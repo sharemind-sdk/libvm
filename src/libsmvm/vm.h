@@ -18,106 +18,106 @@
 extern "C" {
 #endif
 
-SVM_STATIC_ASSERT(sizeof(union SVM_IBlock) == sizeof(uint64_t));
-SVM_STATIC_ASSERT(sizeof(size_t) <= sizeof(uint64_t));
-SVM_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
-SVM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
-SVM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
-SVM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
+SM_STATIC_ASSERT(sizeof(union SM_CodeBlock) == sizeof(uint64_t));
+SM_STATIC_ASSERT(sizeof(size_t) <= sizeof(uint64_t));
+SM_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
+SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
+SM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
+SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 
-#define SVM_ENUM_State \
-    (SVM_INITIALIZED) \
-    (SVM_PREPARING) \
-    (SVM_PREPARED) \
-    (SVM_RUNNING) \
-    (SVM_TRAPPED) \
-    (SVM_TRAPPED_IN_SYSCALL) \
-    (SVM_FINISHED) \
-    (SVM_CRASHED)
-SVM_ENUM_DEFINE(SVM_State, SVM_ENUM_State);
-SVM_ENUM_DECLARE_TOSTRING(SVM_State);
+#define SMVM_ENUM_State \
+    (SMVM_INITIALIZED) \
+    (SMVM_PREPARING) \
+    (SMVM_PREPARED) \
+    (SMVM_RUNNING) \
+    (SMVM_TRAPPED) \
+    (SMVM_TRAPPED_IN_SYSCALL) \
+    (SMVM_FINISHED) \
+    (SMVM_CRASHED)
+SM_ENUM_DEFINE(SMVM_State, SMVM_ENUM_State);
+SM_ENUM_DECLARE_TOSTRING(SMVM_State);
 
-#define SVM_ENUM_Runtime_State \
-    (SVM_RUNNING_NORMAL) \
-    (SVM_RUNNING_SYSCALL) \
-    (SVM_RUNNING_SYSWAIT)
-SVM_ENUM_DEFINE(SVM_Runtime_State, SVM_ENUM_Runtime_State);
-SVM_ENUM_DECLARE_TOSTRING(SVM_Runtime_State);
-
-
-#define SVM_ENUM_Error \
-    ((SVM_OK, = 0)) \
-    ((SVM_OUT_OF_MEMORY,)) \
-    ((SVM_INVALID_INPUT_STATE,)) \
-    ((SVM_PREPARE_ERROR_FILE_NOT_RECOGNIZED,)) \
-    ((SVM_PREPARE_ERROR_NO_CODE_SECTION,)) \
-    ((SVM_PREPARE_ERROR_INVALID_HEADER,)) \
-    ((SVM_PREPARE_ERROR_INVALID_INSTRUCTION,)) \
-    ((SVM_PREPARE_ERROR_INVALID_ARGUMENTS,)) \
-    ((SVM_RUNTIME_EXCEPTION,)) \
-    ((SVM_RUNTIME_TRAP,))
-SVM_ENUM_CUSTOM_DEFINE(SVM_Error, SVM_ENUM_Error);
-SVM_ENUM_DECLARE_TOSTRING(SVM_Error);
-
-#define SVM_ENUM_Exception \
-    ((SVM_E_OUT_OF_MEMORY, = 0x00)) \
-    ((SVM_E_INVALID_REGISTER_INDEX, = 0x10)) \
-    ((SVM_E_INVALID_STACK_INDEX, = 0x20)) \
-    ((SVM_E_JUMP_TO_INVALID_ADDRESS, = 0x30))
-SVM_ENUM_CUSTOM_DEFINE(SVM_Exception, SVM_ENUM_Exception);
-SVM_ENUM_DECLARE_TOSTRING(SVM_Exception);
+#define SMVM_ENUM_Runtime_State \
+    (SMVM_RUNNING_NORMAL) \
+    (SMVM_RUNNING_SYSCALL) \
+    (SMVM_RUNNING_SYSWAIT)
+SM_ENUM_DEFINE(SMVM_Runtime_State, SMVM_ENUM_Runtime_State);
+SM_ENUM_DECLARE_TOSTRING(SMVM_Runtime_State);
 
 
-struct SVM_Program;
+#define SMVM_ENUM_Error \
+    ((SMVM_OK, = 0)) \
+    ((SMVM_OUT_OF_MEMORY,)) \
+    ((SMVM_INVALID_INPUT_STATE,)) \
+    ((SMVM_PREPARE_ERROR_FILE_NOT_RECOGNIZED,)) \
+    ((SMVM_PREPARE_ERROR_NO_CODE_SECTION,)) \
+    ((SMVM_PREPARE_ERROR_INVALID_HEADER,)) \
+    ((SMVM_PREPARE_ERROR_INVALID_INSTRUCTION,)) \
+    ((SMVM_PREPARE_ERROR_INVALID_ARGUMENTS,)) \
+    ((SMVM_RUNTIME_EXCEPTION,)) \
+    ((SMVM_RUNTIME_TRAP,))
+SM_ENUM_CUSTOM_DEFINE(SMVM_Error, SMVM_ENUM_Error);
+SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
+
+#define SMVM_ENUM_Exception \
+    ((SMVM_E_OUT_OF_MEMORY, = 0x00)) \
+    ((SMVM_E_INVALID_REGISTER_INDEX, = 0x10)) \
+    ((SMVM_E_INVALID_STACK_INDEX, = 0x20)) \
+    ((SMVM_E_JUMP_TO_INVALID_ADDRESS, = 0x30))
+SM_ENUM_CUSTOM_DEFINE(SMVM_Exception, SMVM_ENUM_Exception);
+SM_ENUM_DECLARE_TOSTRING(SMVM_Exception);
+
+
+struct SMVM_Program;
 
 /**
- * \brief Allocates and initializes a new SVM_Program instance.
- * \returns a pointer to the new SVM_Program instance.
+ * \brief Allocates and initializes a new SMVM_Program instance.
+ * \returns a pointer to the new SMVM_Program instance.
  * \retval NULL if allocation failed.
  */
-struct SVM_Program * SVM_Program_new() __attribute__ ((warn_unused_result));
+struct SMVM_Program * SMVM_Program_new() __attribute__ ((warn_unused_result));
 
 /**
- * \brief Deallocates a SVM_Program instance.
- * \param[in] p pointer to the SVM_Program instance to free.
+ * \brief Deallocates a SMVM_Program instance.
+ * \param[in] p pointer to the SMVM_Program instance to free.
  */
-void SVM_Program_free(struct SVM_Program *p) __attribute__ ((nonnull(1)));
+void SMVM_Program_free(struct SMVM_Program *p) __attribute__ ((nonnull(1)));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.
  * \pre codeSize > 0
  * \pre This function has been called less than program->numCodeSections on the program object.
- * \pre program->state == SVM_INITIALIZED
- * \post program->state == SVM_INITIALIZED
+ * \pre program->state == SMVM_INITIALIZED
+ * \post program->state == SMVM_INITIALIZED
  * \param program The program to prepare.
  * \param[in] code The program code, of which a copy is made and processed.
  * \param[in] codeSize The length of the code.
- * \returns an SVM_Error.
+ * \returns an SMVM_Error.
  */
-int SVM_Program_addCodeSection(struct SVM_Program * program, const union SVM_IBlock * code, const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+int SMVM_Program_addCodeSection(struct SMVM_Program * program, const union SM_CodeBlock * code, const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Prepares the program fully for execution.
  * \param program The program to prepare.
- * \returns an SVM_Error.
+ * \returns an SMVM_Error.
  */
-int SVM_Program_endPrepare(struct SVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_endPrepare(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Starts execution of the given program in the background.
- * \pre program->state == SVM_PREPARED
+ * \pre program->state == SMVM_PREPARED
  * \param program The program to run.
- * \returns an SVM_Error.
+ * \returns an SMVM_Error.
  */
-int SVM_Program_run(struct SVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_run(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Continues execution of the given program in the background.
- * \pre program->state == SVM_TRAPPED || program->state == SVM_TRAPPED_IN_SYSCALL
+ * \pre program->state == SMVM_TRAPPED || program->state == SMVM_TRAPPED_IN_SYSCALL
  * \param program The program to continue.
- * \returns an SVM_Error.
+ * \returns an SMVM_Error.
  */
-int SVM_Program_continue(struct SVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_continue(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Stops execution of the given program running in the background.
@@ -125,36 +125,36 @@ int SVM_Program_continue(struct SVM_Program * program) __attribute__ ((nonnull(1
  * Execution is stopped before executing any jump or call instruction, or in the
  * middle of asynchronous system calls.
  *
- * \pre program->state == SVM_RUNNING
- * \post program->state == SVM_TRAPPED || program->state == SVM_TRAPPED_IN_SYSCALL
+ * \pre program->state == SMVM_RUNNING
+ * \post program->state == SMVM_TRAPPED || program->state == SMVM_TRAPPED_IN_SYSCALL
  * \param program The program to stop.
- * \returns an SVM_Error.
+ * \returns an SMVM_Error.
  */
-int SVM_Program_stop(struct SVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_stop(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SVM_Program instance.
+ * \param[in] p pointer to the SMVM_Program instance.
  * \returns the return value of the program.
  */
-int64_t SVM_Program_get_return_value(struct SVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SMVM_Program_get_return_value(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SVM_Program instance.
+ * \param[in] p pointer to the SMVM_Program instance.
  * \returns the exception value of the program.
  */
-int64_t SVM_Program_get_exception_value(struct SVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SMVM_Program_get_exception_value(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SVM_Program instance.
+ * \param[in] p pointer to the SMVM_Program instance.
  * \returns the current code section of the program.
  */
-size_t SVM_Program_get_current_codesection(struct SVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SVM_Program instance.
+ * \param[in] p pointer to the SMVM_Program instance.
  * \returns the current instruction pointer of the program.
  */
-size_t SVM_Program_get_current_ip(struct SVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

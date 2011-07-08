@@ -16,26 +16,26 @@
 extern "C" {
 #endif
 
-struct SVM_Program;
-enum SVM_InnerCommand;
+struct SMVM_Program;
+enum SMVM_InnerCommand;
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
-#define _SVM_NOCLONE noclone,
+#define _SMVM_NOCLONE noclone,
 #else
-#define _SVM_NOCLONE
+#define _SMVM_NOCLONE
 #endif
 
-int64_t _SVM(struct SVM_Program * p,
-             const enum SVM_InnerCommand c,
-             void * d) __attribute__ ((_SVM_NOCLONE
-                                       noinline
-                                       warn_unused_result,
-                                       optimize("O2",
-                                                "-fexpensive-optimizations",
-                                                "-fno-gcse"),
-                                       hot,
-                                       nonnull(1)
-                                     ));
+int64_t _SMVM(struct SMVM_Program * p,
+              const enum SMVM_InnerCommand c,
+              void * d) __attribute__ ((_SMVM_NOCLONE
+                                        noinline
+                                        warn_unused_result,
+                                        optimize("O2",
+                                                 "-fexpensive-optimizations",
+                                                 "-fno-gcse"),
+                                        hot,
+                                        nonnull(1)
+                                      ));
 
 #ifdef __cplusplus
 } /* extern "C" { */
