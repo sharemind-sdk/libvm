@@ -56,41 +56,19 @@
     if (1) { \
         SMVM_MI_DISPATCH(ip = codeStart + (a)); \
     } else (void) 0
-#define SMVM_MI_JUMP_REL_FORWARD(n,s) \
+#define SMVM_MI_JUMP_REL(n) \
     if (1) { \
-        SMVM_MI_DISPATCH(ip += (n->uint64[0]) + (s) + 1); \
-    } else (void) 0
-#define SMVM_MI_JUMP_REL_BACKWARD(n) \
-    if (1) { \
-        SMVM_MI_DISPATCH(ip += (n->int64[0]) - 1); \
+        SMVM_MI_DISPATCH(ip += ((n)->int64[0])); \
     } else (void) 0
 
 #define SMVM_MI_IS_INSTR(i) \
-    SMVM_InstrSet_contains(&p->codeSections.data[p->currentCodeSectionIndex].instrset,i)
+    SMVM_InstrSet_contains(&p->codeSections.data[p->currentCodeSectionIndex].instrset,(i))
 
-#define SMVM_MI_CHECK_JUMP_REL(reladdr,numargs) \
+#define SMVM_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
-        uint64_t i = (uint64_t)(ip - codeStart); \
-        if (reladdr->int64[0] > 0) { \
-            uint64_t b = ((uint64_t) i) + (reladdr->uint64[0]); \
-            if (likely(b >= reladdr->uint64[0])) { \
-                b += numargs + 1; \
-                if (likely((b >= numargs + 1) && (b < codeSize))) { \
-                    SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR(i+reladdr->uint64[0]+numargs+1), \
-                                       SMVM_E_JUMP_TO_INVALID_ADDRESS); \
-                    SMVM_MI_JUMP_REL_FORWARD(reladdr,numargs); \
-                } \
-            } \
-        } else { \
-            uint64_t abs = (uint64_t)(-reladdr->int64[0]); \
-            if (likely(abs < i)) { \
-                abs = i - abs - 1; \
-                SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR(i+reladdr->int64[0]-1), \
-                                   SMVM_E_JUMP_TO_INVALID_ADDRESS); \
-                SMVM_MI_JUMP_REL_BACKWARD(reladdr); \
-            } \
-        } \
-        SMVM_MI_DO_EXCEPT(SMVM_E_JUMP_TO_INVALID_ADDRESS); \
+        union SM_CodeBlock * tip = ip + (reladdr); \
+        SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR(tip - codeStart), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
+        SMVM_MI_DISPATCH(ip = tip); \
     } else (void) 0
 
 #define SMVM_MI_DO_EXCEPT(e) \
