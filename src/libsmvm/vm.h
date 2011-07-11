@@ -49,7 +49,7 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Runtime_State);
     ((SMVM_OK, = 0)) \
     ((SMVM_OUT_OF_MEMORY,)) \
     ((SMVM_INVALID_INPUT_STATE,)) \
-    ((SMVM_PREPARE_ERROR_FILE_NOT_RECOGNIZED,)) \
+    ((SMVM_PREPARE_ERROR_INVALID_INPUT_FILE,)) \
     ((SMVM_PREPARE_ERROR_NO_CODE_SECTION,)) \
     ((SMVM_PREPARE_ERROR_INVALID_HEADER,)) \
     ((SMVM_PREPARE_ERROR_INVALID_INSTRUCTION,)) \
@@ -82,6 +82,15 @@ struct SMVM_Program * SMVM_Program_new() __attribute__ ((warn_unused_result));
  * \param[in] p pointer to the SMVM_Program instance to free.
  */
 void SMVM_Program_free(struct SMVM_Program *p) __attribute__ ((nonnull(1)));
+
+/**
+ * \brief Loads the program sections from the given data.
+ * \param p pointer to the SMVM_Program to initialize.
+ * \param[in] data pointer to the sharemind executable file data.
+ * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
+ * \returns an SMVM_Error.
+ */
+int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.

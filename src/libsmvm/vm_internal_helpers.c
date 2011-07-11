@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../libsme/libsme.h"
+#include "../libsme/libsme_0x0.h"
 #include "../likely.h"
 #include "vm_internal_core.h"
 
@@ -119,6 +121,72 @@ void SMVM_Program_free(struct SMVM_Program * const p) {
     SMVM_CodeSectionsVector_destroy_with(&p->codeSections, &SMVM_CodeSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
     free(p);
+}
+
+int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t dataSize) {
+    assert(p);
+    assert(data);
+
+    if (dataSize < sizeof(struct SME_Common_Header))
+        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+
+    const struct SME_Common_Header * ch;
+    if (SME_Common_Header_read(data, &ch) != SME_READ_OK)
+        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+
+    if (ch->file_format_version > 0u)
+        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
+
+
+    const void * pos = data + sizeof(struct SME_Common_Header);
+
+    const struct SME_Header_0x0 * h;
+    if (SME_Header_0x0_read(pos, &h) != SME_READ_OK)
+        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+    pos += sizeof(struct SME_Header_0x0);
+
+    for (unsigned ui = 0; ui <= h->number_of_units_minus_one; ui++) {
+        const struct SME_Unit_Header_0x0 * uh;
+        if (SME_Unit_Header_0x0_read(pos, &uh) != SME_READ_OK)
+            return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+
+        pos += sizeof(struct SME_Unit_Header_0x0);
+        for (unsigned si = 0; si <= uh->sections_minus_one; si++) {
+            const struct SME_Section_Header_0x0 * sh;
+            if (SME_Section_Header_0x0_read(pos, &sh) != SME_READ_OK)
+                return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+
+            pos += sizeof(struct SME_Section_Header_0x0);
+
+            enum SME_Section_Type type = SME_Section_Header_0x0_type(sh);
+            assert(type != (enum SME_Section_Type) -1);
+            if (type == SME_SECTION_TYPE_TEXT) {
+                union {
+                    const void * v;
+                    const union SM_CodeBlock * cb;
+                } c = { .v = pos };
+
+                int r = SMVM_Program_addCodeSection(p, c.cb, sh->length);
+                if (r != SMVM_OK)
+                    return r;
+
+                pos += sh->length * sizeof(union SM_CodeBlock);
+            } else {
+                /** \todo also add other sections. */
+                abort();
+                /*
+                int r = SMVM_Program_addSection(p, pos, sh->length);
+                if (r != SMVM_OK)
+                    return r;
+
+                pos += sh->length;
+                */
+            }
+        }
+    }
+    p->currentCodeSectionIndex = h->active_linking_unit;
+
+    return SMVM_Program_endPrepare(p);
 }
 
 int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
@@ -245,8 +313,6 @@ int SMVM_Program_run(struct SMVM_Program * const program) {
     if (unlikely(program->state != SMVM_PREPARED))
         return SMVM_INVALID_INPUT_STATE;
 
-    program->currentCodeSectionIndex = 0u;
-    program->currentIp = 0u;
     return _SMVM(program, SMVM_I_RUN, NULL);
 }
 
