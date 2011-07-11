@@ -12,6 +12,9 @@
 
 #include "vm.h"
 
+#ifdef SMVM_DEBUG
+#include <stdio.h>
+#endif /* SMVM_DEBUG */
 #include "../instrset.h"
 #include "../stack.h"
 #include "../vector.h"

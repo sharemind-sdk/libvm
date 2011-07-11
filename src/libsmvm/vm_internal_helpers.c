@@ -18,6 +18,11 @@
 #include "../likely.h"
 #include "vm_internal_core.h"
 
+#ifdef SMVM_DEBUG
+#include <inttypes.h>
+#include "../libsmvmi/instr.h"
+#endif /* SMVM_DEBUG */
+
 
 /*******************************************************************************
  *  Public enum methods
@@ -189,6 +194,34 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t
     return SMVM_Program_endPrepare(p);
 }
 
+#ifdef SMVM_DEBUG
+
+static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix) {
+    size_t skip = 0u;
+    for (size_t i = 0u; i < size; i++) {
+        fprintf(stream, "%s %08zx ", linePrefix, i);
+        const uint8_t * b = &code[i].uint8[0];
+        fprintf(stream, "%02x%02x %02x%02x %02x%02x %02x%02x",
+               b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
+
+        if (!skip) {
+            const struct SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
+            if (instr) {
+                fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullname));
+                skip = instr->numargs;
+            } else {
+                fprintf(stream, "  %s", "!!! UNKNOWN INSTRUCTION OR DATA !!!");
+            }
+        } else {
+            skip--;
+        }
+
+        fprintf(stream, "\n");
+    }
+}
+
+#endif /* SMVM_DEBUG */
+
 int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
                                 const union SM_CodeBlock * const code,
                                 const size_t codeSize)
@@ -206,6 +239,11 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 
     if (unlikely(!SMVM_CodeSection_init(s, code, codeSize)))
         return SMVM_OUT_OF_MEMORY;
+
+    #ifdef SMVM_DEBUG
+    fprintf(stderr, "Added code section %zu:\n", p->codeSections.size - 1);
+    printCodeSection(stderr, code, codeSize, "    ");
+    #endif /* SMVM_DEBUG */
 
     return SMVM_OK;
 }
@@ -347,7 +385,7 @@ void SMVM_StackFrame_printStateBencoded(struct SMVM_StackFrame * const s, FILE *
     fprintf(f, "5:Stack");
     SMVM_RegisterVector_printStateBencoded(&s->stack, f);
     fprintf(f, "10:LastCallIpi%zue", s->lastCallIp);
-    fprintf(f, "15:LastCallSectioni%ze", s->lastCallSection);
+    fprintf(f, "15:LastCallSectioni%zue", s->lastCallSection);
     fprintf(f, "e");
 }
 
