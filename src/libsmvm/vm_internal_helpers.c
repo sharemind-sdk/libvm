@@ -393,7 +393,6 @@ void SMVM_Program_printStateBencoded(struct SMVM_Program * const p, FILE * const
     fprintf(f, "d");
         fprintf(f, "5:Statei%de", p->state);
         fprintf(f, "5:Errori%de", p->error);
-        fprintf(f, "12:RuntimeStatei%de", p->runtimeState);
         fprintf(f, "18:CurrentCodeSectioni%zue", p->currentCodeSectionIndex);
         fprintf(f, "9:CurrentIPi%zue", p->currentIp);
         fprintf(f, "12:CurrentStackl");
