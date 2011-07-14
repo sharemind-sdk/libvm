@@ -282,6 +282,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
+#define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
 
 int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     assert(p);
