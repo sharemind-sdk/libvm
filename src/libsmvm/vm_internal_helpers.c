@@ -354,7 +354,7 @@ int SMVM_Program_run(struct SMVM_Program * const program) {
 }
 
 int64_t SMVM_Program_get_return_value(struct SMVM_Program *p) {
-    return p->returnValue;
+    return p->returnValue.int64[0];
 }
 
 int64_t SMVM_Program_get_exception_value(struct SMVM_Program *p) {

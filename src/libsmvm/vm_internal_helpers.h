@@ -47,7 +47,7 @@ struct SMVM_StackFrame {
     struct SMVM_StackFrame * prev;
 
     union SM_CodeBlock * returnAddr;
-    int64_t * returnValueAddr;
+    union SM_CodeBlock * returnValueAddr;
 
 #ifdef SMVM_DEBUG
     size_t lastCallIp;
@@ -105,7 +105,7 @@ struct SMVM_Program {
     size_t currentCodeSectionIndex;
     size_t currentIp;
 
-    int64_t returnValue;
+    union SM_CodeBlock returnValue;
     int64_t exceptionValue;
 
 #ifdef SMVM_DEBUG
