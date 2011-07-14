@@ -29,7 +29,6 @@
 ********************************************************************************/
 
 SM_ENUM_DEFINE_TOSTRING(SMVM_State, SMVM_ENUM_State);
-SM_ENUM_DEFINE_TOSTRING(SMVM_Runtime_State, SMVM_ENUM_Runtime_State);
 SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Error, SMVM_ENUM_Error);
 SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 

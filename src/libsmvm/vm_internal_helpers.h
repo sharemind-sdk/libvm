@@ -95,7 +95,6 @@ SM_STACK_DECLARE(SMVM_FrameStack,struct SMVM_StackFrame,)
 struct SMVM_Program {
     enum SMVM_State state;
     enum SMVM_Error error;
-    enum SMVM_Runtime_State runtimeState;
 
     struct SMVM_CodeSectionsVector codeSections;
     struct SMVM_FrameStack frames;

@@ -37,13 +37,6 @@ SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 SM_ENUM_DEFINE(SMVM_State, SMVM_ENUM_State);
 SM_ENUM_DECLARE_TOSTRING(SMVM_State);
 
-#define SMVM_ENUM_Runtime_State \
-    (SMVM_RUNNING_NORMAL) \
-    (SMVM_RUNNING_SYSCALL) \
-    (SMVM_RUNNING_SYSWAIT)
-SM_ENUM_DEFINE(SMVM_Runtime_State, SMVM_ENUM_Runtime_State);
-SM_ENUM_DECLARE_TOSTRING(SMVM_Runtime_State);
-
 
 #define SMVM_ENUM_Error \
     ((SMVM_OK, = 0)) \
