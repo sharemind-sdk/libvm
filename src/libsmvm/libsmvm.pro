@@ -18,3 +18,8 @@ LIBS += -Wl,-rpath-link=../../lib -L../../lib -lsmvmi -lsme
 SOURCES += \
     vm_internal_core.c \
     vm_internal_helpers.c
+
+OTHER_FILES += \
+    vm.h \
+    vm_internal_core.h \
+    vm_internal_helpers.h
