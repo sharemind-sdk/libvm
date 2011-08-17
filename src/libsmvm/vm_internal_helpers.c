@@ -317,7 +317,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
         }
 
         /* Initialize exception pointer: */
-        c[s->size].uint64[0] = 0u;
+        c[s->size].uint64[0] = 0u; /* && eof */
         struct SMVM_Prepare_IBlock pb = { .block = &c[s->size], .type = 2 };
         int r = _SMVM(p, SMVM_I_GET_IMPL_LABEL, &pb);
         assert(r == SMVM_OK);
@@ -333,7 +333,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     if (unlikely(!p->globalFrame))
         return SMVM_OUT_OF_MEMORY;
 
-    /* Initialize root stack frame: */
+    /* Initialize global frame: */
     SMVM_StackFrame_init(p->globalFrame, NULL);
     p->globalFrame->returnValueAddr = &(p->returnValue);
 
