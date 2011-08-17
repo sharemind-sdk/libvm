@@ -117,6 +117,17 @@
         SMVM_MI_JUMP_ABS((a)); \
     } else (void) 0
 
+#define SMVM_MI_CHECK_CALL(a,r,nargs) \
+    if (1) { \
+        SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR((a)->uint64[0]), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
+        SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
+        p->nextFrame->returnValueAddr = (r); \
+        p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
+        p->thisFrame = p->nextFrame; \
+        p->nextFrame = NULL; \
+        SMVM_MI_JUMP_ABS((a)->uint64[0]); \
+    } else (void) 0
+
 #define SMVM_MI_RETURN(r) \
     if (1) { \
         if (unlikely(p->nextFrame)) { \
