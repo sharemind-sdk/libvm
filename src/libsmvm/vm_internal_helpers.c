@@ -259,11 +259,11 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     if (unlikely(!(c))) { \
         SMVM_PREPARE_ERROR(e); \
     } else (void) 0
-#define SMVM_PREPARE_END_AS(impl_type,index,numargs) \
+#define SMVM_PREPARE_END_AS(index,numargs) \
     if (1) { \
-        struct SMVM_Prepare_IBlock pb = { .block = (union SM_CodeBlock *) &c[i], .type = impl_type }; \
-        pb.block->uint64[0] = index; \
-        int64_t r = _SMVM(p, SMVM_I_GET_IMPL_LABEL, (void*) &pb); \
+        c[i].uint64[0] = (index); \
+        struct SMVM_Prepare_IBlock pb = { .block = &c[i], .type = 0 }; \
+        int r = _SMVM(p, SMVM_I_GET_IMPL_LABEL, (void *) &pb); \
         assert(r == SMVM_OK); \
         i += (numargs); \
         break; \
