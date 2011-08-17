@@ -336,6 +336,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     /* Initialize global frame: */
     SMVM_StackFrame_init(p->globalFrame, NULL);
     p->globalFrame->returnValueAddr = &(p->returnValue);
+    p->globalFrame->returnAddr = NULL; /* Triggers halt on return. */
 
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;

@@ -88,7 +88,7 @@
     if (!p->nextFrame) { \
         p->nextFrame = SMVM_FrameStack_push(&p->frames); \
         SMVM_MI_TRY_OOM(p->nextFrame); \
-        SMVM_StackFrame_init(p->nextFrame, 0); \
+        SMVM_StackFrame_init(p->nextFrame, p->thisFrame); \
     } else (void)0
 
 #define SMVM_MI_PUSH(v) \
@@ -111,7 +111,7 @@
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         p->nextFrame->returnValueAddr = (r); \
-        p->thisFrame->returnAddr = (ip + 1 + (nargs)); \
+        p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
         p->thisFrame = p->nextFrame; \
         p->nextFrame = NULL; \
         SMVM_MI_JUMP_ABS((a)); \
@@ -119,16 +119,20 @@
 
 #define SMVM_MI_RETURN(r) \
     if (1) { \
-        if (p->nextFrame) { \
+        if (unlikely(p->nextFrame)) { \
             SMVM_FrameStack_pop(&p->frames); \
             p->nextFrame = NULL; \
         } \
-        if (p->thisFrame->returnValueAddr) \
-            *p->thisFrame->returnValueAddr = (r); \
-        ip = p->thisFrame->returnAddr; \
-        p->thisFrame = p->thisFrame->prev; \
-        SMVM_FrameStack_pop(&p->frames); \
-        SMVM_MI_DISPATCH(ip); \
+        if (likely(p->thisFrame->returnAddr)) { \
+            if (p->thisFrame->returnValueAddr) \
+                *p->thisFrame->returnValueAddr = (r); \
+            ip = p->thisFrame->returnAddr; \
+            p->thisFrame = p->thisFrame->prev; \
+            SMVM_FrameStack_pop(&p->frames); \
+            SMVM_MI_DISPATCH(ip); \
+        } else { \
+            SMVM_MI_HALT((r)); \
+        } \
     } else (void) 0
 
 #define SMVM_MI_GET_T_reg(d,t,i) \
