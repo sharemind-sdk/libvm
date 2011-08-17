@@ -163,9 +163,9 @@
 #define SMVM_MI_ARG_AS(n,t)   (SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n),t))
 #define SMVM_MI_ARG_AS_P(n,t) (& SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n), t))
 
-int64_t _SMVM(struct SMVM_Program * const p,
-              const enum SMVM_InnerCommand c,
-              void * const d)
+int _SMVM(struct SMVM_Program * const p,
+          const enum SMVM_InnerCommand c,
+          void * const d)
 {
     int returnCode = SMVM_OK;
 

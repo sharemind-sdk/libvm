@@ -25,17 +25,17 @@ enum SMVM_InnerCommand;
 #define _SMVM_NOCLONE
 #endif
 
-int64_t _SMVM(struct SMVM_Program * p,
-              const enum SMVM_InnerCommand c,
-              void * d) __attribute__ ((_SMVM_NOCLONE
-                                        noinline
-                                        warn_unused_result,
-                                        optimize("O2",
-                                                 "-fexpensive-optimizations",
-                                                 "-fno-gcse"),
-                                        hot,
-                                        nonnull(1)
-                                      ));
+int _SMVM(struct SMVM_Program * p,
+          const enum SMVM_InnerCommand c,
+          void * d) __attribute__ ((_SMVM_NOCLONE
+                                    noinline
+                                    warn_unused_result,
+                                    optimize("O2",
+                                             "-fexpensive-optimizations",
+                                             "-fno-gcse"),
+                                    hot,
+                                    nonnull(1)
+                                  ));
 
 #ifdef __cplusplus
 } /* extern "C" { */
