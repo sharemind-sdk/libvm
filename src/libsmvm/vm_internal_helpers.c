@@ -32,6 +32,14 @@ SM_ENUM_DEFINE_TOSTRING(SMVM_State, SMVM_ENUM_State);
 SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Error, SMVM_ENUM_Error);
 SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 
+
+/*******************************************************************************
+ *  SMVM_MemoryMap
+********************************************************************************/
+
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,(uint16_t),malloc,free)
+
+
 /*******************************************************************************
  *  SMVM_StackFrame
 ********************************************************************************/
@@ -111,6 +119,9 @@ struct SMVM_Program * SMVM_Program_new() {
         p->error = SMVM_OK;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_FrameStack_init(&p->frames);
+        SMVM_MemoryMap_init(&p->memoryMap);
+        p->memorySlotsUsed = 0u;
+        p->memorySlotNext = 1u;
         p->currentCodeSectionIndex = 0u;
         p->currentIp = 0u;
 #ifdef SMVM_DEBUG
@@ -124,6 +135,7 @@ void SMVM_Program_free(struct SMVM_Program * const p) {
     assert(p);
     SMVM_CodeSectionsVector_destroy_with(&p->codeSections, &SMVM_CodeSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
+    SMVM_MemoryMap_destroy(&p->memoryMap);
     free(p);
 }
 

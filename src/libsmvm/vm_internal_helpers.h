@@ -16,6 +16,7 @@
 #include <stdio.h>
 #endif /* SMVM_DEBUG */
 #include "../instrset.h"
+#include "../map.h"
 #include "../stack.h"
 #include "../vector.h"
 
@@ -33,6 +34,31 @@ enum SMVM_InnerCommand {
     SMVM_I_GET_IMPL_LABEL,
     SMVM_I_RUN,
     SMVM_I_CONTINUE
+};
+
+
+/*******************************************************************************
+ *  SMVM_MemoryMap
+********************************************************************************/
+
+struct SMVM_MemorySlot {
+    uint64_t nrefs;
+    size_t size;
+    void * pData;
+};
+
+SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot)
+
+
+/*******************************************************************************
+ *  SMVM_StackFrame
+********************************************************************************/
+
+struct SMVM_Reference {
+    struct SMVM_MemorySlot * pMemory;
+    uint64_t dataIndexOnPreviousStack;
+    size_t offset;
+    size_t size;
 };
 
 
@@ -97,10 +123,15 @@ struct SMVM_Program {
     enum SMVM_Error error;
 
     struct SMVM_CodeSectionsVector codeSections;
+
     struct SMVM_FrameStack frames;
     struct SMVM_StackFrame * globalFrame;
     struct SMVM_StackFrame * nextFrame;
     struct SMVM_StackFrame * thisFrame;
+
+    struct SMVM_MemoryMap memoryMap;
+    uint64_t memorySlotsUsed;
+    uint64_t memorySlotNext;
 
     size_t currentCodeSectionIndex;
     size_t currentIp;

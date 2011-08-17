@@ -178,6 +178,44 @@
 #define SMVM_MI_ARG_AS(n,t)   (SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n),t))
 #define SMVM_MI_ARG_AS_P(n,t) (& SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n), t))
 
+#define SMVM_MI_MEM_ALLOC(dptr,sizereg) \
+    if (1) { \
+        if (p->memorySlotsUsed >= UINT64_MAX) { \
+            (dptr)->uint64[0] = 0u; /* NULL */ \
+        } else { \
+            size_t dataSize = (sizereg)->uint64[0]; /* SIZE_MAX == UINT64_MAX */ \
+            void * pData = malloc(dataSize); \
+            if (!pData) { \
+                (dptr)->uint64[0] = 0u; /* NULL */ \
+                free(pData); \
+            } else { \
+                struct SMVM_MemorySlot * slot; \
+                for (;;) { \
+                    slot = SMVM_MemoryMap_get(&p->memoryMap, p->memorySlotNext); \
+                    if (!slot) \
+                        (dptr)->uint64[0] = p->memorySlotNext; \
+                    if (++p->memorySlotNext == 0) \
+                        p->memorySlotNext++; \
+                    if (!slot) \
+                        break; \
+                } \
+                slot = SMVM_MemoryMap_insert(&p->memoryMap, p->memorySlotNext); \
+                slot->nrefs = 0u; \
+                slot->size = dataSize; \
+                slot->pData = pData; \
+            } \
+        } \
+    } else (void) 0
+
+/* The following can be optimized: */
+#define SMVM_MI_MEM_FREE(ptr) \
+    if (1) { \
+        struct SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, (ptr)->uint64[0]); \
+        SMVM_MI_TRY_EXCEPT(slot,SMVM_E_INVALID_MEMORY_POINTER); \
+        free(slot->pData); \
+        SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
+    } else (void) 0
+
 int _SMVM(struct SMVM_Program * const p,
           const enum SMVM_InnerCommand c,
           void * const d)
