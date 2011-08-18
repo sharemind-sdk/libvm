@@ -199,7 +199,7 @@
                     if (!slot) \
                         break; \
                 } \
-                slot = SMVM_MemoryMap_insert(&p->memoryMap, p->memorySlotNext); \
+                slot = SMVM_MemoryMap_insert(&p->memoryMap, (dptr)->uint64[0]); \
                 slot->nrefs = 0u; \
                 slot->size = dataSize; \
                 slot->pData = pData; \
