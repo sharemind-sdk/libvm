@@ -220,7 +220,7 @@
     if (1) { \
         struct SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, (ptr)->uint64[0]); \
         SMVM_MI_TRY_EXCEPT(slot,SMVM_E_INVALID_MEMORY_POINTER); \
-    (sizedest)->uint64[0] = slot->size; \
+        (sizedest)->uint64[0] = slot->size; \
     } else (void) 0
 
 int _SMVM(struct SMVM_Program * const p,
