@@ -187,7 +187,6 @@
             void * pData = malloc(dataSize); \
             if (!pData) { \
                 (dptr)->uint64[0] = 0u; /* NULL */ \
-                free(pData); \
             } else { \
                 struct SMVM_MemorySlot * slot; \
                 for (;;) { \
@@ -200,9 +199,14 @@
                         break; \
                 } \
                 slot = SMVM_MemoryMap_insert(&p->memoryMap, (dptr)->uint64[0]); \
-                slot->nrefs = 0u; \
-                slot->size = dataSize; \
-                slot->pData = pData; \
+                if (!slot) { \
+                    free(pData); \
+                    (dptr)->uint64[0] = 0u; /* NULL */ \
+                } else { \
+                    slot->nrefs = 0u; \
+                    slot->size = dataSize; \
+                    slot->pData = pData; \
+                } \
             } \
         } \
     } else (void) 0
