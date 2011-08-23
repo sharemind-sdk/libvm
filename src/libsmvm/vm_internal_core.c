@@ -11,6 +11,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "vm_internal_helpers.h"
 
 
@@ -211,21 +212,35 @@
         } \
     } else (void) 0
 
+#define SMVM_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
+    if (1) { \
+        (dest) = SMVM_MemoryMap_get(&p->memoryMap, (index)); \
+        SMVM_MI_TRY_EXCEPT((dest),SMVM_E_INVALID_MEMORY_POINTER); \
+    } else (void) 0
+
 /* The following can be optimized: */
 #define SMVM_MI_MEM_FREE(ptr) \
     if (1) { \
-        struct SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, (ptr)->uint64[0]); \
-        SMVM_MI_TRY_EXCEPT(slot,SMVM_E_INVALID_MEMORY_POINTER); \
+        struct SMVM_MemorySlot * slot; \
+        SMVM_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
         free(slot->pData); \
         SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
     } else (void) 0
 
-#define SMVM_MI_MEM_GETSIZE(ptr,sizedest) \
+#define SMVM_MI_MEM_GET_SIZE(ptr,sizedest) \
     if (1) { \
-        struct SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, (ptr)->uint64[0]); \
-        SMVM_MI_TRY_EXCEPT(slot,SMVM_E_INVALID_MEMORY_POINTER); \
+        struct SMVM_MemorySlot * slot; \
+        SMVM_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
         (sizedest)->uint64[0] = slot->size; \
     } else (void) 0
+
+#define SMVM_MI_MEM_GET_PTR(pSlot,dptr) \
+    if (1) { \
+        (dptr) = (pSlot)->pData; \
+    } else (void) 0
+
+#define SMVM_MI_MEMCPY memcpy
+#define SMVM_MI_MEMMOVE memmove
 
 int _SMVM(struct SMVM_Program * const p,
           const enum SMVM_InnerCommand c,
