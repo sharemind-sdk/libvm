@@ -51,7 +51,7 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot)
 
 
 /*******************************************************************************
- *  SMVM_StackFrame
+ *  SMVM_Reference
 ********************************************************************************/
 
 struct SMVM_Reference {
