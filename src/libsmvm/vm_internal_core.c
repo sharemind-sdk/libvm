@@ -273,7 +273,6 @@ int _SMVM(struct SMVM_Program * const p,
         return SMVM_OK;
 
     } else if (c == SMVM_I_RUN) {
-        size_t codeSize = p->codeSections.data[p->currentCodeSectionIndex].size;
         union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
         union SM_CodeBlock * ip = &codeStart[p->currentIp];
         SMVM_MI_DISPATCH(ip);
