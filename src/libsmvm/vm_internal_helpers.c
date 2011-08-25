@@ -44,6 +44,28 @@ int SMVM_MemoryMap_deallocator(struct SMVM_MemorySlot * s) {
     return 1;
 }
 
+
+/*******************************************************************************
+ *  SMVM_Reference
+********************************************************************************/
+
+SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc)
+
+int SMVM_Reference_deallocator(struct SMVM_Reference * r) {
+    if (!r->pBlock) {
+        assert(r->pMemory);
+        r->pMemory->nrefs--;
+    } else {
+        assert(!r->pMemory);
+    }
+    return 1;
+}
+
+void SMVM_Reference_destroy(struct SMVM_Reference * r) {
+    SMVM_Reference_deallocator(r);
+}
+
+
 /*******************************************************************************
  *  SMVM_StackFrame
 ********************************************************************************/
@@ -53,6 +75,8 @@ SM_VECTOR_DEFINE(SMVM_RegisterVector,union SM_CodeBlock,malloc,free,realloc)
 void SMVM_StackFrame_init(struct SMVM_StackFrame * f, struct SMVM_StackFrame * prev) {
     assert(f);
     SMVM_RegisterVector_init(&f->stack);
+    SMVM_ReferenceVector_init(&f->refstack);
+    SMVM_ReferenceVector_init(&f->crefstack);
     f->prev = prev;
 
 #ifdef SMVM_DEBUG
@@ -64,6 +88,8 @@ void SMVM_StackFrame_init(struct SMVM_StackFrame * f, struct SMVM_StackFrame * p
 void SMVM_StackFrame_destroy(struct SMVM_StackFrame * f) {
     assert(f);
     SMVM_RegisterVector_destroy(&f->stack);
+    SMVM_ReferenceVector_destroy_with(&f->refstack, &SMVM_Reference_destroy);
+    SMVM_ReferenceVector_destroy_with(&f->crefstack, &SMVM_Reference_destroy);
 }
 
 /*******************************************************************************

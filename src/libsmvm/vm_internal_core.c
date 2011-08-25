@@ -86,7 +86,7 @@
 #define SMVM_MI_TRY_OOM(e) SMVM_MI_TRY_EXCEPT((e),SMVM_E_OUT_OF_MEMORY)
 
 #define SMVM_MI_CHECK_CREATE_NEXT_FRAME \
-    if (!p->nextFrame) { \
+    if (!SMVM_MI_HAS_STACK) { \
         p->nextFrame = SMVM_FrameStack_push(&p->frames); \
         SMVM_MI_TRY_OOM(p->nextFrame); \
         SMVM_StackFrame_init(p->nextFrame, p->thisFrame); \
@@ -100,13 +100,33 @@
         *reg = (v); \
     } else (void) 0
 
+#define _SMVM_MI_PUSHREF_BLOCK(something,b) \
+    if (1) { \
+        SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
+        struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
+        SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
+        ref->pMemory = NULL; \
+        ref->pBlock = (b); \
+        ref->offset = 0u; \
+        ref->size = sizeof(union SM_CodeBlock); \
+    } else (void) 0
+
+#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b))
+#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b))
+
 #define SMVM_MI_RESIZE_STACK(size) \
     SMVM_MI_TRY_OOM(SMVM_RegisterVector_resize(&p->thisFrame->stack, (size)))
 
 #define SMVM_MI_CLEAR_STACK \
-    if (likely(p->nextFrame)) { \
+    if (1) { \
         SMVM_RegisterVector_resize(&p->nextFrame->stack, 0u); \
+        SMVM_ReferenceVector_foreach(&p->nextFrame->refstack, &SMVM_Reference_deallocator); \
+        SMVM_ReferenceVector_foreach(&p->nextFrame->crefstack, &SMVM_Reference_deallocator); \
+        SMVM_ReferenceVector_resize(&p->nextFrame->refstack, 0u); \
+        SMVM_ReferenceVector_resize(&p->nextFrame->crefstack, 0u); \
     } else (void) 0
+
+#define SMVM_MI_HAS_STACK (!!(p->nextFrame))
 
 #define SMVM_MI_CALL(a,r,nargs) \
     if (1) { \
@@ -132,6 +152,7 @@
 #define SMVM_MI_RETURN(r) \
     if (1) { \
         if (unlikely(p->nextFrame)) { \
+            SMVM_StackFrame_destroy(SMVM_FrameStack_top(&p->frames)); \
             SMVM_FrameStack_pop(&p->frames); \
             p->nextFrame = NULL; \
         } \

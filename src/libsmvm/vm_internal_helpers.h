@@ -56,10 +56,15 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot)
 
 struct SMVM_Reference {
     struct SMVM_MemorySlot * pMemory;
-    uint64_t dataIndexOnPreviousStack;
+    union SM_CodeBlock * pBlock;
     size_t offset;
     size_t size;
 };
+
+int SMVM_Reference_deallocator(struct SMVM_Reference * r);
+void SMVM_Reference_destroy(struct SMVM_Reference * r);
+
+SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,)
 
 
 /*******************************************************************************
@@ -70,6 +75,8 @@ SM_VECTOR_DECLARE(SMVM_RegisterVector,union SM_CodeBlock,)
 
 struct SMVM_StackFrame {
     struct SMVM_RegisterVector stack;
+    struct SMVM_ReferenceVector refstack;
+    struct SMVM_ReferenceVector crefstack;
     struct SMVM_StackFrame * prev;
 
     union SM_CodeBlock * returnAddr;
