@@ -171,28 +171,43 @@
 #define SMVM_MI_GET_T_reg(d,t,i) \
     if (1) { \
         union SM_CodeBlock * r = SMVM_RegisterVector_get_pointer(&p->globalFrame->stack, (i)); \
-        SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_REGISTER_INDEX); \
+        SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_REGISTER); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
 
 #define SMVM_MI_GET_T_stack(d,t,i) \
     if (1) { \
         union SM_CodeBlock * r = SMVM_RegisterVector_get_pointer(&p->thisFrame->stack, (i)); \
-        SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_STACK_INDEX); \
+        SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_STACK); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
 
 #define SMVM_MI_GET_reg(d,i) \
     if (1) { \
         (d) = SMVM_RegisterVector_get_pointer(&p->globalFrame->stack, (i)); \
-        SMVM_MI_TRY_EXCEPT(d,SMVM_E_INVALID_REGISTER_INDEX); \
+        SMVM_MI_TRY_EXCEPT((d),SMVM_E_INVALID_INDEX_REGISTER); \
     } else (void) 0
 
 #define SMVM_MI_GET_stack(d,i) \
     if (1) { \
         (d) = SMVM_RegisterVector_get_pointer(&p->thisFrame->stack, (i)); \
-        SMVM_MI_TRY_EXCEPT(d,SMVM_E_INVALID_STACK_INDEX); \
+        SMVM_MI_TRY_EXCEPT((d),SMVM_E_INVALID_INDEX_STACK); \
     } else (void) 0
+
+#define SMVM_MI_GET_ref(r,i) \
+    if (1) { \
+        (r) = SMVM_ReferenceVector_get_pointer(&p->thisFrame->refstack, (i)); \
+        SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_REFERENCE); \
+    } else (void) 0
+
+#define SMVM_MI_GET_cref(r,i) \
+    if (1) { \
+        (r) = SMVM_ReferenceVector_get_pointer(&p->thisFrame->crefstack, (i)); \
+        SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_CONST_REFERENCE); \
+    } else (void) 0
+
+#define SMVM_MI_REFERENCE_GET_PTR(r) ((void *) ((r)->pMemory ? (r)->pMemory->pData : &(r)->pBlock->uint64[0]))
+#define SMVM_MI_REFERENCE_GET_SIZE(r) ((size_t) ((r)->pMemory ? (r)->pMemory->size : 8u))
 
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
 #define SMVM_MI_ARG(n)        (* SMVM_MI_ARG_P(n))
