@@ -207,6 +207,7 @@
     } else (void) 0
 
 #define SMVM_MI_REFERENCE_GET_PTR(r) ((void *) ((r)->pMemory ? (r)->pMemory->pData : &(r)->pBlock->uint64[0]))
+#define SMVM_MI_REFERENCE_GET_OFFSET(r) ((r)->offset)
 #define SMVM_MI_REFERENCE_GET_SIZE(r) ((size_t) ((r)->pMemory ? (r)->pMemory->size : 8u))
 
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
