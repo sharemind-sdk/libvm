@@ -116,8 +116,9 @@
 
 #define _SMVM_MI_PUSHREF_REF(something,r) \
     if (1) { \
-        if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) \
+        if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) { \
             SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
+        } \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
