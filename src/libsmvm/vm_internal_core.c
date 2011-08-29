@@ -100,21 +100,23 @@
         *reg = (v); \
     } else (void) 0
 
-#define _SMVM_MI_PUSHREF_BLOCK(something,b) \
+#define _SMVM_MI_PUSHREF_BLOCK(something,b,bOffset,rSize) \
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = NULL; \
         ref->pBlock = (b); \
-        ref->offset = 0u; \
-        ref->size = sizeof(union SM_CodeBlock); \
+        ref->offset = (bOffset); \
+        ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b))
-#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b))
+#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b), 0u, sizeof(union SM_CodeBlock))
+#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b), 0u, sizeof(union SM_CodeBlock))
+#define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b), (o), (s))
+#define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b), (o), (s))
 
-#define _SMVM_MI_PUSHREF_REF(something,r) \
+#define _SMVM_MI_PUSHREF_REF(something,r,rOffset,rSize) \
     if (1) { \
         if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) { \
             SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
@@ -126,14 +128,16 @@
         if (ref->pMemory) \
             ref->pMemory->nrefs++; \
         ref->pBlock = (r)->pBlock; \
-        ref->offset = (r)->offset; \
-        ref->size = (r)->size; \
+        ref->offset = (rOffset); \
+        ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(refstack,  (r))
-#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(crefstack, (r))
+#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(refstack,  (r), (r)->offset, (r)->size)
+#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(crefstack, (r), (r)->offset, (r)->size)
+#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(refstack,  (r), (o), (s))
+#define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(crefstack, (r), (o), (s))
 
-#define _SMVM_MI_PUSHREF_MEM(something,slot) \
+#define _SMVM_MI_PUSHREF_MEM(something,slot,mOffset,rSize) \
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
@@ -141,12 +145,14 @@
         ref->pMemory = (slot); \
         (slot)->nrefs++; \
         ref->pBlock = NULL; \
-        ref->offset = 0u; \
-        ref->size = (slot)->size; \
+        ref->offset = (mOffset); \
+        ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot))
-#define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(crefstack, (slot))
+#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot), 0u, (slot)->size)
+#define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(crefstack, (slot), 0u, (slot)->size)
+#define SMVM_MI_PUSHREFPART_MEM_ref(slot,o,s)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot), (o), (s))
+#define SMVM_MI_PUSHREFPART_MEM_cref(slot,o,s) _SMVM_MI_PUSHREF_MEM(crefstack, (slot), (o), (s))
 
 #define SMVM_MI_RESIZE_STACK(size) \
     SMVM_MI_TRY_OOM(SMVM_RegisterVector_resize(&p->thisFrame->stack, (size)))
