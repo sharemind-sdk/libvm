@@ -133,6 +133,21 @@
 #define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(refstack,  (r))
 #define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(crefstack, (r))
 
+#define _SMVM_MI_PUSHREF_MEM(something,slot) \
+    if (1) { \
+        SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
+        struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
+        SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
+        ref->pMemory = (slot); \
+        (slot)->nrefs++; \
+        ref->pBlock = NULL; \
+        ref->offset = 0u; \
+        ref->size = (slot)->size; \
+    } else (void) 0
+
+#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot))
+#define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(crefstack, (slot))
+
 #define SMVM_MI_RESIZE_STACK(size) \
     SMVM_MI_TRY_OOM(SMVM_RegisterVector_resize(&p->thisFrame->stack, (size)))
 
