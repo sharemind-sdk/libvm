@@ -13,7 +13,8 @@ TEMPLATE = lib
 TARGET = smvm
 DESTDIR = ../../lib/
 
-LIBS += -Wl,-rpath-link=../../lib -L../../lib -lsmvmi -lsme
+unix:!macx:LIBS += -Wl,-rpath-link=../../lib
+LIBS += -L../../lib -lsmvmi -lsme
 
 SOURCES += \
     vm_internal_core.c \
