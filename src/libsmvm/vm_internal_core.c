@@ -251,6 +251,7 @@
 #define SMVM_MI_REFERENCE_GET_SIZE(r) ((size_t) ((r)->pMemory ? (r)->pMemory->size : 8u))
 
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
+#define SMVM_MI_BLOCK_AS_P(b,t) (&b->t[0])
 #define SMVM_MI_ARG(n)        (* SMVM_MI_ARG_P(n))
 #define SMVM_MI_ARG_P(n)      (ip + (n))
 #define SMVM_MI_ARG_AS(n,t)   (SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n),t))
