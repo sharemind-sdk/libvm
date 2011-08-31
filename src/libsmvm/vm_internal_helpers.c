@@ -415,6 +415,11 @@ size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
     return p->currentIp;
 }
 
+sigjmp_buf * SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p) {
+    return &p->safeJmpBuf;
+}
+
+
 #ifdef SMVM_DEBUG
 
 void SMVM_RegisterVector_printStateBencoded(struct SMVM_RegisterVector * const v, FILE * const f) {

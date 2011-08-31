@@ -12,6 +12,7 @@
 
 #include "vm.h"
 
+#include <setjmp.h>
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif /* SMVM_DEBUG */
@@ -136,6 +137,7 @@ struct SMVM_Program {
     struct SMVM_StackFrame * nextFrame;
     struct SMVM_StackFrame * thisFrame;
 
+
     struct SMVM_MemoryMap memoryMap;
     uint64_t memorySlotsUsed;
     uint64_t memorySlotNext;
@@ -145,6 +147,8 @@ struct SMVM_Program {
 
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;
+
+    sigjmp_buf safeJmpBuf;
 
 #ifdef SMVM_DEBUG
     FILE * debugFileHandle;

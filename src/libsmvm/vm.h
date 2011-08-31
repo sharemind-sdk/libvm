@@ -10,6 +10,7 @@
 #ifndef LIBSMVM_VM_H
 #define LIBSMVM_VM_H
 
+#include <setjmp.h>
 #include "../codeblock.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
@@ -64,7 +65,8 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
     ((SMVM_E_OUT_OF_BOUNDS_READ, = 0x302)) \
     ((SMVM_E_OUT_OF_BOUNDS_WRITE, = 0x303)) \
     ((SMVM_E_OUT_OF_BOUNDS_REFERENCE_INDEX, = 0x304)) \
-    ((SMVM_E_OUT_OF_BOUNDS_REFERENCE_SIZE, = 0x305))
+    ((SMVM_E_OUT_OF_BOUNDS_REFERENCE_SIZE, = 0x305)) \
+    ((SMVM_E_ARITHMETIC_EXCEPTION, = 0x400))
 SM_ENUM_CUSTOM_DEFINE(SMVM_Exception, SMVM_ENUM_Exception);
 SM_ENUM_DECLARE_TOSTRING(SMVM_Exception);
 
@@ -165,6 +167,12 @@ size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) __attribute_
  * \returns the current instruction pointer of the program.
  */
 size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+
+/**
+ * \param[in] p pointer to the SMVM_Program instance.
+ * \returns a pointer to the safe jump buffer of the execution environment of the program.
+ */
+sigjmp_buf * SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

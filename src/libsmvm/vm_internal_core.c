@@ -325,8 +325,6 @@ int _SMVM(struct SMVM_Program * const p,
           const enum SMVM_InnerCommand c,
           void * const d)
 {
-    int returnCode = SMVM_OK;
-
     if (c == SMVM_I_GET_IMPL_LABEL) {
 
 #include "../m4/static_label_structs.h"
@@ -350,9 +348,15 @@ int _SMVM(struct SMVM_Program * const p,
         }
         return SMVM_OK;
 
-    } else if (c == SMVM_I_RUN) {
+    } else if (c == SMVM_I_RUN || c == SMVM_I_CONTINUE) {
         union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
         union SM_CodeBlock * ip = &codeStart[p->currentIp];
+
+        if (sigsetjmp(p->safeJmpBuf, 1)) {
+            p->exceptionValue = SMVM_E_ARITHMETIC_EXCEPTION;
+            goto except;
+        }
+
         SMVM_MI_DISPATCH(ip);
 
 #include "../m4/dispatches.h"
@@ -376,9 +380,6 @@ int _SMVM(struct SMVM_Program * const p,
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_RUNTIME_TRAP;
-    } else if (c == SMVM_I_CONTINUE) {
-        /* TODO */
-        return returnCode;
     } else {
         abort();
     }
