@@ -16,6 +16,7 @@
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif /* SMVM_DEBUG */
+#include <stdlib.h>
 #include "../instrset.h"
 #include "../map.h"
 #include "../stack.h"
@@ -48,7 +49,12 @@ struct SMVM_MemorySlot {
     void * pData;
 };
 
-SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot)
+#ifdef SMVM_RELEASE
+SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,inline)
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,(uint16_t),malloc,free,inline)
+#else
+SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,)
+#endif
 
 
 /*******************************************************************************
@@ -65,14 +71,24 @@ struct SMVM_Reference {
 int SMVM_Reference_deallocator(struct SMVM_Reference * r);
 void SMVM_Reference_destroy(struct SMVM_Reference * r);
 
-SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,)
+#ifdef SMVM_RELEASE
+SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,,inline)
+SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc,inline)
+#else
+SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,,)
+#endif
 
 
 /*******************************************************************************
  *  SMVM_StackFrame
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_RegisterVector,union SM_CodeBlock,)
+#ifdef SMVM_RELEASE
+SM_VECTOR_DECLARE(SMVM_RegisterVector,union SM_CodeBlock,,inline)
+SM_VECTOR_DEFINE(SMVM_RegisterVector,union SM_CodeBlock,malloc,free,realloc,inline)
+#else
+SM_VECTOR_DECLARE(SMVM_RegisterVector,union SM_CodeBlock,,)
+#endif
 
 struct SMVM_StackFrame {
     struct SMVM_RegisterVector stack;
@@ -102,8 +118,15 @@ struct SMVM_Breakpoint {
     union SM_CodeBlock originalInstruction;
 };
 
-SM_VECTOR_DECLARE(SMVM_BreakpointVector,struct SMVM_Breakpoint,)
-SM_INSTRSET_DECLARE(SMVM_InstrSet)
+#ifdef SMVM_RELEASE
+SM_VECTOR_DECLARE(SMVM_BreakpointVector,struct SMVM_Breakpoint,,inline)
+SM_VECTOR_DEFINE(SMVM_BreakpointVector,struct SMVM_Breakpoint,malloc,free,realloc,inline)
+SM_INSTRSET_DECLARE(SMVM_InstrSet,inline)
+SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,inline)
+#else
+SM_VECTOR_DECLARE(SMVM_BreakpointVector,struct SMVM_Breakpoint,,)
+SM_INSTRSET_DECLARE(SMVM_InstrSet,)
+#endif
 
 struct SMVM_CodeSection {
     union SM_CodeBlock * data;
@@ -123,8 +146,15 @@ void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) __attribute__ (
  *  SMVM_Program
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,)
-SM_STACK_DECLARE(SMVM_FrameStack,struct SMVM_StackFrame,)
+#ifdef SMVM_RELEASE
+SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,,inline)
+SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,realloc,inline)
+SM_STACK_DECLARE(SMVM_FrameStack,struct SMVM_StackFrame,,inline)
+SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free,inline)
+#else
+SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,,)
+SM_STACK_DECLARE(SMVM_FrameStack,struct SMVM_StackFrame,,)
+#endif
 
 struct SMVM_Program {
     enum SMVM_State state;

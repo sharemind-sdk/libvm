@@ -10,7 +10,6 @@
 #include "vm_internal_core.h"
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 #include "vm_internal_helpers.h"
 

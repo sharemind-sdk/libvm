@@ -11,7 +11,6 @@
 #include "vm_internal_helpers.h"
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include "../libsme/libsme.h"
 #include "../libsme/libsme_0x0.h"
@@ -37,7 +36,9 @@ SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
  *  SMVM_MemoryMap
 ********************************************************************************/
 
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,(uint16_t),malloc,free)
+#ifndef SMVM_RELEASE
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,(uint16_t),malloc,free,)
+#endif
 
 int SMVM_MemoryMap_deallocator(struct SMVM_MemorySlot * s) {
     free(s->pData);
@@ -49,7 +50,9 @@ int SMVM_MemoryMap_deallocator(struct SMVM_MemorySlot * s) {
  *  SMVM_Reference
 ********************************************************************************/
 
-SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc)
+#ifndef SMVM_RELEASE
+SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc,)
+#endif
 
 int SMVM_Reference_deallocator(struct SMVM_Reference * r) {
     if (!r->pBlock) {
@@ -70,7 +73,9 @@ void SMVM_Reference_destroy(struct SMVM_Reference * r) {
  *  SMVM_StackFrame
 ********************************************************************************/
 
-SM_VECTOR_DEFINE(SMVM_RegisterVector,union SM_CodeBlock,malloc,free,realloc)
+#ifndef SMVM_RELEASE
+SM_VECTOR_DEFINE(SMVM_RegisterVector,union SM_CodeBlock,malloc,free,realloc,)
+#endif
 
 void SMVM_StackFrame_init(struct SMVM_StackFrame * f, struct SMVM_StackFrame * prev) {
     assert(f);
@@ -96,9 +101,10 @@ void SMVM_StackFrame_destroy(struct SMVM_StackFrame * f) {
  *  SMVM_CodeSection
 ********************************************************************************/
 
-SM_VECTOR_DEFINE(SMVM_BreakpointVector,struct SMVM_Breakpoint,malloc,free,realloc)
-
-SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free)
+#ifndef SMVM_RELEASE
+SM_VECTOR_DEFINE(SMVM_BreakpointVector,struct SMVM_Breakpoint,malloc,free,realloc,)
+SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,)
+#endif
 
 int SMVM_CodeSection_init(struct SMVM_CodeSection * s,
                           const union SM_CodeBlock * const code,
@@ -139,8 +145,10 @@ void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) {
  *  SMVM_Program
 ********************************************************************************/
 
-SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,realloc)
-SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free)
+#ifndef SMVM_RELEASE
+SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,realloc,)
+SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free,)
+#endif
 
 struct SMVM_Program * SMVM_Program_new() {
     struct SMVM_Program * const p = malloc(sizeof(struct SMVM_Program));
