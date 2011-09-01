@@ -148,7 +148,7 @@ struct SMVM_Program {
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;
 
-    sigjmp_buf safeJmpBuf;
+    sigjmp_buf safeJmpBuf[_SMVM_HET_COUNT];
 
 #ifdef SMVM_DEBUG
     FILE * debugFileHandle;

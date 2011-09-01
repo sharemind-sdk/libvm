@@ -349,13 +349,33 @@ int _SMVM(struct SMVM_Program * const p,
         return SMVM_OK;
 
     } else if (c == SMVM_I_RUN || c == SMVM_I_CONTINUE) {
+
         union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
         union SM_CodeBlock * ip = &codeStart[p->currentIp];
 
-        if (sigsetjmp(p->safeJmpBuf, 1)) {
-            p->exceptionValue = SMVM_E_ARITHMETIC_EXCEPTION;
-            goto except;
-        }
+        /**
+          \warning Note that the variable "ip" is not valid after one of the
+                   following sigsetjmp's returns non-zero unless we declare it
+                   volatile. However, declaring "ip" as volatile has a negative
+                   performance impact. A remedy would be to update p->currentIp
+                   before every instruction which could generate such signals.
+        */
+
+#define _SMVM_DECLARE_SIGJMP(h,e) \
+        if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
+            p->exceptionValue = (e); \
+            goto except; \
+        } else (void) 0
+
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_OTHER,      SMVM_E_OTHER_HARDWARE_EXCEPTION);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_INTDIV, SMVM_E_INTEGER_DIVIDE_BY_ZERO);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_INTOVF, SMVM_E_INTEGER_OVERFLOW);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTDIV, SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTOVF, SMVM_E_FLOATING_POINT_OVERFLOW);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTUND, SMVM_E_FLOATING_POINT_UNDERFLOW);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTRES, SMVM_E_FLOATING_POINT_INEXACT_RESULT);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTINV, SMVM_E_FLOATING_POINT_INVALID_OPERATION);
+        _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB, SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
         SMVM_MI_DISPATCH(ip);
 
