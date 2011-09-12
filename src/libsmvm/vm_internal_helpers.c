@@ -315,8 +315,8 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     if (1) { \
         c[i].uint64[0] = (index); \
         struct SMVM_Prepare_IBlock pb = { .block = &c[i], .type = 0 }; \
-        int r = _SMVM(p, SMVM_I_GET_IMPL_LABEL, (void *) &pb); \
-        assert(r == SMVM_OK); \
+        if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, (void *) &pb) != SMVM_OK) \
+            abort(); \
         i += (numargs); \
         break; \
     } else (void) 0
@@ -371,8 +371,8 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
         /* Initialize exception pointer: */
         c[s->size].uint64[0] = 0u; /* && eof */
         struct SMVM_Prepare_IBlock pb = { .block = &c[s->size], .type = 2 };
-        int r = _SMVM(p, SMVM_I_GET_IMPL_LABEL, &pb);
-        assert(r == SMVM_OK);
+        if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, &pb) != SMVM_OK)
+            abort();
 
         continue;
 
