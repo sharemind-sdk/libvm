@@ -88,7 +88,7 @@ enum SMVM_HardwareExceptionType {
     SMVM_HET_FPE_FLTRES = 0x06, /* floating-point inexact result */
     SMVM_HET_FPE_FLTINV = 0x07, /* floating-point invalid operation */
     SMVM_HET_FPE_FLTSUB = 0x08, /* subscript out of range */
-    _SMVM_HET_COUNT = 0x08
+    _SMVM_HET_COUNT = 0x09
 };
 
 struct SMVM_Program;
