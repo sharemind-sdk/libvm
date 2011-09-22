@@ -4,7 +4,7 @@ PROJECT("SHAREMIND_VM" "C")
 
 LINK_DIRECTORIES("lib")
 
-SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -ggdb -fstrict-aliasing -Wstrict-aliasing=1")
+SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
 
 # m4
 SET(M4_DIR "src/m4")
