@@ -85,3 +85,6 @@ ADD_EXECUTABLE("vm" "src/vm/main.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/")
 TARGET_LINK_LIBRARIES("vm" "libsmvmi" "libsmvm")
+
+# Load any custom configuration:
+INCLUDE("config.local" OPTIONAL)
