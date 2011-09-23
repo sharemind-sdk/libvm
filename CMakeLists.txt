@@ -36,18 +36,21 @@ ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
 ADD_CUSTOM_COMMAND(TARGET "${M4_DIR_B}/instr.m4f" POST_BUILD
                    COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/stats.m4")
 FOREACH(_H_SOURCE ${M4_2_H_SOURCES})
+  SET(M4_2_H_SOURCES_S ${M4_2_H_SOURCES_S} "${M4_DIR_S}/${_H_SOURCE}")
   STRING(REGEX REPLACE "\\.m4$" ".h" _H_TARGET ${_H_SOURCE})
   ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/${_H_TARGET}"
                      COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/${_H_SOURCE}" > "${M4_DIR_B}/${_H_TARGET}"
                      DEPENDS "${M4_DIR_S}/${_H_SOURCE}" "${M4_DIR_B}/instr.m4f")
 ENDFOREACH(_H_SOURCE ${M4_2_H_SOURCES})
+SET(OTHER_FILES ${OTHER_FILES} ${M4_2_H_SOURCES_S})
 
 
 ################################################################################
 # libsmvmi
 ################################################################################
 
-ADD_LIBRARY("libsmvmi" SHARED "src/libsmvmi/instr.c")
+ADD_LIBRARY("libsmvmi" SHARED "src/libsmvmi/instr.c"
+            ${OTHER_FILES}) # <-- hack for Qt Creator to include other files
 SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES
                       OUTPUT_NAME "smvmi"
                       LIBRARY_OUTPUT_DIRECTORY "lib/")
