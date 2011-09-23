@@ -53,7 +53,9 @@ ADD_LIBRARY("libsmvmi" SHARED "src/libsmvmi/instr.c"
             ${OTHER_FILES}) # <-- hack for Qt Creator to include other files
 SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES
                       OUTPUT_NAME "smvmi"
-                      LIBRARY_OUTPUT_DIRECTORY "lib/")
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvmi/instr.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/instruction_from_code_cases.h;${M4_DIR_B}/instruction_from_name_cases.h;${M4_DIR_B}/instruction_structs.h")
 
@@ -67,7 +69,9 @@ ADD_LIBRARY("libsme" SHARED
             "src/libsme/libsme_0x0.c")
 SET_TARGET_PROPERTIES("libsme" PROPERTIES
                       OUTPUT_NAME "sme"
-                      LIBRARY_OUTPUT_DIRECTORY "lib/")
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
 
 
 ################################################################################
@@ -83,7 +87,9 @@ ADD_LIBRARY("libsmas" SHARED
             "src/libsmas/tokens.c")
 SET_TARGET_PROPERTIES("libsmas" PROPERTIES
                       OUTPUT_NAME "smas"
-                      LIBRARY_OUTPUT_DIRECTORY "lib/")
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
 TARGET_LINK_LIBRARIES("libsmas" "libsmvmi" "libsme")
 
 
@@ -100,7 +106,9 @@ SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJEC
                             "${M4_DIR_B}/preprocess_pass1_cases.h;${M4_DIR_B}/preprocess_pass2_cases.h")
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
-                      LIBRARY_OUTPUT_DIRECTORY "lib/")
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme")
 
 
@@ -110,7 +118,8 @@ TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme")
 
 ADD_EXECUTABLE("smas" "src/smas/main.c")
 SET_TARGET_PROPERTIES("smas" PROPERTIES
-                      RUNTIME_OUTPUT_DIRECTORY "bin/")
+                      RUNTIME_OUTPUT_DIRECTORY "bin/"
+                      VERSION "0.1.0.0")
 TARGET_LINK_LIBRARIES("smas" "libsmas")
 
 
@@ -120,7 +129,8 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 
 ADD_EXECUTABLE("vm" "src/vm/main.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
-                      RUNTIME_OUTPUT_DIRECTORY "bin/")
+                      RUNTIME_OUTPUT_DIRECTORY "bin/"
+                      VERSION "0.1.0.0")
 TARGET_LINK_LIBRARIES("vm" "libsmvmi" "libsmvm")
 
 
