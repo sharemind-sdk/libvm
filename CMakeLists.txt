@@ -3,6 +3,7 @@ CMAKE_POLICY(SET CMP0015 NEW)
 PROJECT("SHAREMIND_VM" "C")
 
 LINK_DIRECTORIES("lib")
+SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
 
@@ -58,6 +59,9 @@ SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES
                       SOVERSION "0.1")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvmi/instr.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/instruction_from_code_cases.h;${M4_DIR_B}/instruction_from_name_cases.h;${M4_DIR_B}/instruction_structs.h")
+INSTALL(DIRECTORY "src/libsmvmi/"
+        DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvmi"
+        FILES_MATCHING PATTERN "*.h")
 
 
 ################################################################################
@@ -72,6 +76,9 @@ SET_TARGET_PROPERTIES("libsme" PROPERTIES
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
+INSTALL(DIRECTORY "src/libsme/"
+        DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsme"
+        FILES_MATCHING PATTERN "*.h")
 
 
 ################################################################################
@@ -91,6 +98,10 @@ SET_TARGET_PROPERTIES("libsmas" PROPERTIES
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
 TARGET_LINK_LIBRARIES("libsmas" "libsmvmi" "libsme")
+INSTALL(DIRECTORY "src/libsmas/"
+        DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmas"
+        FILES_MATCHING PATTERN "stdion.h" EXCLUDE
+                       PATTERN "*.h")
 
 
 ################################################################################
@@ -110,6 +121,8 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme")
+INSTALL(FILES "src/libsmvm/vm.h"
+        DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvm")
 
 
 ################################################################################
@@ -132,6 +145,16 @@ SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
 TARGET_LINK_LIBRARIES("vm" "libsmvmi" "libsmvm")
+
+
+################################################################################
+# Installs:
+################################################################################
+
+INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas"
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        PUBLIC_HEADER DESTINATION "include")
 
 
 ################################################################################
