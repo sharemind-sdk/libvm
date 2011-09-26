@@ -11,6 +11,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION "2.8")
 CMAKE_POLICY(SET CMP0015 NEW)
 PROJECT("SHAREMIND_VM" "C")
 
+FIND_PACKAGE(Boost)
+IF (NOT Boost_FOUND)
+    MESSAGE(FATAL_ERROR "Required Boost library headers not found!")
+ENDIF (NOT Boost_FOUND)
+
 LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
