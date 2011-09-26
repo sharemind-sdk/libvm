@@ -15,7 +15,6 @@ LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
 
-
 ################################################################################
 # Load any custom configuration:
 ################################################################################
@@ -170,3 +169,21 @@ INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         PUBLIC_HEADER DESTINATION "include")
+
+
+################################################################################
+# Tests:
+################################################################################
+
+FUNCTION(add_test_assemble_execute testfile)
+    ADD_TEST(NAME "${testfile}"
+             COMMAND tests/run_test_assemble_execute.sh
+                 $<TARGET_FILE:smas> $<TARGET_FILE:vm> "tests/${testfile}.sa")
+ENDFUNCTION()
+
+add_test_assemble_execute("benchmark")
+add_test_assemble_execute("divbyzero")
+SET_TESTS_PROPERTIES("divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute("global_return")
+add_test_assemble_execute("mem")
+add_test_assemble_execute("proc")
