@@ -26,7 +26,9 @@ SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for 
 # Load any custom configuration:
 ################################################################################
 
-INCLUDE("config.local" OPTIONAL)
+SET(OTHER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/config.local.example")
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
+INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
 
 ################################################################################
