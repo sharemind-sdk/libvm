@@ -20,6 +20,8 @@ LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
 
+SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for the vm binary.")
+
 ################################################################################
 # Load any custom configuration:
 ################################################################################
@@ -163,9 +165,9 @@ ADD_EXECUTABLE("vm" "src/vm/main.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
-IF(DEFINED VM_OUT_OF_MEMORY_DEBUG)
+IF(VM_OUT_OF_MEMORY_DEBUG)
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_DEFINITIONS "VM_OUT_OF_MEMORY_DEBUG")
-ENDIF(DEFINED VM_OUT_OF_MEMORY_DEBUG)
+ENDIF(VM_OUT_OF_MEMORY_DEBUG)
 TARGET_LINK_LIBRARIES("vm" "libsmvmi" "libsmvm")
 
 
