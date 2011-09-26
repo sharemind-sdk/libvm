@@ -4,8 +4,14 @@ PROJECT("SHAREMIND_VM" "C")
 
 LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
-
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1")
+
+
+################################################################################
+# Load any custom configuration:
+################################################################################
+
+INCLUDE("config.local" OPTIONAL)
 
 
 ################################################################################
@@ -155,10 +161,3 @@ INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         PUBLIC_HEADER DESTINATION "include")
-
-
-################################################################################
-# Load any custom configuration:
-################################################################################
-
-INCLUDE("config.local" OPTIONAL)
