@@ -359,13 +359,19 @@ int _SMVM(struct SMVM_Program * const p,
                    performance impact. A remedy would be to update p->currentIp
                    before every instruction which could generate such signals.
         */
-
-#define _SMVM_DECLARE_SIGJMP(h,e) \
-        if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
-            p->exceptionValue = (e); \
-            goto except; \
-        } else (void) 0
-
+#ifdef	__USE_POSIX
+    #define _SMVM_DECLARE_SIGJMP(h,e) \
+            if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
+                p->exceptionValue = (e); \
+                goto except; \
+            } else (void) 0
+#else
+    #define _SMVM_DECLARE_SIGJMP(h,e) \
+            if (setjmp(p->safeJmpBuf[(h)])) { \
+                p->exceptionValue = (e); \
+                goto except; \
+            } else (void) 0
+#endif
         _SMVM_DECLARE_SIGJMP(SMVM_HET_OTHER,      SMVM_E_OTHER_HARDWARE_EXCEPTION);
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_INTDIV, SMVM_E_INTEGER_DIVIDE_BY_ZERO);
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_INTOVF, SMVM_E_INTEGER_OVERFLOW);

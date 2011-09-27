@@ -423,7 +423,12 @@ size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
     return p->currentIp;
 }
 
-sigjmp_buf * SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p, enum SMVM_HardwareExceptionType t) {
+#ifdef __USE_POSIX
+sigjmp_buf *
+#else
+jmp_buf *
+#endif
+SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p, enum SMVM_HardwareExceptionType t) {
     return &p->safeJmpBuf[t];
 }
 
