@@ -205,7 +205,7 @@ ENDFUNCTION()
 
 add_test_assemble_execute("benchmark")
 add_test_assemble_execute("divbyzero")
-SET_TESTS_PROPERTIES("divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+SET_TESTS_PROPERTIES("divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (SMVM_E_INTEGER_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE)")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")
