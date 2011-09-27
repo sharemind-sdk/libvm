@@ -53,6 +53,15 @@ SET(M4_2_H_SOURCES
     "preprocess_pass1_cases.m4"
     "preprocess_pass2_cases.m4"
     "static_label_structs.m4")
+SET(OTHER_FILES ${OTHER_FILES}
+                ${M4_DIR_S}/datatypebyte.m4
+                ${M4_DIR_S}/foreach.m4
+                ${M4_DIR_S}/forloop.m4
+                ${M4_DIR_S}/instr.m4
+                ${M4_DIR_S}/operandlocationbyte.m4
+                ${M4_DIR_S}/product.m4
+                ${M4_DIR_S}/stats.m4)
+
 ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
                    COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "${M4_DIR_S}/instr.m4" "--freeze-state=${M4_DIR_B}/instr.m4f"
                    DEPENDS "${M4_DIR_S}/instr.m4"
@@ -73,8 +82,7 @@ SET(OTHER_FILES ${OTHER_FILES} ${M4_2_H_SOURCES_S})
 # libsmvmi
 ################################################################################
 
-ADD_LIBRARY("libsmvmi" SHARED "src/libsmvmi/instr.c"
-            ${OTHER_FILES}) # <-- hack for Qt Creator to include other files
+ADD_LIBRARY("libsmvmi" SHARED "src/libsmvmi/instr.c")
 SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES
                       OUTPUT_NAME "smvmi"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
@@ -134,6 +142,7 @@ INSTALL(DIRECTORY "src/libsmas/"
 ADD_LIBRARY("libsmvm" SHARED
             "src/libsmvm/vm_internal_core.c"
             "src/libsmvm/vm_internal_helpers.c")
+SET(OTHER_FILES ${OTHER_FILES} "${CMAKE_CURRENT_SOURCE_DIR}/src/libsmvm/vm.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
@@ -163,7 +172,8 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 # vm
 ################################################################################
 
-ADD_EXECUTABLE("vm" "src/vm/main.c")
+ADD_EXECUTABLE("vm" "src/vm/main.c"
+               ${OTHER_FILES}) # <-- hack for Qt Creator to include other files
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
