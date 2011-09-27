@@ -197,10 +197,14 @@ INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas"
 # Tests:
 ################################################################################
 
+SET(TESTS_DIR_B "${CMAKE_CURRENT_BINARY_DIR}/tests")
+SET(TESTS_DIR_S "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+FILE(MAKE_DIRECTORY "${TESTS_DIR_B}")
+
 FUNCTION(add_test_assemble_execute testfile)
     ADD_TEST(NAME "${testfile}"
-             COMMAND tests/run_test_assemble_execute.sh
-                 $<TARGET_FILE:smas> $<TARGET_FILE:vm> "tests/${testfile}.sa")
+             COMMAND "${TESTS_DIR_S}/run_test_assemble_execute.sh"
+                 $<TARGET_FILE:smas> $<TARGET_FILE:vm> "${TESTS_DIR_S}/${testfile}.sa" "${TESTS_DIR_B}/${testfile}.sb")
 ENDFUNCTION()
 
 add_test_assemble_execute("benchmark")
