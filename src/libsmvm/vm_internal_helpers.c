@@ -246,31 +246,7 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t
 }
 
 #ifdef SMVM_DEBUG
-
-static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix) {
-    size_t skip = 0u;
-    for (size_t i = 0u; i < size; i++) {
-        fprintf(stream, "%s %08zx ", linePrefix, i);
-        const uint8_t * b = &code[i].uint8[0];
-        fprintf(stream, "%02x%02x %02x%02x %02x%02x %02x%02x",
-               b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
-
-        if (!skip) {
-            const struct SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
-            if (instr) {
-                fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullname));
-                skip = instr->numargs;
-            } else {
-                fprintf(stream, "  %s", "!!! UNKNOWN INSTRUCTION OR DATA !!!");
-            }
-        } else {
-            skip--;
-        }
-
-        fprintf(stream, "\n");
-    }
-}
-
+static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix);
 #endif /* SMVM_DEBUG */
 
 int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
@@ -423,15 +399,9 @@ size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
     return p->currentIp;
 }
 
-#ifdef __USE_POSIX
-sigjmp_buf *
-#else
-jmp_buf *
-#endif
-SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p, enum SMVM_HardwareExceptionType t) {
-    return &p->safeJmpBuf[t];
-}
-
+/*******************************************************************************
+ *  Debugging
+********************************************************************************/
 
 #ifdef SMVM_DEBUG
 
@@ -468,6 +438,30 @@ void SMVM_Program_printStateBencoded(struct SMVM_Program * const p, FILE * const
             SMVM_StackFrame_printStateBencoded(p->nextFrame, f);
         fprintf(f, "e");
     fprintf(f, "e");
+}
+
+static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix) {
+    size_t skip = 0u;
+    for (size_t i = 0u; i < size; i++) {
+        fprintf(stream, "%s %08zx ", linePrefix, i);
+        const uint8_t * b = &code[i].uint8[0];
+        fprintf(stream, "%02x%02x %02x%02x %02x%02x %02x%02x",
+               b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
+
+        if (!skip) {
+            const struct SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
+            if (instr) {
+                fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullname));
+                skip = instr->numargs;
+            } else {
+                fprintf(stream, "  %s", "!!! UNKNOWN INSTRUCTION OR DATA !!!");
+            }
+        } else {
+            skip--;
+        }
+
+        fprintf(stream, "\n");
+    }
 }
 
 #endif /* SMVM_DEBUG */

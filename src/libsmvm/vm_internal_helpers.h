@@ -12,10 +12,14 @@
 
 #include "vm.h"
 
+#include <fenv.h>
 #include <setjmp.h>
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif /* SMVM_DEBUG */
+#ifdef __USE_POSIX
+#include <signal.h>
+#endif
 #include <stdlib.h>
 #include "../instrset.h"
 #include "../map.h"
@@ -177,10 +181,14 @@ struct SMVM_Program {
 
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;
+
+    fenv_t oldFeEnv;
 #ifdef __USE_POSIX
     sigjmp_buf safeJmpBuf[_SMVM_HET_COUNT];
+    struct sigaction oldFpeAction;
 #else
     jmp_buf safeJmpBuf[_SMVM_HET_COUNT];
+    void * oldFpeAction;
 #endif
 
 #ifdef SMVM_DEBUG

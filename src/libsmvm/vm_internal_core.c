@@ -9,7 +9,12 @@
 
 #include "vm_internal_core.h"
 
+#include <fenv.h>
+#include <signal.h>
 #include <stddef.h>
+#ifdef SMVM_DEBUG
+#include <stdio.h>
+#endif
 #include <string.h>
 #include "vm_internal_helpers.h"
 
@@ -29,6 +34,129 @@
 #define SMVM_DEBUG_PRINTSTATE (void) 0
 #define SMVM_DEBUG_PRINTINSTRUCTION(t) (void) 0
 #endif
+
+#ifdef FE_INEXACT
+#define SMVM_SETUP_FENV_FLAGS (FE_ALL_EXCEPT) & ~(FE_INEXACT)
+#else /* FE_INEXACT */
+#define SMVM_SETUP_FENV_FLAGS FE_ALL_EXCEPT
+#endif /* FE_INEXACT */
+
+/**
+  Thread-local pointer to the program being executed.
+*/
+#ifndef SMVM_NO_THREADS
+#error The Sharemind VM does not yet fully support threads.
+#else
+static struct SMVM_Program * _SMVM_Program_SIGFPE_handler_p = NULL;
+#endif
+
+#ifdef __USE_POSIX
+static void _SMVM_Program_SIGFPE_handler(int signalNumber,
+                                         siginfo_t * signalInfo,
+                                         void * context)
+    __attribute__ ((__noreturn__, __nothrow__));
+static void _SMVM_Program_SIGFPE_handler(int signalNumber,
+                                         siginfo_t * signalInfo,
+                                         void * context)
+{
+    (void) signalNumber;
+    (void) context;
+
+    enum SMVM_HardwareExceptionType e;
+    switch (signalInfo->si_code) {
+        case FPE_INTDIV: e = SMVM_HET_FPE_INTDIV; break;
+        case FPE_INTOVF: e = SMVM_HET_FPE_INTOVF; break;
+        case FPE_FLTDIV: e = SMVM_HET_FPE_FLTDIV; break;
+        case FPE_FLTOVF: e = SMVM_HET_FPE_FLTOVF; break;
+        case FPE_FLTUND: e = SMVM_HET_FPE_FLTUND; break;
+        case FPE_FLTRES: e = SMVM_HET_FPE_FLTRES; break;
+        case FPE_FLTINV: e = SMVM_HET_FPE_FLTINV; break;
+        case FPE_FLTSUB: e = SMVM_HET_FPE_FLTSUB; break;
+        default: e = SMVM_HET_FPE_UNKNOWN; break;
+    }
+
+    assert(_SMVM_Program_SIGFPE_handler_p);
+    siglongjmp(_SMVM_Program_SIGFPE_handler_p->safeJmpBuf[e], 1);
+}
+#else /* __USE_POSIX */
+static void _SMVM_Program_SIGFPE_handler(int signalNumber)
+    __attribute__ ((__noreturn__, __nothrow__));
+static void _SMVM_Program_SIGFPE_handler(int signalNumber) {
+    signal(SIGFPE, _SMVM_Program_SIGFPE_handler);
+    (void) signalNumber;
+    assert(_SMVM_Program_SIGFPE_handler_p);
+    longjmp(_SMVM_Program_SIGFPE_handler_p->safeJmpBuf[SMVM_HET_FPE_UNKNOWN], 1);
+}
+#endif /* __USE_POSIX */
+
+static inline void _SMVM_Program_setupSignalHandlers(struct SMVM_Program * program) {
+    /* Register SIGFPE handler: */
+    _SMVM_Program_SIGFPE_handler_p = program;
+#ifdef __USE_POSIX
+    struct sigaction newFpeAction;
+    memset(&newFpeAction, '\0', sizeof(struct sigaction));
+    newFpeAction.sa_sigaction = _SMVM_Program_SIGFPE_handler;
+    newFpeAction.sa_flags = SA_RESTART | SA_SIGINFO;
+    if (sigaction(SIGFPE, &newFpeAction, &program->oldFpeAction) != 0) {
+#ifdef SMVM_DEBUG
+        fprintf(program->debugFileHandle, "Failed to set SIGFPE signal handler!");
+#endif
+    }
+#else /* __USE_POSIX */
+    program->oldFpeAction = signal(SIGFPE, _SMVM_Program_SIGFPE_handler);
+#endif /* __USE_POSIX */
+
+    /* Setup the FPU: */
+    fenv_t newFeEnv;
+    fegetenv(&program->oldFeEnv);
+    fegetenv(&newFeEnv);
+    newFeEnv.__control_word &= ~(SMVM_SETUP_FENV_FLAGS);
+    fesetenv(&newFeEnv);
+}
+
+static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * program) {
+    /* Restore the FPU: */
+    fesetenv(&program->oldFeEnv);
+
+    /* Restore old SIGFPE handler: */
+#ifdef __USE_POSIX
+    if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0)
+#else /* __USE_POSIX */
+    if (signal(SIGFPE, program->oldFpeAction) == SIG_ERR)
+#endif /* __USE_POSIX */
+    {
+#ifdef SMVM_DEBUG
+        fprintf(program->debugFileHandle, "Failed to restore previous SIGFPE signal handler!");
+#endif
+#ifdef __USE_POSIX
+        memset(&program->oldFpeAction, '\0', sizeof(struct sigaction));
+        program->oldFpeAction.sa_handler = SIG_DFL;
+        if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0) {
+#else /* __USE_POSIX */
+        if (signal(SIGFPE, SIG_DFL) == SIG_ERR) {
+#endif /* __USE_POSIX */
+#ifdef SMVM_DEBUG
+            fprintf(program->debugFileHandle, "Failed reset SIGFPE signal handler to default!");
+#endif
+        }
+    }
+    _SMVM_Program_SIGFPE_handler_p = NULL;
+}
+
+/**
+    \warning SMVM_RESTORE_FENV and SMVM_SETUP_FENV should be used when
+             descending into "unsafe" functions from _SMVM.
+*/
+
+#define SMVM_SETUP_FENV \
+    if (1) { \
+        _SMVM_Program_setupSignalHandlers(p); \
+    } else (void) 0
+
+#define SMVM_RESTORE_FENV \
+    if (1) { \
+        _SMVM_Program_restoreSignalHandlers(p); \
+    } else (void) 0
 
 #define SMVM_UPDATESTATE \
     if (1) { \
@@ -383,6 +511,7 @@ int _SMVM(struct SMVM_Program * const p,
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTINV,  SMVM_E_FLOATING_POINT_INVALID_OPERATION);
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB,  SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
+        SMVM_SETUP_FENV;
         SMVM_MI_DISPATCH(ip);
 
 #include "../m4/dispatches.h"
@@ -391,17 +520,20 @@ int _SMVM(struct SMVM_Program * const p,
             p->exceptionValue = SMVM_E_JUMP_TO_INVALID_ADDRESS;
 
         except:
+            SMVM_RESTORE_FENV;
             p->state = SMVM_CRASHED;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_RUNTIME_EXCEPTION;
 
         halt:
+            SMVM_RESTORE_FENV;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_OK;
 
         trap:
+            SMVM_RESTORE_FENV;
             p->state = SMVM_TRAPPED;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;

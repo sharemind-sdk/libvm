@@ -151,8 +151,9 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
-                      SOVERSION "0.1")
-TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme")
+                      SOVERSION "0.1"
+                      COMPILE_DEFINITIONS "SMVM_NO_THREADS")
+TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme" "m")
 INSTALL(FILES "src/libsmvm/vm.h"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvm")
 
