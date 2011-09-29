@@ -10,7 +10,6 @@
 #ifndef LIBSMVM_VM_H
 #define LIBSMVM_VM_H
 
-#include <setjmp.h>
 #include "../codeblock.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
@@ -78,20 +77,6 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
     ((SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE, = 0x409))
 SM_ENUM_CUSTOM_DEFINE(SMVM_Exception, SMVM_ENUM_Exception);
 SM_ENUM_DECLARE_TOSTRING(SMVM_Exception);
-
-enum SMVM_HardwareExceptionType {
-    SMVM_HET_OTHER       = 0x00, /* Unknown hardware exception */
-    SMVM_HET_FPE_UNKNOWN = 0x01, /* Unknown arithmetic or floating-point error */
-    SMVM_HET_FPE_INTDIV  = 0x02, /* integer divide by zero */
-    SMVM_HET_FPE_INTOVF  = 0x03, /* integer overflow */
-    SMVM_HET_FPE_FLTDIV  = 0x04, /* floating-point divide by zero */
-    SMVM_HET_FPE_FLTOVF  = 0x05, /* floating-point overflow */
-    SMVM_HET_FPE_FLTUND  = 0x06, /* floating-point underflow */
-    SMVM_HET_FPE_FLTRES  = 0x07, /* floating-point inexact result */
-    SMVM_HET_FPE_FLTINV  = 0x08, /* floating-point invalid operation */
-    SMVM_HET_FPE_FLTSUB  = 0x09, /* subscript out of range */
-    _SMVM_HET_COUNT
-};
 
 struct SMVM_Program;
 
@@ -189,18 +174,6 @@ size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) __attribute_
  * \returns the current instruction pointer of the program.
  */
 size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
-
-/**
- * \param[in] p pointer to the SMVM_Program instance.
- * \param[in] t the exception which to handle by the returned jump buffer.
- * \returns a pointer to the safe jump buffer of the execution environment of the program.
- */
-#ifdef __USE_POSIX
-sigjmp_buf *
-#else
-jmp_buf *
-#endif
-SMVM_Program_get_safe_jump_buffer(struct SMVM_Program *p, enum SMVM_HardwareExceptionType t) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

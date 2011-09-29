@@ -35,12 +35,6 @@
 #define SMVM_DEBUG_PRINTINSTRUCTION(t) (void) 0
 #endif
 
-#ifdef FE_INEXACT
-#define SMVM_SETUP_FENV_FLAGS (FE_ALL_EXCEPT) & ~(FE_INEXACT)
-#else /* FE_INEXACT */
-#define SMVM_SETUP_FENV_FLAGS FE_ALL_EXCEPT
-#endif /* FE_INEXACT */
-
 /**
   Thread-local pointer to the program being executed.
 */
@@ -105,19 +99,9 @@ static inline void _SMVM_Program_setupSignalHandlers(struct SMVM_Program * progr
 #else /* __USE_POSIX */
     program->oldFpeAction = signal(SIGFPE, _SMVM_Program_SIGFPE_handler);
 #endif /* __USE_POSIX */
-
-    /* Setup the FPU: */
-    fenv_t newFeEnv;
-    fegetenv(&program->oldFeEnv);
-    fegetenv(&newFeEnv);
-    newFeEnv.__control_word &= ~(SMVM_SETUP_FENV_FLAGS);
-    fesetenv(&newFeEnv);
 }
 
 static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * program) {
-    /* Restore the FPU: */
-    fesetenv(&program->oldFeEnv);
-
     /* Restore old SIGFPE handler: */
 #ifdef __USE_POSIX
     if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0)
@@ -143,19 +127,41 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
     _SMVM_Program_SIGFPE_handler_p = NULL;
 }
 
-/**
-    \warning SMVM_RESTORE_FENV and SMVM_SETUP_FENV should be used when
-             descending into "unsafe" functions from _SMVM.
-*/
-
-#define SMVM_SETUP_FENV \
+#define SMVM_MI_CLEAR_FPE_EXCEPT \
     if (1) { \
-        _SMVM_Program_setupSignalHandlers(p); \
+        feclearexcept(FE_ALL_EXCEPT); \
     } else (void) 0
 
-#define SMVM_RESTORE_FENV \
+#define SMVM_MI_TEST_FPE_EXCEPT \
     if (1) { \
-        _SMVM_Program_restoreSignalHandlers(p); \
+        int exceptions = fetestexcept(FE_ALL_EXCEPT); \
+        if (exceptions) { \
+            if (exceptions & FE_DIVBYZERO) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO; \
+            } else if (exceptions & FE_OVERFLOW) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_OVERFLOW; \
+            } else if (exceptions & FE_UNDERFLOW) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_UNDERFLOW; \
+            } else if (exceptions & FE_INEXACT) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_INEXACT_RESULT; \
+            } else if (exceptions & FE_INVALID) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_INVALID_OPERATION; \
+            } else { \
+                p->exceptionValue = SMVM_E_UNKNOWN_FPE; \
+            } \
+            goto except; \
+        } \
+    } else (void) 0
+
+#define SMVM_SAVE_FPE_ENV \
+    if (1) { \
+        p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0); \
+    } else (void) 0
+
+/** \todo Check for error */
+#define SMVM_RESTORE_FPE_ENV \
+    if (p->hasSavedFpeEnv) { \
+        fesetenv(&p->savedFpeEnv); \
     } else (void) 0
 
 #define SMVM_UPDATESTATE \
@@ -477,8 +483,12 @@ int _SMVM(struct SMVM_Program * const p,
 
     } else if (c == SMVM_I_RUN || c == SMVM_I_CONTINUE) {
 
+#pragma STDC FENV_ACCESS ON
+
         union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
         union SM_CodeBlock * ip = &codeStart[p->currentIp];
+
+        SMVM_SAVE_FPE_ENV;
 
         /**
           \warning Note that the variable "ip" is not valid after one of the
@@ -511,7 +521,7 @@ int _SMVM(struct SMVM_Program * const p,
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTINV,  SMVM_E_FLOATING_POINT_INVALID_OPERATION);
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB,  SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
-        SMVM_SETUP_FENV;
+        _SMVM_Program_setupSignalHandlers(p);
         SMVM_MI_DISPATCH(ip);
 
 #include "../m4/dispatches.h"
@@ -520,20 +530,23 @@ int _SMVM(struct SMVM_Program * const p,
             p->exceptionValue = SMVM_E_JUMP_TO_INVALID_ADDRESS;
 
         except:
-            SMVM_RESTORE_FENV;
+            _SMVM_Program_restoreSignalHandlers(p);
+            SMVM_RESTORE_FPE_ENV;
             p->state = SMVM_CRASHED;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_RUNTIME_EXCEPTION;
 
         halt:
-            SMVM_RESTORE_FENV;
+            _SMVM_Program_restoreSignalHandlers(p);
+            SMVM_RESTORE_FPE_ENV;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_OK;
 
         trap:
-            SMVM_RESTORE_FENV;
+            _SMVM_Program_restoreSignalHandlers(p);
+            SMVM_RESTORE_FPE_ENV;
             p->state = SMVM_TRAPPED;
             SMVM_UPDATESTATE;
             SMVM_DEBUG_PRINTSTATE;

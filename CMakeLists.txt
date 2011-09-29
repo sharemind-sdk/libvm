@@ -152,7 +152,8 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1"
-                      COMPILE_DEFINITIONS "SMVM_NO_THREADS")
+                      COMPILE_DEFINITIONS "SMVM_NO_THREADS"
+                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme" "m")
 INSTALL(FILES "src/libsmvm/vm.h"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvm")
@@ -211,6 +212,8 @@ ENDFUNCTION()
 add_test_assemble_execute("benchmark")
 add_test_assemble_execute("divbyzero")
 SET_TESTS_PROPERTIES("divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (SMVM_E_INTEGER_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE)")
+add_test_assemble_execute("divbyzero_float")
+SET_TESTS_PROPERTIES("divbyzero_float" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE)")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")

@@ -150,6 +150,20 @@ void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) __attribute__ (
  *  SMVM_Program
 ********************************************************************************/
 
+enum SMVM_HardwareExceptionType {
+    SMVM_HET_OTHER       = 0x00, /* Unknown hardware exception */
+    SMVM_HET_FPE_UNKNOWN = 0x01, /* Unknown arithmetic or floating-point error */
+    SMVM_HET_FPE_INTDIV  = 0x02, /* integer divide by zero */
+    SMVM_HET_FPE_INTOVF  = 0x03, /* integer overflow */
+    SMVM_HET_FPE_FLTDIV  = 0x04, /* floating-point divide by zero */
+    SMVM_HET_FPE_FLTOVF  = 0x05, /* floating-point overflow */
+    SMVM_HET_FPE_FLTUND  = 0x06, /* floating-point underflow */
+    SMVM_HET_FPE_FLTRES  = 0x07, /* floating-point inexact result */
+    SMVM_HET_FPE_FLTINV  = 0x08, /* floating-point invalid operation */
+    SMVM_HET_FPE_FLTSUB  = 0x09, /* subscript out of range */
+    _SMVM_HET_COUNT
+};
+
 #ifdef SMVM_RELEASE
 SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,,inline)
 SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,realloc,inline)
@@ -182,7 +196,8 @@ struct SMVM_Program {
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;
 
-    fenv_t oldFeEnv;
+    int hasSavedFpeEnv;
+    fenv_t savedFpeEnv;
 #ifdef __USE_POSIX
     sigjmp_buf safeJmpBuf[_SMVM_HET_COUNT];
     struct sigaction oldFpeAction;
