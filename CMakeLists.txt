@@ -26,7 +26,31 @@ SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for 
 # Load any custom configuration:
 ################################################################################
 
-SET(OTHER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/config.local.example")
+SET(OTHER_FILES "config.local.example"
+                "src/codeblock.h"
+                "src/instrset.h"
+                "src/likely.h"
+                "src/map.h"
+                "src/preprocessor.h"
+                "src/stack.h"
+                "src/static_assert.h"
+                "src/trie.h"
+                "src/vector.h"
+                "tests/benchmark.sa"
+                "tests/divbyzero.sa"
+                "tests/float_divbyzero.sa"
+                "tests/float_overflow.sa"
+                "tests/float_underflow.sa"
+                "tests/global_return.sa"
+                "tests/mem.sa"
+                "tests/proc.sa"
+                "tests/run_test_assemble_execute.sh")
+FUNCTION(PREPARE_OTHER_FILES)
+    FOREACH(OTHER_FILE ${OTHER_FILES})
+        SET(P ${P} "${CMAKE_CURRENT_SOURCE_DIR}/${OTHER_FILE}")
+        SET(PREPARED_OTHER_FILES ${P} PARENT_SCOPE)
+    ENDFOREACH(OTHER_FILE ${OTHER_FILES})
+ENDFUNCTION(PREPARE_OTHER_FILES)
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
@@ -54,13 +78,13 @@ SET(M4_2_H_SOURCES
     "preprocess_pass2_cases.m4"
     "static_label_structs.m4")
 SET(OTHER_FILES ${OTHER_FILES}
-                ${M4_DIR_S}/datatypebyte.m4
-                ${M4_DIR_S}/foreach.m4
-                ${M4_DIR_S}/forloop.m4
-                ${M4_DIR_S}/instr.m4
-                ${M4_DIR_S}/operandlocationbyte.m4
-                ${M4_DIR_S}/product.m4
-                ${M4_DIR_S}/stats.m4)
+                ${M4_DIR}/datatypebyte.m4
+                ${M4_DIR}/foreach.m4
+                ${M4_DIR}/forloop.m4
+                ${M4_DIR}/instr.m4
+                ${M4_DIR}/operandlocationbyte.m4
+                ${M4_DIR}/product.m4
+                ${M4_DIR}/stats.m4)
 
 ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
                    COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "${M4_DIR_S}/instr.m4" "--freeze-state=${M4_DIR_B}/instr.m4f"
@@ -69,13 +93,13 @@ ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
 ADD_CUSTOM_COMMAND(TARGET "${M4_DIR_B}/instr.m4f" POST_BUILD
                    COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/stats.m4")
 FOREACH(_H_SOURCE ${M4_2_H_SOURCES})
+  SET(OTHER_FILES ${OTHER_FILES} "${M4_DIR}/${_H_SOURCE}")
   SET(M4_2_H_SOURCES_S ${M4_2_H_SOURCES_S} "${M4_DIR_S}/${_H_SOURCE}")
   STRING(REGEX REPLACE "\\.m4$" ".h" _H_TARGET ${_H_SOURCE})
   ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/${_H_TARGET}"
                      COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/${_H_SOURCE}" > "${M4_DIR_B}/${_H_TARGET}"
                      DEPENDS "${M4_DIR_S}/${_H_SOURCE}" "${M4_DIR_B}/instr.m4f")
 ENDFOREACH(_H_SOURCE ${M4_2_H_SOURCES})
-SET(OTHER_FILES ${OTHER_FILES} ${M4_2_H_SOURCES_S})
 
 
 ################################################################################
@@ -142,7 +166,7 @@ INSTALL(DIRECTORY "src/libsmas/"
 ADD_LIBRARY("libsmvm" SHARED
             "src/libsmvm/vm_internal_core.c"
             "src/libsmvm/vm_internal_helpers.c")
-SET(OTHER_FILES ${OTHER_FILES} "${CMAKE_CURRENT_SOURCE_DIR}/src/libsmvm/vm.h")
+SET(OTHER_FILES ${OTHER_FILES} "src/libsmvm/vm.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
@@ -174,8 +198,9 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 # vm
 ################################################################################
 
+PREPARE_OTHER_FILES()
 ADD_EXECUTABLE("vm" "src/vm/main.c"
-               ${OTHER_FILES}) # <-- hack for Qt Creator to include other files
+               ${PREPARED_OTHER_FILES}) # <-- hack for Qt Creator to include other files
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
