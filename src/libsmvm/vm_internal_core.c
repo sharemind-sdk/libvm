@@ -127,6 +127,17 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
     _SMVM_Program_SIGFPE_handler_p = NULL;
 }
 
+#ifndef SMVM_FAST_BUILD
+#define SMVM_DO_EXCEPT if (1) { goto except; } else (void) 0
+#define SMVM_DO_HALT if (1) { goto halt; } else (void) 0
+#define SMVM_DO_TRAP if (1) { goto trap; } else (void) 0
+#else
+enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
+#define SMVM_DO_EXCEPT if (1) { return HC_EXCEPT; } else (void) 0
+#define SMVM_DO_HALT if (1) { return HC_HALT; } else (void) 0
+#define SMVM_DO_TRAP if (1) { return HC_TRAP; } else (void) 0
+#endif
+
 #define SMVM_MI_CLEAR_FPE_EXCEPT \
     if (1) { \
         feclearexcept(FE_ALL_EXCEPT); \
@@ -149,7 +160,7 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
             } else { \
                 p->exceptionValue = SMVM_E_UNKNOWN_FPE; \
             } \
-            goto except; \
+            SMVM_DO_EXCEPT; \
         } \
     } else (void) 0
 
@@ -175,16 +186,18 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
 #define SMVM_MI_HALT(r) \
     if (1) { \
         p->returnValue = (r); \
-        goto halt; \
+        SMVM_DO_HALT; \
     } else (void) 0
-#define SMVM_MI_TRAP if (1) { goto trap; } else (void) 0
+#define SMVM_MI_TRAP SMVM_DO_TRAP
 
 #define SMVM_TODO(msg)
 
-#define SMVM_MI_DISPATCH(ip) \
-    if (1) { \
-        goto *((ip)->p[0]); \
-    } else (void) 0
+#ifndef SMVM_FAST_BUILD
+#define SMVM_MI_DISPATCH(ip) if (k1) { goto *((ip)->p[0]); } else (void) 0
+#else
+#define SMVM_DISPATCH(ip) ((*((enum HaltCode (*)(struct SMVM_Program * const, union SM_CodeBlock *, union SM_CodeBlock *))((ip)->p[0])))(p,codeStart,ip))
+#define SMVM_MI_DISPATCH(newIp) if (1) { (void) (newIp); SMVM_UPDATESTATE; return SMVM_DISPATCH(ip); } else (void) 0
+#endif
 
 #define SMVM_MI_JUMP_ABS(a) \
     if (1) { \
@@ -208,7 +221,7 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
 #define SMVM_MI_DO_EXCEPT(e) \
     if (1) { \
         p->exceptionValue = (e); \
-        goto except; \
+        SMVM_DO_EXCEPT; \
     } else (void) 0
 
 #define SMVM_MI_TRY_EXCEPT(cond,e) \
@@ -454,15 +467,38 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
 #define SMVM_MI_MEMCPY memcpy
 #define SMVM_MI_MEMMOVE memmove
 
+#ifndef SMVM_FAST_BUILD
+#define SMVM_IMPL(name,code) \
+    label_impl_ ## name : code
+#else
+#define SMVM_IMPL_INNER(name,code) \
+extern enum HaltCode name (struct SMVM_Program * const p, union SM_CodeBlock * codeStart, union SM_CodeBlock * ip) { (void) p; (void) codeStart; (void) ip; code }
+#define SMVM_IMPL(name,code) SMVM_IMPL_INNER(func_impl_ ## name, code)
+
+#include "../m4/dispatches.h"
+
+SMVM_IMPL_INNER(_func_impl_eof,return HC_EOF;)
+SMVM_IMPL_INNER(_func_impl_except,return HC_EXCEPT;)
+SMVM_IMPL_INNER(_func_impl_halt,return HC_HALT;)
+SMVM_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
+
+#endif
+
 int _SMVM(struct SMVM_Program * const p,
           const enum SMVM_InnerCommand c,
           void * const d)
 {
     if (c == SMVM_I_GET_IMPL_LABEL) {
 
+#ifndef SMVM_FAST_BUILD
+#define SMVM_IMPL_LABEL(name) && label_impl_ ## name ,
 #include "../m4/static_label_structs.h"
-
         static void * system_labels[] = { && eof, && except, && halt, && trap };
+#else
+#define SMVM_IMPL_LABEL(name) & func_impl_ ## name ,
+#include "../m4/static_label_structs.h"
+        static void * system_labels[] = { &_func_impl_eof, &_func_impl_except, &_func_impl_halt, &_func_impl_trap };
+#endif
         // static void *(*labels[3])[] = { &instr_labels, &empty_impl_labels, &system_labels };
 
         struct SMVM_Prepare_IBlock * pb = (struct SMVM_Prepare_IBlock *) d;
@@ -501,13 +537,13 @@ int _SMVM(struct SMVM_Program * const p,
     #define _SMVM_DECLARE_SIGJMP(h,e) \
             if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
                 p->exceptionValue = (e); \
-                goto except; \
+                SMVM_DO_EXCEPT; \
             } else (void) 0
 #else
     #define _SMVM_DECLARE_SIGJMP(h,e) \
             if (setjmp(p->safeJmpBuf[(h)])) { \
                 p->exceptionValue = (e); \
-                goto except; \
+                SMVM_DO_EXCEPT; \
             } else (void) 0
 #endif
         _SMVM_DECLARE_SIGJMP(SMVM_HET_OTHER,       SMVM_E_OTHER_HARDWARE_EXCEPTION);
@@ -522,9 +558,24 @@ int _SMVM(struct SMVM_Program * const p,
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB,  SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
         _SMVM_Program_setupSignalHandlers(p);
+#ifndef SMVM_FAST_BUILD
         SMVM_MI_DISPATCH(ip);
 
-#include "../m4/dispatches.h"
+        #include "../m4/dispatches.h"
+#else
+        switch (SMVM_DISPATCH(ip)) {
+            case HC_EOF:
+                goto eof;
+            case HC_EXCEPT:
+                goto except;
+            case HC_HALT:
+                goto halt;
+            case HC_TRAP:
+                goto trap;
+            default:
+                abort();
+        }
+#endif
 
         eof:
             p->exceptionValue = SMVM_E_JUMP_TO_INVALID_ADDRESS;
@@ -533,14 +584,18 @@ int _SMVM(struct SMVM_Program * const p,
             _SMVM_Program_restoreSignalHandlers(p);
             SMVM_RESTORE_FPE_ENV;
             p->state = SMVM_CRASHED;
+#ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;
+#endif
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_RUNTIME_EXCEPTION;
 
         halt:
             _SMVM_Program_restoreSignalHandlers(p);
             SMVM_RESTORE_FPE_ENV;
+#ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;
+#endif
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_OK;
 
@@ -548,7 +603,9 @@ int _SMVM(struct SMVM_Program * const p,
             _SMVM_Program_restoreSignalHandlers(p);
             SMVM_RESTORE_FPE_ENV;
             p->state = SMVM_TRAPPED;
+#ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;
+#endif
             SMVM_DEBUG_PRINTSTATE;
             return SMVM_RUNTIME_TRAP;
     } else {

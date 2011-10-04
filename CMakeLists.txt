@@ -197,7 +197,7 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
 IF(VM_FAST_BUILD)
   SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS;SMVM_FAST_BUILD")
   SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
-                              "${M4_DIR_B}/preprocess_pass2_functions.h")
+                              "${M4_DIR_B}/dispatches.h;${M4_DIR_B}/preprocess_pass2_functions.h")
 ELSE(VM_FAST_BUILD)
   SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS")
   SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS

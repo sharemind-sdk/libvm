@@ -315,7 +315,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 #else
 #define SMVM_PREPARE_END_AS(index,funName,numargs) \
     if (1) { \
-        c[*i].p[0] = &(prepare_pass2_ ## funName); \
+        c[*i].p[0] = &(func_impl_ ## funName); \
         *i += (numargs); \
     } else (void) 0
 #endif
@@ -345,6 +345,12 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 #define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
 
 #ifdef SMVM_FAST_BUILD
+
+#define SMVM_IMPL(name,code) \
+extern enum HaltCode func_impl_ ## name (struct SMVM_Program * const, union SM_CodeBlock *, union SM_CodeBlock *);
+
+#include "../m4/dispatches.h"
+
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
     static int prepare_pass2_ ## name (struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i) { \
         (void) p; (void) s; (void) c; (void) i; \
@@ -416,7 +422,10 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
                 SMVM_PREPARE_INVALID_INSTRUCTION;
             }
             struct preprocess_pass2_function * ppf = &preprocess_pass2_functions[0];
-            while (!ppf->f) {
+            for (;;) {
+                if (!(ppf->f)) {
+                    SMVM_PREPARE_INVALID_INSTRUCTION;
+                }
                 if (ppf->code == c[i].uint64[0]) {
                     returnCode = (*(ppf->f))(p, s, c, &i);
                     if (returnCode != SMVM_OK)
@@ -424,9 +433,6 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
                     break;
                 }
                 ++ppf;
-            }
-            if (!ppf->f) {
-                SMVM_PREPARE_INVALID_INSTRUCTION;
             }
         }
 #endif
