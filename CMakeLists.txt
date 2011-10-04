@@ -72,25 +72,34 @@ ENDIF(NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 SET(M4_2_H_SOURCES
     "dispatches.m4"
     "instruction_structs.m4"
-    "preprocess_pass1_cases.m4"
-    "preprocess_pass2_cases.m4"
     "static_label_structs.m4")
 IF(VM_FAST_BUILD)
   SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
-      "instruction_index.m4")
+      "instruction_index.m4"
+      "preprocess_pass2_functions.m4")
+  SET(OTHER_FILES ${OTHER_FILES}
+      "${M4_DIR}/instruction_from_code_cases.m4"
+      "${M4_DIR}/instruction_from_name_cases.m4"
+      "${M4_DIR}/preprocess_pass1_cases.m4"
+      "${M4_DIR}/preprocess_pass2_cases.m4")
 ELSE(VM_FAST_BUILD)
   SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
       "instruction_from_code_cases.m4"
-      "instruction_from_name_cases.m4")
+      "instruction_from_name_cases.m4"
+      "preprocess_pass1_cases.m4"
+      "preprocess_pass2_cases.m4")
+  SET(OTHER_FILES ${OTHER_FILES}
+      "${M4_DIR}/instruction_index.m4"
+      "${M4_DIR}/preprocess_pass2_functions.m4")
 ENDIF(VM_FAST_BUILD)
 SET(OTHER_FILES ${OTHER_FILES}
-                ${M4_DIR}/datatypebyte.m4
-                ${M4_DIR}/foreach.m4
-                ${M4_DIR}/forloop.m4
-                ${M4_DIR}/instr.m4
-                ${M4_DIR}/operandlocationbyte.m4
-                ${M4_DIR}/product.m4
-                ${M4_DIR}/stats.m4)
+                "${M4_DIR}/datatypebyte.m4"
+                "${M4_DIR}/foreach.m4"
+                "${M4_DIR}/forloop.m4"
+                "${M4_DIR}/instr.m4"
+                "${M4_DIR}/operandlocationbyte.m4"
+                "${M4_DIR}/product.m4"
+                "${M4_DIR}/stats.m4")
 
 ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
                    COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "${M4_DIR_S}/instr.m4" "--freeze-state=${M4_DIR_B}/instr.m4f"
@@ -179,17 +188,23 @@ ADD_LIBRARY("libsmvm" SHARED
             "src/libsmvm/vm_internal_core.c"
             "src/libsmvm/vm_internal_helpers.c")
 SET(OTHER_FILES ${OTHER_FILES} "src/libsmvm/vm.h")
-SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
-                            "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
-SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
-                            "${M4_DIR_B}/preprocess_pass1_cases.h;${M4_DIR_B}/preprocess_pass2_cases.h")
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1"
-                      COMPILE_DEFINITIONS "SMVM_NO_THREADS"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
+IF(VM_FAST_BUILD)
+  SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS;SMVM_FAST_BUILD")
+  SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
+                              "${M4_DIR_B}/preprocess_pass2_functions.h")
+ELSE(VM_FAST_BUILD)
+  SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS")
+  SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
+                              "${M4_DIR_B}/preprocess_pass1_cases.h;${M4_DIR_B}/preprocess_pass2_cases.h")
+ENDIF(VM_FAST_BUILD)
+SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
+                            "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme" "m")
 INSTALL(FILES "src/libsmvm/vm.h"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvm")

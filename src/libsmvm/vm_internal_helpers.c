@@ -14,6 +14,7 @@
 #include <string.h>
 #include "../libsme/libsme.h"
 #include "../libsme/libsme_0x0.h"
+#include "../libsmvmi/instr.h"
 #include "../likely.h"
 #include "vm_internal_core.h"
 
@@ -276,18 +277,33 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 }
 
 #define SMVM_PREPARE_NOP (void)0
-#define SMVM_PREPARE_INVALID_INSTRUCTION SMVM_PREPARE_ERROR(SMVM_PREPARE_ERROR_INVALID_INSTRUCTION)
-#define SMVM_PREPARE_ERROR(e) \
+#define SMVM_PREPARE_INVALID_INSTRUCTION SMVM_PREPARE_ERROR_OUTER(SMVM_PREPARE_ERROR_INVALID_INSTRUCTION)
+#define SMVM_PREPARE_ERROR_OUTER(e) \
     if (1) { \
         returnCode = (e); \
         p->currentIp = i; \
         goto smvm_prepare_codesection_return_error; \
     } else (void) 0
+#ifndef SMVM_FAST_BUILD
+#define SMVM_PREPARE_ERROR(e) SMVM_PREPARE_ERROR_OUTER(e)
+#else
+#define SMVM_PREPARE_ERROR(e) \
+    if (1) { \
+        returnCode = (e); \
+        p->currentIp = *i; \
+        return returnCode; \
+    } else (void) 0
+#endif
+#define SMVM_PREPARE_CHECK_OR_ERROR_OUTER(c,e) \
+    if (unlikely(!(c))) { \
+        SMVM_PREPARE_ERROR_OUTER(e); \
+    } else (void) 0
 #define SMVM_PREPARE_CHECK_OR_ERROR(c,e) \
     if (unlikely(!(c))) { \
         SMVM_PREPARE_ERROR(e); \
     } else (void) 0
-#define SMVM_PREPARE_END_AS(index,numargs) \
+#ifndef SMVM_FAST_BUILD
+#define SMVM_PREPARE_END_AS(index,fun,numargs) \
     if (1) { \
         c[i].uint64[0] = (index); \
         struct SMVM_Prepare_IBlock pb = { .block = &c[i], .type = 0 }; \
@@ -296,21 +312,60 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
         i += (numargs); \
         break; \
     } else (void) 0
+#else
+#define SMVM_PREPARE_END_AS(index,funName,numargs) \
+    if (1) { \
+        c[*i].p[0] = &(prepare_pass2_ ## funName); \
+        *i += (numargs); \
+    } else (void) 0
+#endif
+#define SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(args) \
+    if (1) { \
+        SMVM_PREPARE_CHECK_OR_ERROR_OUTER(i + (args) < s->size, \
+                                          SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
+        SMVM_PREPARE_CHECK_OR_ERROR_OUTER(SMVM_InstrSet_insert(&s->instrset, i), \
+                                          SMVM_OUT_OF_MEMORY); \
+        i += (args); \
+    } else (void) 0
 #define SMVM_FOREACH_PREPARE_PASS1_CASE(bytecode, args) \
     case bytecode: \
-        SMVM_PREPARE_CHECK_OR_ERROR(i + (args) < s->size, \
-                                    SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
-        SMVM_PREPARE_CHECK_OR_ERROR(SMVM_InstrSet_insert(&s->instrset, SMVM_PREPARE_CURRENT_I), \
-                                    SMVM_OUT_OF_MEMORY); \
-        i += (args); \
+        SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(args); \
         break;
+#ifndef SMVM_FAST_BUILD
 #define SMVM_PREPARE_ARG_AS(v,t) (c[i+(v)].t[0])
 #define SMVM_PREPARE_CURRENT_I i
+#else
+#define SMVM_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
+#define SMVM_PREPARE_CURRENT_I (*i)
+#endif
 #define SMVM_PREPARE_CODESIZE(s) (s)->size
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
 #define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
+
+#ifdef SMVM_FAST_BUILD
+#define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
+    static int prepare_pass2_ ## name (struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i) { \
+        (void) p; (void) s; (void) c; (void) i; \
+        int returnCode = SMVM_OK; \
+        code \
+        return returnCode; \
+    }
+#include "../m4/preprocess_pass2_functions.h"
+
+#undef SMVM_PREPARE_PASS2_FUNCTION
+#define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,_) \
+    { .code = bytecode, .f = prepare_pass2_ ## name},
+struct preprocess_pass2_function {
+    uint64_t code;
+    int (*f)(struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i);
+};
+struct preprocess_pass2_function preprocess_pass2_functions[] = {
+#include "../m4/preprocess_pass2_functions.h"
+    { .code = 0u, .f = NULL }
+};
+#endif
 
 int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     assert(p);
@@ -328,6 +383,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
         union SM_CodeBlock * c = s->data;
 
         /* Initialize instructions hashmap: */
+#ifndef SMVM_FAST_BUILD
         for (size_t i = 0u; i < s->size; i++) {
             switch (c[i].uint64[0]) {
 #include "../m4/preprocess_pass1_cases.h"
@@ -335,7 +391,17 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
                     SMVM_PREPARE_INVALID_INSTRUCTION;
             }
         }
+#else
+        for (size_t i = 0u; i < s->size; i++) {
+            const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
+            if (!instr) {
+                SMVM_PREPARE_INVALID_INSTRUCTION;
+            }
+            SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(instr->numargs);
+        }
+#endif
 
+#ifndef SMVM_FAST_BUILD
         for (size_t i = 0u; i < s->size; i++) {
             switch (c[i].uint64[0]) {
 #include "../m4/preprocess_pass2_cases.h"
@@ -343,6 +409,27 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
                     SMVM_PREPARE_INVALID_INSTRUCTION;
             }
         }
+#else
+        for (size_t i = 0u; i < s->size; i++) {
+            const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
+            if (!instr) {
+                SMVM_PREPARE_INVALID_INSTRUCTION;
+            }
+            struct preprocess_pass2_function * ppf = &preprocess_pass2_functions[0];
+            while (!ppf->f) {
+                if (ppf->code == c[i].uint64[0]) {
+                    returnCode = (*(ppf->f))(p, s, c, &i);
+                    if (returnCode != SMVM_OK)
+                        goto smvm_prepare_codesection_return_error;
+                    break;
+                }
+                ++ppf;
+            }
+            if (!ppf->f) {
+                SMVM_PREPARE_INVALID_INSTRUCTION;
+            }
+        }
+#endif
 
         /* Initialize exception pointer: */
         c[s->size].uint64[0] = 0u; /* && eof */
