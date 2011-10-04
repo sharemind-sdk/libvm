@@ -497,7 +497,7 @@ int _SMVM(struct SMVM_Program * const p,
                    performance impact. A remedy would be to update p->currentIp
                    before every instruction which could generate such signals.
         */
-#ifdef	__USE_POSIX
+#ifdef __USE_POSIX
     #define _SMVM_DECLARE_SIGJMP(h,e) \
             if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
                 p->exceptionValue = (e); \
