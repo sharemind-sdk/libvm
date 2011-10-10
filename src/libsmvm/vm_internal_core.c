@@ -472,7 +472,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
     label_impl_ ## name : code
 #else
 #define SMVM_IMPL_INNER(name,code) \
-extern enum HaltCode name (struct SMVM_Program * const p, union SM_CodeBlock * codeStart, union SM_CodeBlock * ip) { (void) p; (void) codeStart; (void) ip; code }
+extern enum HaltCode name (struct SMVM_Program * const p, union SM_CodeBlock * codeStart, union SM_CodeBlock * ip) { (void) codeStart; SMVM_UPDATESTATE; code }
 #define SMVM_IMPL(name,code) SMVM_IMPL_INNER(func_impl_ ## name, code)
 
 #include "../m4/dispatches.h"
