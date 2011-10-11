@@ -34,6 +34,15 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
+#ifndef SHAREMIND_SOFTFLOAT_MACROS_H
+#define SHAREMIND_SOFTFLOAT_MACROS_H
+
+#include "milieu.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*----------------------------------------------------------------------------
 | Shifts `a' right by the number of bits given in `count'.  If any nonzero
 | bits are shifted off, they are ``jammed'' into the least significant bit of
@@ -382,3 +391,8 @@ SF_INLINE sf_flag sf_ne128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 
 
 }
 
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
+
+#endif /* SHAREMIND_SOFTFLOAT_MACROS_H */

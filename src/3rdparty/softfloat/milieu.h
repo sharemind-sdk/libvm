@@ -34,8 +34,15 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
+#ifndef SHAREMIND_SOFTFLOAT_MILIEU_H
+#define SHAREMIND_SOFTFLOAT_MILIEU_H
+
 #include <stdint.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*----------------------------------------------------------------------------
 | Each of the following `typedef's defines the most convenient type that holds
@@ -86,7 +93,7 @@ typedef  int64_t sf_sbits64;
 | a compiler does not support explicit inlining, this macro should be defined
 | to be `static'.
 *----------------------------------------------------------------------------*/
-#define SF_INLINE inline
+#define SF_INLINE extern inline
 
 /*----------------------------------------------------------------------------
 | Symbolic Boolean literals.
@@ -96,3 +103,9 @@ enum {
     TRUE  = 1
 };
 
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
+
+#endif /* SHAREMIND_SOFTFLOAT_MILIEU_H */

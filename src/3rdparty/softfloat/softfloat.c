@@ -34,15 +34,7 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
-#include "milieu.h"
 #include "softfloat.h"
-
-/*----------------------------------------------------------------------------
-| Floating-point rounding mode, extended double-precision rounding precision,
-| and exception flags.
-*----------------------------------------------------------------------------*/
-sf_int8 sf_float_rounding_mode = sf_float_round_nearest_even;
-sf_int8 sf_float_exception_flags = 0;
 
 /*----------------------------------------------------------------------------
 | Primitive arithmetic functions, including multi-word arithmetic, and
@@ -60,6 +52,14 @@ sf_int8 sf_float_exception_flags = 0;
 | specific.
 *----------------------------------------------------------------------------*/
 #include "specialize.h"
+
+
+/*----------------------------------------------------------------------------
+| Floating-point rounding mode, extended double-precision rounding precision,
+| and exception flags.
+*----------------------------------------------------------------------------*/
+sf_int8 sf_float_rounding_mode = sf_float_round_nearest_even;
+sf_int8 sf_float_exception_flags = 0;
 
 /*----------------------------------------------------------------------------
 | Takes a 64-bit fixed-point value `absZ' with binary point between bits 6

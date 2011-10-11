@@ -34,6 +34,16 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
+#ifndef SHAREMIND_SOFTFLOAT_SOFTFLOAT_H
+#define SHAREMIND_SOFTFLOAT_SOFTFLOAT_H
+
+#include "milieu.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point types.
 *----------------------------------------------------------------------------*/
@@ -139,3 +149,9 @@ sf_flag sf_float64_eq_signaling( sf_float64, sf_float64 );
 sf_flag sf_float64_le_quiet( sf_float64, sf_float64 );
 sf_flag sf_float64_lt_quiet( sf_float64, sf_float64 );
 sf_flag sf_float64_is_signaling_nan( sf_float64 );
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
+
+#endif /* SHAREMIND_SOFTFLOAT_SOFTFLOAT_H */

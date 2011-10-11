@@ -34,6 +34,16 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
+#ifndef SHAREMIND_SOFTFLOAT_SPECIALIZE_H
+#define SHAREMIND_SOFTFLOAT_SPECIALIZE_H
+
+#include "milieu.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*----------------------------------------------------------------------------
 | Underflow tininess-detection mode, statically initialized to default value.
 | (The declaration in `softfloat.h' must match the `int8' type here.)
@@ -251,3 +261,9 @@ static sf_float64 sf_propagateFloat64NaN( sf_float64 a, sf_float64 b )
     }
 
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
+
+#endif /* SHAREMIND_SOFTFLOAT_SPECIALIZE_H */
