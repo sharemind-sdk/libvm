@@ -89,6 +89,12 @@ enum {
 void sf_float_raise( sf_int8 );
 
 /*----------------------------------------------------------------------------
+| Routine to test for any or some of the software IEC/IEEE floating-point
+| exception flags.
+*----------------------------------------------------------------------------*/
+sf_flag sf_float_test( sf_int8 );
+
+/*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
 sf_float32 sf_int32_to_float32( sf_int32 );

@@ -64,6 +64,16 @@ void sf_float_raise( sf_int8 flags )
 }
 
 /*----------------------------------------------------------------------------
+| Tests for the exceptions specified by `flags'.
+*----------------------------------------------------------------------------*/
+
+sf_flag sf_float_test( sf_int8 flags )
+{
+
+    return !!( sf_float_exception_flags & flags );
+}
+
+/*----------------------------------------------------------------------------
 | Internal canonical NaN format.
 *----------------------------------------------------------------------------*/
 typedef struct {
