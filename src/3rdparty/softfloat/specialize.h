@@ -37,7 +37,7 @@ these four paragraphs for those parts of this code that are retained.
 #ifndef SHAREMIND_SOFTFLOAT_SPECIALIZE_H
 #define SHAREMIND_SOFTFLOAT_SPECIALIZE_H
 
-#include "milieu.h"
+#include "softfloat.h"
 
 
 #ifdef __cplusplus

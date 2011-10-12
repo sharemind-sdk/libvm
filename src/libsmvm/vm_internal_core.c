@@ -194,13 +194,12 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
             SMVM_DO_EXCEPT; \
         } \
     } else (void) 0
-static sf_float32 sf_one;
 #define SMVM_MI_UNEG_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_neg(d))
-#define SMVM_MI_UINC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_add((d), sf_one))
-#define SMVM_MI_UDEC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_sub((d), sf_one))
+#define SMVM_MI_UINC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_add((d), sf_float32_one))
+#define SMVM_MI_UDEC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_sub((d), sf_float32_one))
 #define SMVM_MI_BNEG_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_neg(s))
-#define SMVM_MI_BINC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_add((s), sf_one))
-#define SMVM_MI_BDEC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s), sf_one))
+#define SMVM_MI_BINC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_add((s), sf_float32_one))
+#define SMVM_MI_BDEC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s), sf_float32_one))
 #define SMVM_MI_BADD_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_add((d), (s)))
 #define SMVM_MI_BSUB_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((d), (s)))
 #define SMVM_MI_BSUB2_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s), (d)))
@@ -611,8 +610,6 @@ int _SMVM(struct SMVM_Program * const p,
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB,  SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
         _SMVM_Program_setupSignalHandlers(p);
-#else /* #ifndef SMVM_SOFT_FLOAT */
-        sf_one = sf_int32_to_float32(1);
 #endif /* #ifndef SMVM_SOFT_FLOAT */
 
 #ifndef SMVM_FAST_BUILD

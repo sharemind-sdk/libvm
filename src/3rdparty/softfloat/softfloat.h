@@ -89,9 +89,13 @@ enum {
 | to substitute a result value.  If traps are not implemented, this routine
 | should be simply `float_exception_flags |= flags;'.
 *----------------------------------------------------------------------------*/
-inline void sf_float_raise( const sf_int8 flags ) {
-    sf_float_exception_flags |= flags;
-}
+#define sf_float_raise(flags) do { sf_float_exception_flags |= flags; } while(0)
+
+/*----------------------------------------------------------------------------
+| Software IEC/IEEE integer-to-floating-point values of 1.0000:
+*----------------------------------------------------------------------------*/
+#define sf_float32_one 0x3f800000u
+#define sf_float64_one SF_ULIT64(0x3ff0000000000000)
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
