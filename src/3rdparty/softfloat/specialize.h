@@ -50,28 +50,6 @@ extern "C" {
 *----------------------------------------------------------------------------*/
 sf_int8 sf_float_detect_tininess = sf_float_tininess_after_rounding;
 
-/*----------------------------------------------------------------------------
-| Raises the exceptions specified by `flags'.  Floating-point traps can be
-| defined here if desired.  It is currently not possible for such a trap
-| to substitute a result value.  If traps are not implemented, this routine
-| should be simply `float_exception_flags |= flags;'.
-*----------------------------------------------------------------------------*/
-
-void sf_float_raise( sf_int8 flags )
-{
-
-    sf_float_exception_flags |= flags;
-}
-
-/*----------------------------------------------------------------------------
-| Tests for the exceptions specified by `flags'.
-*----------------------------------------------------------------------------*/
-
-sf_flag sf_float_test( sf_int8 flags )
-{
-
-    return !!( sf_float_exception_flags & flags );
-}
 
 /*----------------------------------------------------------------------------
 | Internal canonical NaN format.

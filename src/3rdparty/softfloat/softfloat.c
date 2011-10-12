@@ -544,7 +544,6 @@ sf_float32 sf_int64_to_float32( sf_int64 a )
     sf_flag zSign;
     sf_uint64 absA;
     sf_int8 shiftCount;
-    sf_bits32 zSig;
 
     if ( a == 0 ) return 0;
     zSign = ( a < 0 );
@@ -1389,7 +1388,6 @@ sf_flag sf_float32_eq_signaling( sf_float32 a, sf_float32 b )
 sf_flag sf_float32_le_quiet( sf_float32 a, sf_float32 b )
 {
     sf_flag aSign, bSign;
-    sf_int16 aExp, bExp;
 
     if (    ( ( sf_extractFloat32Exp( a ) == 0xFF ) && sf_extractFloat32Frac( a ) )
          || ( ( sf_extractFloat32Exp( b ) == 0xFF ) && sf_extractFloat32Frac( b ) )
@@ -2103,7 +2101,6 @@ sf_float64 sf_float64_sqrt( sf_float64 a )
     sf_int16 aExp, zExp;
     sf_bits64 aSig, zSig, doubleZSig;
     sf_bits64 rem0, rem1, term0, term1;
-    sf_float64 z;
 
     aSig = sf_extractFloat64Frac( a );
     aExp = sf_extractFloat64Exp( a );
@@ -2241,7 +2238,6 @@ sf_flag sf_float64_eq_signaling( sf_float64 a, sf_float64 b )
 sf_flag sf_float64_le_quiet( sf_float64 a, sf_float64 b )
 {
     sf_flag aSign, bSign;
-    sf_int16 aExp, bExp;
 
     if (    ( ( sf_extractFloat64Exp( a ) == 0x7FF ) && sf_extractFloat64Frac( a ) )
          || ( ( sf_extractFloat64Exp( b ) == 0x7FF ) && sf_extractFloat64Frac( b ) )

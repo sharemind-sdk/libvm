@@ -84,15 +84,14 @@ enum {
 
 /*----------------------------------------------------------------------------
 | Routine to raise any or all of the software IEC/IEEE floating-point
-| exception flags.
+| exception flags specified by `flags'.  Floating-point traps can be
+| defined here if desired.  It is currently not possible for such a trap
+| to substitute a result value.  If traps are not implemented, this routine
+| should be simply `float_exception_flags |= flags;'.
 *----------------------------------------------------------------------------*/
-void sf_float_raise( sf_int8 );
-
-/*----------------------------------------------------------------------------
-| Routine to test for any or some of the software IEC/IEEE floating-point
-| exception flags.
-*----------------------------------------------------------------------------*/
-sf_flag sf_float_test( sf_int8 );
+inline void sf_float_raise( const sf_int8 flags ) {
+    sf_float_exception_flags |= flags;
+}
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
@@ -115,6 +114,9 @@ sf_float64 sf_float32_to_float64( sf_float32 );
 | Software IEC/IEEE single-precision operations.
 *----------------------------------------------------------------------------*/
 sf_float32 sf_float32_round_to_int( sf_float32 );
+inline sf_float32 sf_float32_neg( const sf_float32 n ) {
+    return n ^ (sf_bits32) 0x80000000;
+}
 sf_float32 sf_float32_add( sf_float32, sf_float32 );
 sf_float32 sf_float32_sub( sf_float32, sf_float32 );
 sf_float32 sf_float32_mul( sf_float32, sf_float32 );
@@ -142,6 +144,9 @@ sf_float32 sf_float64_to_float32( sf_float64 );
 | Software IEC/IEEE double-precision operations.
 *----------------------------------------------------------------------------*/
 sf_float64 sf_float64_round_to_int( sf_float64 );
+inline sf_float64 sf_float64_neg( const sf_float64 n ) {
+    return n ^ (sf_bits64) SF_ULIT64(0x8000000000000000);
+}
 sf_float64 sf_float64_add( sf_float64, sf_float64 );
 sf_float64 sf_float64_sub( sf_float64, sf_float64 );
 sf_float64 sf_float64_mul( sf_float64, sf_float64 );
