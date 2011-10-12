@@ -12,6 +12,7 @@
 
 #include "vm.h"
 
+#ifndef SMVM_SOFT_FLOAT
 #include <fenv.h>
 #include <setjmp.h>
 #ifdef SMVM_DEBUG
@@ -20,6 +21,8 @@
 #ifdef __USE_POSIX
 #include <signal.h>
 #endif
+#endif /* #ifndef SMVM_SOFT_FLOAT */
+
 #include <stdlib.h>
 #include "../instrset.h"
 #include "../map.h"
@@ -150,6 +153,7 @@ void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) __attribute__ (
  *  SMVM_Program
 ********************************************************************************/
 
+#ifndef SMVM_SOFT_FLOAT
 enum SMVM_HardwareExceptionType {
     SMVM_HET_OTHER       = 0x00, /* Unknown hardware exception */
     SMVM_HET_FPE_UNKNOWN = 0x01, /* Unknown arithmetic or floating-point error */
@@ -163,6 +167,7 @@ enum SMVM_HardwareExceptionType {
     SMVM_HET_FPE_FLTSUB  = 0x09, /* subscript out of range */
     _SMVM_HET_COUNT
 };
+#endif
 
 #ifdef SMVM_RELEASE
 SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,,inline)
@@ -196,6 +201,7 @@ struct SMVM_Program {
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;
 
+#ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;
     fenv_t savedFpeEnv;
 #ifdef __USE_POSIX
@@ -204,6 +210,7 @@ struct SMVM_Program {
 #else
     jmp_buf safeJmpBuf[_SMVM_HET_COUNT];
     void * oldFpeAction;
+#endif
 #endif
 
 #ifdef SMVM_DEBUG

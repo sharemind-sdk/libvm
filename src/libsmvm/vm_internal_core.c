@@ -9,9 +9,10 @@
 
 #include "vm_internal_core.h"
 
-#include <fenv.h>
-#include <signal.h>
 #include <stddef.h>
+#ifdef SMVM_SOFT_FLOAT
+#include "../3rdparty/softfloat/softfloat.h"
+#endif
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif
@@ -35,12 +36,14 @@
 #define SMVM_DEBUG_PRINTINSTRUCTION(t) (void) 0
 #endif
 
+#ifndef SMVM_SOFT_FLOAT
+
+#ifndef SMVM_NO_THREADS
+#error The Sharemind VM does not yet fully support threads without softfloat.
+#else
 /**
   Thread-local pointer to the program being executed.
 */
-#ifndef SMVM_NO_THREADS
-#error The Sharemind VM does not yet fully support threads.
-#else
 static struct SMVM_Program * _SMVM_Program_SIGFPE_handler_p = NULL;
 #endif
 
@@ -127,26 +130,12 @@ static inline void _SMVM_Program_restoreSignalHandlers(struct SMVM_Program * pro
     _SMVM_Program_SIGFPE_handler_p = NULL;
 }
 
-#ifndef SMVM_FAST_BUILD
-#define SMVM_DO_EXCEPT if (1) { goto except; } else (void) 0
-#define SMVM_DO_HALT if (1) { goto halt; } else (void) 0
-#define SMVM_DO_TRAP if (1) { goto trap; } else (void) 0
-#else
-enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
-#define SMVM_DO_EXCEPT if (1) { return HC_EXCEPT; } else (void) 0
-#define SMVM_DO_HALT if (1) { return HC_HALT; } else (void) 0
-#define SMVM_DO_TRAP if (1) { return HC_TRAP; } else (void) 0
-#endif
-
-#define SMVM_MI_CLEAR_FPE_EXCEPT \
-    if (1) { \
+#define SMVM_NO_SF_ENCLOSE(op) \
+    if(1) { \
         feclearexcept(FE_ALL_EXCEPT); \
-    } else (void) 0
-
-#define SMVM_MI_TEST_FPE_EXCEPT \
-    if (1) { \
+        op; \
         int exceptions = fetestexcept(FE_ALL_EXCEPT); \
-        if (exceptions) { \
+        if (unlikely(exceptions)) { \
             if (exceptions & FE_DIVBYZERO) { \
                 p->exceptionValue = SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO; \
             } else if (exceptions & FE_OVERFLOW) { \
@@ -163,17 +152,80 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
             SMVM_DO_EXCEPT; \
         } \
     } else (void) 0
-
-#define SMVM_SAVE_FPE_ENV \
-    if (1) { \
-        p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0); \
+#define SMVM_MI_UNEG_FLOAT32(d) SMVM_NO_SF_ENCLOSE((d) = -(d))
+#define SMVM_MI_UINC_FLOAT32(d) SMVM_NO_SF_ENCLOSE((d) = (d) + 1.0)
+#define SMVM_MI_UDEC_FLOAT32(d) SMVM_NO_SF_ENCLOSE((d) = (d) - 1.0)
+#define SMVM_MI_BNEG_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = -(s))
+#define SMVM_MI_BINC_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = (s) + 1.0)
+#define SMVM_MI_BDEC_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = (s) - 1.0)
+#define SMVM_MI_BADD_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) += (s))
+#define SMVM_MI_BSUB_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) -= (s))
+#define SMVM_MI_BSUB2_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = (s) - (d))
+#define SMVM_MI_BMUL_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) *= (s))
+#define SMVM_MI_BDIV_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) /= (s))
+#define SMVM_MI_BDIV2_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = (s) / (d))
+#define SMVM_MI_BMOD_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) %= (s))
+#define SMVM_MI_BMOD2_FLOAT32(d,s) SMVM_NO_SF_ENCLOSE((d) = (s) % (d))
+#define SMVM_MI_TADD_FLOAT32(d,s1,s2) SMVM_NO_SF_ENCLOSE((d) = (s1) + (s2))
+#define SMVM_MI_TSUB_FLOAT32(d,s1,s2) SMVM_NO_SF_ENCLOSE((d) = (s1) - (s2))
+#define SMVM_MI_TMUL_FLOAT32(d,s1,s2) SMVM_NO_SF_ENCLOSE((d) = (s1) * (s2))
+#define SMVM_MI_TDIV_FLOAT32(d,s1,s2) SMVM_NO_SF_ENCLOSE((d) = (s1) / (s2))
+#define SMVM_MI_TMOD_FLOAT32(d,s1,s2) SMVM_NO_SF_ENCLOSE((d) = (s1) % (s2))
+#else /* #ifndef SMVM_SOFT_FLOAT */
+#define SMVM_RESTORE_FPE_ENV
+#define SMVM_SF_ENCLOSE(op) \
+    if(1) { \
+        sf_float_exception_flags = 0; \
+        op; \
+        if (unlikely(sf_float_exception_flags)) { \
+            if (sf_float_exception_flags & sf_float_flag_divbyzero) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO; \
+            } else if (sf_float_exception_flags & sf_float_flag_overflow) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_OVERFLOW; \
+            } else if (sf_float_exception_flags & sf_float_flag_underflow) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_UNDERFLOW; \
+            } else if (sf_float_exception_flags & sf_float_flag_inexact) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_INEXACT_RESULT; \
+            } else if (sf_float_exception_flags & sf_float_flag_invalid) { \
+                p->exceptionValue = SMVM_E_FLOATING_POINT_INVALID_OPERATION; \
+            } else { \
+                p->exceptionValue = SMVM_E_UNKNOWN_FPE; \
+            } \
+            SMVM_DO_EXCEPT; \
+        } \
     } else (void) 0
+static sf_float32 sf_one;
+#define SMVM_MI_UNEG_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_neg(d))
+#define SMVM_MI_UINC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_add((d), sf_one))
+#define SMVM_MI_UDEC_FLOAT32(d) SMVM_SF_ENCLOSE((d) = sf_float32_sub((d), sf_one))
+#define SMVM_MI_BNEG_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_neg(s))
+#define SMVM_MI_BINC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_add((s), sf_one))
+#define SMVM_MI_BDEC_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s), sf_one))
+#define SMVM_MI_BADD_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_add((d), (s)))
+#define SMVM_MI_BSUB_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((d), (s)))
+#define SMVM_MI_BSUB2_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s), (d)))
+#define SMVM_MI_BMUL_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_mul((d), (s)))
+#define SMVM_MI_BDIV_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_div((d), (s)))
+#define SMVM_MI_BDIV2_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_div((s), (d)))
+#define SMVM_MI_BMOD_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_mod((d), (s)))
+#define SMVM_MI_BMOD2_FLOAT32(d,s) SMVM_SF_ENCLOSE((d) = sf_float32_mod((s), (d)))
+#define SMVM_MI_TADD_FLOAT32(d,s1,s2) SMVM_SF_ENCLOSE((d) = sf_float32_add((s1), (s2)))
+#define SMVM_MI_TSUB_FLOAT32(d,s1,s2) SMVM_SF_ENCLOSE((d) = sf_float32_sub((s1), (s2)))
+#define SMVM_MI_TMUL_FLOAT32(d,s1,s2) SMVM_SF_ENCLOSE((d) = sf_float32_mul((s1), (s2)))
+#define SMVM_MI_TDIV_FLOAT32(d,s1,s2) SMVM_SF_ENCLOSE((d) = sf_float32_div((s1), (s2)))
+#define SMVM_MI_TMOD_FLOAT32(d,s1,s2) SMVM_SF_ENCLOSE((d) = sf_float32_mod((s1), (s2)))
+#endif /* #ifndef SMVM_SOFT_FLOAT */
 
-/** \todo Check for error */
-#define SMVM_RESTORE_FPE_ENV \
-    if (p->hasSavedFpeEnv) { \
-        fesetenv(&p->savedFpeEnv); \
-    } else (void) 0
+#ifndef SMVM_FAST_BUILD
+#define SMVM_DO_EXCEPT if (1) { goto except; } else (void) 0
+#define SMVM_DO_HALT if (1) { goto halt; } else (void) 0
+#define SMVM_DO_TRAP if (1) { goto trap; } else (void) 0
+#else
+enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
+#define SMVM_DO_EXCEPT if (1) { return HC_EXCEPT; } else (void) 0
+#define SMVM_DO_HALT if (1) { return HC_HALT; } else (void) 0
+#define SMVM_DO_TRAP if (1) { return HC_TRAP; } else (void) 0
+#endif
 
 #define SMVM_UPDATESTATE \
     if (1) { \
@@ -524,7 +576,8 @@ int _SMVM(struct SMVM_Program * const p,
         union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
         union SM_CodeBlock * ip = &codeStart[p->currentIp];
 
-        SMVM_SAVE_FPE_ENV;
+#ifndef SMVM_SOFT_FLOAT
+        p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0);
 
         /**
           \warning Note that the variable "ip" is not valid after one of the
@@ -558,6 +611,10 @@ int _SMVM(struct SMVM_Program * const p,
         _SMVM_DECLARE_SIGJMP(SMVM_HET_FPE_FLTSUB,  SMVM_E_FLOATING_POINT_SUBSCRIPT_OUT_OF_RANGE);
 
         _SMVM_Program_setupSignalHandlers(p);
+#else /* #ifndef SMVM_SOFT_FLOAT */
+        sf_one = sf_int32_to_float32(1);
+#endif /* #ifndef SMVM_SOFT_FLOAT */
+
 #ifndef SMVM_FAST_BUILD
         SMVM_MI_DISPATCH(ip);
 
@@ -581,8 +638,12 @@ int _SMVM(struct SMVM_Program * const p,
             p->exceptionValue = SMVM_E_JUMP_TO_INVALID_ADDRESS;
 
         except:
+#ifndef SMVM_SOFT_FLOAT
             _SMVM_Program_restoreSignalHandlers(p);
-            SMVM_RESTORE_FPE_ENV;
+            /** \todo Check for errors */
+            if (p->hasSavedFpeEnv)
+                fesetenv(&p->savedFpeEnv);
+#endif
             p->state = SMVM_CRASHED;
 #ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;
@@ -591,8 +652,12 @@ int _SMVM(struct SMVM_Program * const p,
             return SMVM_RUNTIME_EXCEPTION;
 
         halt:
+#ifndef SMVM_SOFT_FLOAT
             _SMVM_Program_restoreSignalHandlers(p);
-            SMVM_RESTORE_FPE_ENV;
+            /** \todo Check for errors */
+            if (p->hasSavedFpeEnv)
+                fesetenv(&p->savedFpeEnv);
+#endif
 #ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;
 #endif
@@ -600,8 +665,12 @@ int _SMVM(struct SMVM_Program * const p,
             return SMVM_OK;
 
         trap:
+#ifndef SMVM_SOFT_FLOAT
             _SMVM_Program_restoreSignalHandlers(p);
-            SMVM_RESTORE_FPE_ENV;
+            /** \todo Check for errors */
+            if (p->hasSavedFpeEnv)
+                fesetenv(&p->savedFpeEnv);
+#endif
             p->state = SMVM_TRAPPED;
 #ifndef SMVM_FAST_BUILD
             SMVM_UPDATESTATE;

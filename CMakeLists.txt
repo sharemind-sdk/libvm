@@ -184,9 +184,19 @@ INSTALL(DIRECTORY "src/libsmas/"
 # libsmvm
 ################################################################################
 
-ADD_LIBRARY("libsmvm" SHARED
-            "src/libsmvm/vm_internal_core.c"
-            "src/libsmvm/vm_internal_helpers.c")
+SET(LIBSMVM_DEFINES "SMVM_NO_THREADS")
+
+IF(NOT VM_SOFT_FLOAT)
+  ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/vm_internal_core.c"
+              "src/libsmvm/vm_internal_helpers.c")
+ELSE(NOT VM_SOFT_FLOAT)
+  SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_SOFT_FLOAT")
+  ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/vm_internal_core.c"
+              "src/libsmvm/vm_internal_helpers.c"
+              "src/3rdparty/softfloat/softfloat.c")
+ENDIF(NOT VM_SOFT_FLOAT)
 SET(OTHER_FILES ${OTHER_FILES} "src/libsmvm/vm.h")
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
@@ -195,14 +205,14 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
 IF(VM_FAST_BUILD)
-  SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS;SMVM_FAST_BUILD")
+  SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_FAST_BUILD")
   SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
                               "${M4_DIR_B}/dispatches.h;${M4_DIR_B}/preprocess_pass2_functions.h")
 ELSE(VM_FAST_BUILD)
-  SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "SMVM_NO_THREADS")
   SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
                               "${M4_DIR_B}/preprocess_pass1_cases.h;${M4_DIR_B}/preprocess_pass2_cases.h")
 ENDIF(VM_FAST_BUILD)
+SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "${LIBSMVM_DEFINES}")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme" "m")
