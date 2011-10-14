@@ -72,25 +72,20 @@ ENDIF(NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 SET(M4_2_H_SOURCES
     "dispatches.m4"
     "instruction_structs.m4"
-    "static_label_structs.m4")
+    "static_label_structs.m4"
+    "preprocess_pass2_functions.m4")
 IF(VM_FAST_BUILD)
   SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
-      "instruction_index.m4"
-      "preprocess_pass2_functions.m4")
+      "instruction_index.m4")
   SET(OTHER_FILES ${OTHER_FILES}
       "${M4_DIR}/instruction_from_code_cases.m4"
-      "${M4_DIR}/instruction_from_name_cases.m4"
-      "${M4_DIR}/preprocess_pass1_cases.m4"
-      "${M4_DIR}/preprocess_pass2_cases.m4")
+      "${M4_DIR}/instruction_from_name_cases.m4")
 ELSE(VM_FAST_BUILD)
   SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
       "instruction_from_code_cases.m4"
-      "instruction_from_name_cases.m4"
-      "preprocess_pass1_cases.m4"
-      "preprocess_pass2_cases.m4")
+      "instruction_from_name_cases.m4")
   SET(OTHER_FILES ${OTHER_FILES}
-      "${M4_DIR}/instruction_index.m4"
-      "${M4_DIR}/preprocess_pass2_functions.m4")
+      "${M4_DIR}/instruction_index.m4")
 ENDIF(VM_FAST_BUILD)
 SET(OTHER_FILES ${OTHER_FILES}
                 "${M4_DIR}/datatypebyte.m4"
@@ -204,15 +199,13 @@ SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       VERSION "0.1.0.0"
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
+
 IF(VM_FAST_BUILD)
   SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_FAST_BUILD")
-  SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
-                              "${M4_DIR_B}/dispatches.h;${M4_DIR_B}/preprocess_pass2_functions.h")
-ELSE(VM_FAST_BUILD)
-  SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
-                              "${M4_DIR_B}/preprocess_pass1_cases.h;${M4_DIR_B}/preprocess_pass2_cases.h")
 ENDIF(VM_FAST_BUILD)
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "${LIBSMVM_DEFINES}")
+SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
+                            "${M4_DIR_B}/preprocess_pass2_functions.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 TARGET_LINK_LIBRARIES("libsmvm" "libsmvmi" "libsme" "m")

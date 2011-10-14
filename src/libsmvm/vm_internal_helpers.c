@@ -277,23 +277,19 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 }
 
 #define SMVM_PREPARE_NOP (void)0
-#define SMVM_PREPARE_INVALID_INSTRUCTION SMVM_PREPARE_ERROR_OUTER(SMVM_PREPARE_ERROR_INVALID_INSTRUCTION)
+#define SMVM_PREPARE_INVALID_INSTRUCTION_OUTER SMVM_PREPARE_ERROR_OUTER(SMVM_PREPARE_ERROR_INVALID_INSTRUCTION)
 #define SMVM_PREPARE_ERROR_OUTER(e) \
     if (1) { \
         returnCode = (e); \
         p->currentIp = i; \
         goto smvm_prepare_codesection_return_error; \
     } else (void) 0
-#ifndef SMVM_FAST_BUILD
-#define SMVM_PREPARE_ERROR(e) SMVM_PREPARE_ERROR_OUTER(e)
-#else
 #define SMVM_PREPARE_ERROR(e) \
     if (1) { \
         returnCode = (e); \
         p->currentIp = *i; \
         return returnCode; \
     } else (void) 0
-#endif
 #define SMVM_PREPARE_CHECK_OR_ERROR_OUTER(c,e) \
     if (unlikely(!(c))) { \
         SMVM_PREPARE_ERROR_OUTER(e); \
@@ -302,54 +298,21 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     if (unlikely(!(c))) { \
         SMVM_PREPARE_ERROR(e); \
     } else (void) 0
-#ifndef SMVM_FAST_BUILD
-#define SMVM_PREPARE_END_AS(index,fun,numargs) \
+#define SMVM_PREPARE_END_AS(index,numargs) \
     if (1) { \
-        c[i].uint64[0] = (index); \
-        struct SMVM_Prepare_IBlock pb = { .block = &c[i], .type = 0 }; \
+        c[SMVM_PREPARE_CURRENT_I].uint64[0] = (index); \
+        struct SMVM_Prepare_IBlock pb = { .block = &c[SMVM_PREPARE_CURRENT_I], .type = 0 }; \
         if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, (void *) &pb) != SMVM_OK) \
             abort(); \
-        i += (numargs); \
-        break; \
+        SMVM_PREPARE_CURRENT_I += (numargs); \
     } else (void) 0
-#else
-#define SMVM_PREPARE_END_AS(index,funName,numargs) \
-    if (1) { \
-        c[*i].p[0] = &(func_impl_ ## funName); \
-        *i += (numargs); \
-    } else (void) 0
-#endif
-#define SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(args) \
-    if (1) { \
-        SMVM_PREPARE_CHECK_OR_ERROR_OUTER(i + (args) < s->size, \
-                                          SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
-        SMVM_PREPARE_CHECK_OR_ERROR_OUTER(SMVM_InstrSet_insert(&s->instrset, i), \
-                                          SMVM_OUT_OF_MEMORY); \
-        i += (args); \
-    } else (void) 0
-#define SMVM_FOREACH_PREPARE_PASS1_CASE(bytecode, args) \
-    case bytecode: \
-        SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(args); \
-        break;
-#ifndef SMVM_FAST_BUILD
-#define SMVM_PREPARE_ARG_AS(v,t) (c[i+(v)].t[0])
-#define SMVM_PREPARE_CURRENT_I i
-#else
 #define SMVM_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
 #define SMVM_PREPARE_CURRENT_I (*i)
-#endif
 #define SMVM_PREPARE_CODESIZE(s) (s)->size
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
 #define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
-
-#ifdef SMVM_FAST_BUILD
-
-#define SMVM_IMPL(name,code) \
-extern enum HaltCode func_impl_ ## name (struct SMVM_Program * const, union SM_CodeBlock *, union SM_CodeBlock *);
-
-#include "../m4/dispatches.h"
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
     static int prepare_pass2_ ## name (struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i) { \
@@ -371,7 +334,6 @@ struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include "../m4/preprocess_pass2_functions.h"
     { .code = 0u, .f = NULL }
 };
-#endif
 
 int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     assert(p);
@@ -389,42 +351,28 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
         union SM_CodeBlock * c = s->data;
 
         /* Initialize instructions hashmap: */
-#ifndef SMVM_FAST_BUILD
-        for (size_t i = 0u; i < s->size; i++) {
-            switch (c[i].uint64[0]) {
-#include "../m4/preprocess_pass1_cases.h"
-                default:
-                    SMVM_PREPARE_INVALID_INSTRUCTION;
-            }
-        }
-#else
         for (size_t i = 0u; i < s->size; i++) {
             const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
             if (!instr) {
-                SMVM_PREPARE_INVALID_INSTRUCTION;
+                SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
-            SMVM_FOREACH_PREPARE_PASS1_CASE_BELLY(instr->numargs);
-        }
-#endif
 
-#ifndef SMVM_FAST_BUILD
-        for (size_t i = 0u; i < s->size; i++) {
-            switch (c[i].uint64[0]) {
-#include "../m4/preprocess_pass2_cases.h"
-                default:
-                    SMVM_PREPARE_INVALID_INSTRUCTION;
-            }
+            SMVM_PREPARE_CHECK_OR_ERROR_OUTER(i + instr->numargs < s->size,
+                                              SMVM_PREPARE_ERROR_INVALID_ARGUMENTS);
+            SMVM_PREPARE_CHECK_OR_ERROR_OUTER(SMVM_InstrSet_insert(&s->instrset, i),
+                                              SMVM_OUT_OF_MEMORY);
+            i += instr->numargs;
         }
-#else
+
         for (size_t i = 0u; i < s->size; i++) {
             const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
             if (!instr) {
-                SMVM_PREPARE_INVALID_INSTRUCTION;
+                SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
             struct preprocess_pass2_function * ppf = &preprocess_pass2_functions[0];
             for (;;) {
                 if (!(ppf->f)) {
-                    SMVM_PREPARE_INVALID_INSTRUCTION;
+                    SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
                 }
                 if (ppf->code == c[i].uint64[0]) {
                     returnCode = (*(ppf->f))(p, s, c, &i);
@@ -435,7 +383,6 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
                 ++ppf;
             }
         }
-#endif
 
         /* Initialize exception pointer: */
         c[s->size].uint64[0] = 0u; /* && eof */
