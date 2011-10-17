@@ -244,7 +244,8 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #define SMVM_TODO(msg)
 
 #ifndef SMVM_FAST_BUILD
-#define SMVM_MI_DISPATCH(ip) if (k1) { goto *((ip)->p[0]); } else (void) 0
+#define SMVM_DISPATCH(ip) goto *((ip)->p[0])
+#define SMVM_MI_DISPATCH(ip) if (1) { SMVM_DISPATCH(ip); } else (void) 0
 #else
 #define SMVM_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCrefStack) \
     ((*((enum HaltCode (*)(struct SMVM_Program * const, \
