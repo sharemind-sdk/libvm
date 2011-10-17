@@ -56,32 +56,14 @@ SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc,
 SM_VECTOR_DEFINE(SMVM_CReferenceVector,struct SMVM_CReference,malloc,free,realloc,)
 #endif
 
-int SMVM_Reference_deallocator(struct SMVM_Reference * r) {
-    if (!r->pBlock) {
-        assert(r->pMemory);
-        r->pMemory->nrefs--;
-    } else {
-        assert(!r->pMemory);
-    }
-    return 1;
-}
-
 void SMVM_Reference_destroy(struct SMVM_Reference * r) {
-    SMVM_Reference_deallocator(r);
-}
-
-int SMVM_CReference_deallocator(struct SMVM_CReference * r) {
-    if (!r->pBlock) {
-        assert(r->pMemory);
+    if (r->pMemory)
         r->pMemory->nrefs--;
-    } else {
-        assert(!r->pMemory);
-    }
-    return 1;
 }
 
 void SMVM_CReference_destroy(struct SMVM_CReference * r) {
-    SMVM_CReference_deallocator(r);
+    if (r->pMemory)
+        r->pMemory->nrefs--;
 }
 
 

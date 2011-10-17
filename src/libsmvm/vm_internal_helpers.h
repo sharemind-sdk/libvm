@@ -70,20 +70,16 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,)
 
 struct SMVM_Reference {
     struct SMVM_MemorySlot * pMemory;
-    union SM_CodeBlock * pBlock;
-    size_t offset;
     size_t size;
+    void * pData;
 };
 struct SMVM_CReference {
     struct SMVM_MemorySlot * pMemory;
-    const union SM_CodeBlock * pBlock;
-    size_t offset;
+    const void * pData;
     size_t size;
 };
 
-int SMVM_Reference_deallocator(struct SMVM_Reference * r);
 void SMVM_Reference_destroy(struct SMVM_Reference * r);
-int SMVM_CReference_deallocator(struct SMVM_CReference * r);
 void SMVM_CReference_destroy(struct SMVM_CReference * r);
 
 #ifdef SMVM_RELEASE

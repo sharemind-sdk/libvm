@@ -308,14 +308,13 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = NULL; \
-        ref->pBlock = (b); \
-        ref->offset = (bOffset); \
+        ref->pData = (void *) (&(b)->uint8[0]) + (bOffset); \
         ref->size = (rSize); \
     } else (void) 0
 
 #define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack, (b), 0u, sizeof(union SM_CodeBlock))
 #define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack,(b), 0u, sizeof(union SM_CodeBlock))
-#define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(Ref,refstack, (b), (o), (s))
+#define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack, (b), (o), (s))
 #define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack,(b), (o), (s))
 
 #define _SMVM_MI_PUSHREF_REF(prefix,something,r,rOffset,rSize) \
@@ -329,14 +328,13 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->pMemory = (r)->pMemory; \
         if (ref->pMemory) \
             ref->pMemory->nrefs++; \
-        ref->pBlock = (r)->pBlock; \
-        ref->offset = (rOffset); \
+        ref->pData = (r)->pData + (rOffset); \
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref,refstack,  (r), (r)->offset, (r)->size)
-#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), (r)->offset, (r)->size)
-#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref,refstack,  (r), (o), (s))
+#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,  (r), 0, (r)->size)
+#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), 0, (r)->size)
+#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref, refstack,  (r), (o), (s))
 #define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), (o), (s))
 
 #define _SMVM_MI_PUSHREF_MEM(prefix,something,slot,mOffset,rSize) \
@@ -346,14 +344,13 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = (slot); \
         (slot)->nrefs++; \
-        ref->pBlock = NULL; \
-        ref->offset = (mOffset); \
+        ref->pData = (slot)->pData + (mOffset); \
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(Ref,refstack,  (slot), 0u, (slot)->size)
+#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(Ref, refstack,  (slot), 0u, (slot)->size)
 #define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(CRef,crefstack, (slot), 0u, (slot)->size)
-#define SMVM_MI_PUSHREFPART_MEM_ref(slot,o,s)  _SMVM_MI_PUSHREF_MEM(Ref,refstack,  (slot), (o), (s))
+#define SMVM_MI_PUSHREFPART_MEM_ref(slot,o,s)  _SMVM_MI_PUSHREF_MEM(Ref, refstack,  (slot), (o), (s))
 #define SMVM_MI_PUSHREFPART_MEM_cref(slot,o,s) _SMVM_MI_PUSHREF_MEM(CRef,crefstack, (slot), (o), (s))
 
 #define SMVM_MI_RESIZE_STACK(size) \
@@ -362,8 +359,8 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #define SMVM_MI_CLEAR_STACK \
     if (1) { \
         SMVM_RegisterVector_resize(&p->nextFrame->stack, 0u); \
-        SMVM_ReferenceVector_foreach(&p->nextFrame->refstack, &SMVM_Reference_deallocator); \
-        SMVM_CReferenceVector_foreach(&p->nextFrame->crefstack, &SMVM_CReference_deallocator); \
+        SMVM_ReferenceVector_foreach_void(&p->nextFrame->refstack, &SMVM_Reference_destroy); \
+        SMVM_CReferenceVector_foreach_void(&p->nextFrame->crefstack, &SMVM_CReference_destroy); \
         SMVM_ReferenceVector_resize(&p->nextFrame->refstack, 0u); \
         SMVM_CReferenceVector_resize(&p->nextFrame->crefstack, 0u); \
     } else (void) 0
@@ -456,9 +453,9 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_CONST_REFERENCE); \
     } else (void) 0
 
-#define SMVM_MI_REFERENCE_GET_PTR(r) ((void *) ((r)->pMemory ? (r)->pMemory->pData : &(r)->pBlock->uint64[0]))
-#define SMVM_MI_REFERENCE_GET_OFFSET(r) ((r)->offset)
-#define SMVM_MI_REFERENCE_GET_SIZE(r) ((size_t) ((r)->pMemory ? (r)->pMemory->size : 8u))
+#define SMVM_MI_REFERENCE_GET_MEMORY_PTR(r) ((r)->pMemory)
+#define SMVM_MI_REFERENCE_GET_PTR(r) ((r)->pData)
+#define SMVM_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
 #define SMVM_MI_BLOCK_AS_P(b,t) (&b->t[0])
