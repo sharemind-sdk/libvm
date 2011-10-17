@@ -38,6 +38,7 @@ SET(OTHER_FILES "config.local.example"
                 "src/vector.h"
                 "tests/benchmark.sa"
                 "tests/divbyzero.sa"
+                "tests/divoverflow.sa"
                 "tests/float_divbyzero.sa"
                 "tests/float_overflow.sa"
                 "tests/float_underflow.sa"
@@ -273,6 +274,7 @@ ENDFUNCTION()
 add_test_assemble_execute("benchmark")
 add_test_assemble_execute("divbyzero")
 SET_TESTS_PROPERTIES("divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (SMVM_E_INTEGER_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE)")
+add_test_assemble_execute("divoverflow")
 add_test_assemble_execute("float_divbyzero")
 SET_TESTS_PROPERTIES("float_divbyzero" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_FLOATING_POINT_INEXACT_RESULT|SMVM_E_UNKNOWN_FPE)")
 add_test_assemble_execute("float_overflow")
