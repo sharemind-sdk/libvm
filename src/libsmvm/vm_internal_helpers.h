@@ -74,15 +74,26 @@ struct SMVM_Reference {
     size_t offset;
     size_t size;
 };
+struct SMVM_CReference {
+    struct SMVM_MemorySlot * pMemory;
+    const union SM_CodeBlock * pBlock;
+    size_t offset;
+    size_t size;
+};
 
 int SMVM_Reference_deallocator(struct SMVM_Reference * r);
 void SMVM_Reference_destroy(struct SMVM_Reference * r);
+int SMVM_CReference_deallocator(struct SMVM_CReference * r);
+void SMVM_CReference_destroy(struct SMVM_CReference * r);
 
 #ifdef SMVM_RELEASE
 SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,,inline)
 SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_CReferenceVector,struct SMVM_CReference,,inline)
+SM_VECTOR_DEFINE(SMVM_CReferenceVector,struct SMVM_CReference,malloc,free,realloc,inline)
 #else
 SM_VECTOR_DECLARE(SMVM_ReferenceVector,struct SMVM_Reference,,)
+SM_VECTOR_DECLARE(SMVM_CReferenceVector,struct SMVM_CReference,,)
 #endif
 
 
@@ -100,10 +111,10 @@ SM_VECTOR_DECLARE(SMVM_RegisterVector,union SM_CodeBlock,,)
 struct SMVM_StackFrame {
     struct SMVM_RegisterVector stack;
     struct SMVM_ReferenceVector refstack;
-    struct SMVM_ReferenceVector crefstack;
+    struct SMVM_CReferenceVector crefstack;
     struct SMVM_StackFrame * prev;
 
-    union SM_CodeBlock * returnAddr;
+    const union SM_CodeBlock * returnAddr;
     union SM_CodeBlock * returnValueAddr;
 
 #ifdef SMVM_DEBUG

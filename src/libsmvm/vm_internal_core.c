@@ -246,14 +246,18 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #ifndef SMVM_FAST_BUILD
 #define SMVM_MI_DISPATCH(ip) if (k1) { goto *((ip)->p[0]); } else (void) 0
 #else
-#define SMVM_DISPATCH(ip) ((*((enum HaltCode (*)(struct SMVM_Program * const, union SM_CodeBlock *, union SM_CodeBlock *))((ip)->p[0])))(p,codeStart,ip))
-#define SMVM_MI_DISPATCH(newIp) if (1) { (void) (newIp); SMVM_UPDATESTATE; return SMVM_DISPATCH(ip); } else (void) 0
+#define SMVM_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCrefStack) \
+    ((*((enum HaltCode (*)(struct SMVM_Program * const, \
+                           const union SM_CodeBlock *, \
+                           const union SM_CodeBlock *, \
+                           struct SMVM_RegisterVector * const, \
+                           struct SMVM_RegisterVector *, \
+                           const struct SMVM_ReferenceVector *, \
+                           const struct SMVM_CReferenceVector *))((ip)->p[0])))(p,codeStart,ip,globalStack,_thisStack,_thisRefStack,_thisCrefStack))
+#define SMVM_DISPATCH(ip) SMVM_DISPATCH_OTHERFRAME(ip,thisStack,thisRefStack,thisCrefStack)
+#define SMVM_MI_DISPATCH(newIp) if (1) { (void) (newIp); return SMVM_DISPATCH(ip); } else (void) 0
 #endif
 
-#define SMVM_MI_JUMP_ABS(a) \
-    if (1) { \
-        SMVM_MI_DISPATCH(ip = codeStart + (a)); \
-    } else (void) 0
 #define SMVM_MI_JUMP_REL(n) \
     if (1) { \
         SMVM_MI_DISPATCH(ip += ((n)->int64[0])); \
@@ -264,7 +268,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 
 #define SMVM_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
-        union SM_CodeBlock * tip = ip + (reladdr); \
+        const union SM_CodeBlock * tip = ip + (reladdr); \
         SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR(tip - codeStart), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
         SMVM_MI_DISPATCH(ip = tip); \
     } else (void) 0
@@ -297,10 +301,10 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         *reg = (v); \
     } else (void) 0
 
-#define _SMVM_MI_PUSHREF_BLOCK(something,b,bOffset,rSize) \
+#define _SMVM_MI_PUSHREF_BLOCK(prefix,something,b,bOffset,rSize) \
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
-        struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
+        struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = NULL; \
         ref->pBlock = (b); \
@@ -308,18 +312,18 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b), 0u, sizeof(union SM_CodeBlock))
-#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b), 0u, sizeof(union SM_CodeBlock))
-#define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(refstack, (b), (o), (s))
-#define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(crefstack,(b), (o), (s))
+#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack, (b), 0u, sizeof(union SM_CodeBlock))
+#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack,(b), 0u, sizeof(union SM_CodeBlock))
+#define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(Ref,refstack, (b), (o), (s))
+#define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack,(b), (o), (s))
 
-#define _SMVM_MI_PUSHREF_REF(something,r,rOffset,rSize) \
+#define _SMVM_MI_PUSHREF_REF(prefix,something,r,rOffset,rSize) \
     if (1) { \
         if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) { \
             SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
         } \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
-        struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
+        struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = (r)->pMemory; \
         if (ref->pMemory) \
@@ -329,15 +333,15 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(refstack,  (r), (r)->offset, (r)->size)
-#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(crefstack, (r), (r)->offset, (r)->size)
-#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(refstack,  (r), (o), (s))
-#define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(crefstack, (r), (o), (s))
+#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref,refstack,  (r), (r)->offset, (r)->size)
+#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), (r)->offset, (r)->size)
+#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref,refstack,  (r), (o), (s))
+#define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), (o), (s))
 
-#define _SMVM_MI_PUSHREF_MEM(something,slot,mOffset,rSize) \
+#define _SMVM_MI_PUSHREF_MEM(prefix,something,slot,mOffset,rSize) \
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
-        struct SMVM_Reference * ref = SMVM_ReferenceVector_push(&p->nextFrame->something); \
+        struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
         ref->pMemory = (slot); \
         (slot)->nrefs++; \
@@ -346,24 +350,36 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot), 0u, (slot)->size)
-#define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(crefstack, (slot), 0u, (slot)->size)
-#define SMVM_MI_PUSHREFPART_MEM_ref(slot,o,s)  _SMVM_MI_PUSHREF_MEM(refstack,  (slot), (o), (s))
-#define SMVM_MI_PUSHREFPART_MEM_cref(slot,o,s) _SMVM_MI_PUSHREF_MEM(crefstack, (slot), (o), (s))
+#define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(Ref,refstack,  (slot), 0u, (slot)->size)
+#define SMVM_MI_PUSHREF_MEM_cref(slot) _SMVM_MI_PUSHREF_MEM(CRef,crefstack, (slot), 0u, (slot)->size)
+#define SMVM_MI_PUSHREFPART_MEM_ref(slot,o,s)  _SMVM_MI_PUSHREF_MEM(Ref,refstack,  (slot), (o), (s))
+#define SMVM_MI_PUSHREFPART_MEM_cref(slot,o,s) _SMVM_MI_PUSHREF_MEM(CRef,crefstack, (slot), (o), (s))
 
 #define SMVM_MI_RESIZE_STACK(size) \
-    SMVM_MI_TRY_OOM(SMVM_RegisterVector_resize(&p->thisFrame->stack, (size)))
+    SMVM_MI_TRY_OOM(SMVM_RegisterVector_resize(thisStack, (size)))
 
 #define SMVM_MI_CLEAR_STACK \
     if (1) { \
         SMVM_RegisterVector_resize(&p->nextFrame->stack, 0u); \
         SMVM_ReferenceVector_foreach(&p->nextFrame->refstack, &SMVM_Reference_deallocator); \
-        SMVM_ReferenceVector_foreach(&p->nextFrame->crefstack, &SMVM_Reference_deallocator); \
+        SMVM_CReferenceVector_foreach(&p->nextFrame->crefstack, &SMVM_CReference_deallocator); \
         SMVM_ReferenceVector_resize(&p->nextFrame->refstack, 0u); \
-        SMVM_ReferenceVector_resize(&p->nextFrame->crefstack, 0u); \
+        SMVM_CReferenceVector_resize(&p->nextFrame->crefstack, 0u); \
     } else (void) 0
 
 #define SMVM_MI_HAS_STACK (!!(p->nextFrame))
+
+#ifndef SMVM_FAST_BUILD
+#define SMVM_CALL_RETURN_DISPATCH(ip) \
+    if (1) { \
+        thisStack = &p->thisFrame->stack; \
+        thisRefStack = &p->thisFrame->refstack; \
+        thisCrefStack = &p->thisFrame->crefstack; \
+        SMVM_DISPATCH((ip)); \
+    } else (void) 0
+#else
+#define SMVM_CALL_RETURN_DISPATCH(ip) return SMVM_DISPATCH_OTHERFRAME((ip), &p->thisFrame->stack, &p->thisFrame->refstack, &p->thisFrame->crefstack)
+#endif
 
 #define SMVM_MI_CALL(a,r,nargs) \
     if (1) { \
@@ -372,18 +388,14 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
         p->thisFrame = p->nextFrame; \
         p->nextFrame = NULL; \
-        SMVM_MI_JUMP_ABS((a)); \
+        ip = codeStart + (a); \
+        SMVM_CALL_RETURN_DISPATCH(ip); \
     } else (void) 0
 
 #define SMVM_MI_CHECK_CALL(a,r,nargs) \
     if (1) { \
         SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR((a)->uint64[0]), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
-        SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
-        p->nextFrame->returnValueAddr = (r); \
-        p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
-        p->thisFrame = p->nextFrame; \
-        p->nextFrame = NULL; \
-        SMVM_MI_JUMP_ABS((a)->uint64[0]); \
+        SMVM_MI_CALL((a)->uint64[0],r,nargs); \
     } else (void) 0
 
 #define SMVM_MI_RETURN(r) \
@@ -399,7 +411,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
             ip = p->thisFrame->returnAddr; \
             p->thisFrame = p->thisFrame->prev; \
             SMVM_FrameStack_pop(&p->frames); \
-            SMVM_MI_DISPATCH(ip); \
+            SMVM_CALL_RETURN_DISPATCH(ip); \
         } else { \
             SMVM_MI_HALT((r)); \
         } \
@@ -407,39 +419,39 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 
 #define SMVM_MI_GET_T_reg(d,t,i) \
     if (1) { \
-        union SM_CodeBlock * r = SMVM_RegisterVector_get_pointer(&p->globalFrame->stack, (i)); \
+        const union SM_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(globalStack, (i)); \
         SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_REGISTER); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
 
 #define SMVM_MI_GET_T_stack(d,t,i) \
     if (1) { \
-        union SM_CodeBlock * r = SMVM_RegisterVector_get_pointer(&p->thisFrame->stack, (i)); \
+        const union SM_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(thisStack, (i)); \
         SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_STACK); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
 
 #define SMVM_MI_GET_reg(d,i) \
     if (1) { \
-        (d) = SMVM_RegisterVector_get_pointer(&p->globalFrame->stack, (i)); \
+        (d) = SMVM_RegisterVector_get_pointer(globalStack, (i)); \
         SMVM_MI_TRY_EXCEPT((d),SMVM_E_INVALID_INDEX_REGISTER); \
     } else (void) 0
 
 #define SMVM_MI_GET_stack(d,i) \
     if (1) { \
-        (d) = SMVM_RegisterVector_get_pointer(&p->thisFrame->stack, (i)); \
+        (d) = SMVM_RegisterVector_get_pointer(thisStack, (i)); \
         SMVM_MI_TRY_EXCEPT((d),SMVM_E_INVALID_INDEX_STACK); \
     } else (void) 0
 
 #define SMVM_MI_GET_ref(r,i) \
     if (1) { \
-        (r) = SMVM_ReferenceVector_get_pointer(&p->thisFrame->refstack, (i)); \
+        (r) = SMVM_ReferenceVector_get_const_pointer(thisRefStack, (i)); \
         SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_REFERENCE); \
     } else (void) 0
 
 #define SMVM_MI_GET_cref(r,i) \
     if (1) { \
-        (r) = SMVM_ReferenceVector_get_pointer(&p->thisFrame->crefstack, (i)); \
+        (r) = SMVM_CReferenceVector_get_const_pointer(thisCrefStack, (i)); \
         SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_CONST_REFERENCE); \
     } else (void) 0
 
@@ -559,7 +571,20 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
     label_impl_ ## name : code
 #else
 #define SMVM_IMPL_INNER(name,code) \
-extern enum HaltCode name (struct SMVM_Program * const p, union SM_CodeBlock * codeStart, union SM_CodeBlock * ip) { (void) codeStart; SMVM_UPDATESTATE; code }
+    static inline enum HaltCode name ( \
+        struct SMVM_Program * const p, \
+        const union SM_CodeBlock * const codeStart, \
+        const union SM_CodeBlock * ip, \
+        struct SMVM_RegisterVector * const globalStack, \
+        struct SMVM_RegisterVector * thisStack, \
+        const struct SMVM_ReferenceVector * thisRefStack, \
+        const struct SMVM_CReferenceVector * thisCrefStack) \
+    { \
+        (void) codeStart; (void) globalStack; (void) thisStack; \
+        (void) thisRefStack; (void) thisCrefStack; \
+        SMVM_UPDATESTATE; \
+        code \
+    }
 #define SMVM_IMPL(name,code) SMVM_IMPL_INNER(func_impl_ ## name, code)
 
 #include "../m4/dispatches.h"
@@ -608,8 +633,12 @@ int _SMVM(struct SMVM_Program * const p,
 
 #pragma STDC FENV_ACCESS ON
 
-        union SM_CodeBlock * codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
-        union SM_CodeBlock * ip = &codeStart[p->currentIp];
+        const union SM_CodeBlock * const codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
+        const union SM_CodeBlock * ip = &codeStart[p->currentIp];
+        struct SMVM_RegisterVector * const globalStack = &p->globalFrame->stack;
+        struct SMVM_RegisterVector * thisStack = &p->thisFrame->stack;
+        const struct SMVM_ReferenceVector * thisRefStack = &p->thisFrame->refstack;
+        const struct SMVM_CReferenceVector * thisCrefStack = &p->thisFrame->crefstack;
 
 #ifndef SMVM_SOFT_FLOAT
         p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0);
