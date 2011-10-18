@@ -119,7 +119,7 @@ int SMVM_CodeSection_init(struct SMVM_CodeSection * s,
         return 0;
 
 
-    s->data = malloc(memSize);
+    s->data = (union SM_CodeBlock *) malloc(memSize);
     if (unlikely(!s->data))
         return 0;
 
@@ -148,7 +148,7 @@ SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free,)
 #endif
 
 struct SMVM_Program * SMVM_Program_new(void) {
-    struct SMVM_Program * const p = malloc(sizeof(struct SMVM_Program));
+    struct SMVM_Program * const p = (struct SMVM_Program *) malloc(sizeof(struct SMVM_Program));
     if (likely(p)) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
