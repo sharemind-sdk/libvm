@@ -595,10 +595,10 @@ SMVM_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 #endif
 
 int _SMVM(struct SMVM_Program * const p,
-          const enum SMVM_InnerCommand c,
-          void * const d)
+          const enum SMVM_InnerCommand _SMVM_command,
+          void * const _SMVM_data)
 {
-    if (c == SMVM_I_GET_IMPL_LABEL) {
+    if (_SMVM_command == SMVM_I_GET_IMPL_LABEL) {
 
 #ifndef SMVM_FAST_BUILD
 #define SMVM_IMPL_LABEL(name) && label_impl_ ## name ,
@@ -611,7 +611,7 @@ int _SMVM(struct SMVM_Program * const p,
 #endif
         // static void *(*labels[3])[] = { &instr_labels, &empty_impl_labels, &system_labels };
 
-        struct SMVM_Prepare_IBlock * pb = (struct SMVM_Prepare_IBlock *) d;
+        struct SMVM_Prepare_IBlock * pb = (struct SMVM_Prepare_IBlock *) _SMVM_data;
         switch (pb->type) {
             case 0:
                 pb->block->p[0] = instr_labels[pb->block->uint64[0]];
@@ -627,7 +627,7 @@ int _SMVM(struct SMVM_Program * const p,
         }
         return SMVM_OK;
 
-    } else if (c == SMVM_I_RUN || c == SMVM_I_CONTINUE) {
+    } else if (_SMVM_command == SMVM_I_RUN || _SMVM_command == SMVM_I_CONTINUE) {
 
 #pragma STDC FENV_ACCESS ON
 
