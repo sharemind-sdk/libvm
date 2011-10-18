@@ -176,7 +176,7 @@ void SMVM_Program_free(struct SMVM_Program * const p) {
     free(p);
 }
 
-int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t dataSize) {
+int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, size_t dataSize) {
     assert(p);
     assert(data);
 
@@ -191,7 +191,7 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
 
 
-    const void * pos = data + sizeof(struct SME_Common_Header);
+    const uint8_t * pos = data + sizeof(struct SME_Common_Header);
 
     const struct SME_Header_0x0 * h;
     if (SME_Header_0x0_read(pos, &h) != SME_READ_OK)

@@ -85,7 +85,7 @@ struct SMVM_Program;
  * \returns a pointer to the new SMVM_Program instance.
  * \retval NULL if allocation failed.
  */
-struct SMVM_Program * SMVM_Program_new() __attribute__ ((warn_unused_result));
+struct SMVM_Program * SMVM_Program_new(void) __attribute__ ((warn_unused_result));
 
 /**
  * \brief Deallocates a SMVM_Program instance.
@@ -100,7 +100,7 @@ void SMVM_Program_free(struct SMVM_Program *p) __attribute__ ((nonnull(1)));
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_load_from_sme(struct SMVM_Program *p, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.
