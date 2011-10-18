@@ -330,7 +330,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), (o), (s))
 #define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack, (b), (o), (s))
 
-#define _SMVM_MI_PUSHREF_REF(prefix,something,r,rOffset,rSize) \
+#define _SMVM_MI_PUSHREF_REF(prefix,something,constPerhaps,r,rOffset,rSize) \
     if (1) { \
         if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) { \
             SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
@@ -341,14 +341,14 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->pMemory = (r)->pMemory; \
         if (ref->pMemory) \
             ref->pMemory->nrefs++; \
-            ref->pData = ((uint8_t *) (r)->pData) + (rOffset); \
+            ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
         ref->size = (rSize); \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,  (r), 0u, (r)->size)
-#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), 0u, (r)->size)
-#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref, refstack,  (r), (o), (s))
-#define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(CRef,crefstack, (r), (o), (s))
+#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), 0u, (r)->size)
+#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, const, (r), 0u, (r)->size)
+#define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), (o), (s))
+#define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(CRef,crefstack, const, (r), (o), (s))
 
 #define _SMVM_MI_PUSHREF_MEM(prefix,something,slot,mOffset,rSize) \
     if (1) { \
