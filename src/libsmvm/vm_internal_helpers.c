@@ -304,7 +304,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     } else (void) 0
 #define SMVM_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
 #define SMVM_PREPARE_CURRENT_I (*i)
-#define SMVM_PREPARE_CODESIZE(s) (s)->size
+#define SMVM_PREPARE_CODESIZE (s)->size
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))

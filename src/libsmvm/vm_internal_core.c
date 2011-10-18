@@ -269,6 +269,13 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 
 #define SMVM_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
+        if ((reladdr) < 0) { \
+            SMVM_MI_TRY_EXCEPT(((uint64_t) -((reladdr) + 1)) < (ip - codeStart), \
+                               SMVM_E_JUMP_TO_INVALID_ADDRESS); \
+        } else { \
+            SMVM_MI_TRY_EXCEPT((reladdr) < p->codeSections.data[p->currentCodeSectionIndex].size - (ip - codeStart) - 1u, \
+                               SMVM_E_JUMP_TO_INVALID_ADDRESS); \
+        } \
         const union SM_CodeBlock * tip = ip + (reladdr); \
         SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR(tip - codeStart), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
         SMVM_MI_DISPATCH(ip = tip); \
