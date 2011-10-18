@@ -294,6 +294,12 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 
 #define SMVM_MI_TRY_OOM(e) SMVM_MI_TRY_EXCEPT((e),SMVM_E_OUT_OF_MEMORY)
 
+#define SMVM_MI_TRY_MEMRANGE(size,offset,numBytes,exception) \
+    SMVM_MI_TRY_EXCEPT(((offset) < (size)) \
+                       && ((numBytes) <= (size)) \
+                       && ((size) - (offset) >= (numBytes)), \
+                       (exception))
+
 #define SMVM_MI_CHECK_CREATE_NEXT_FRAME \
     if (!SMVM_MI_HAS_STACK) { \
         p->nextFrame = SMVM_FrameStack_push(&p->frames); \
