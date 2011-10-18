@@ -480,22 +480,22 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #define SMVM_MI_ARG_AS_P(n,t) (& SMVM_MI_BLOCK_AS(SMVM_MI_ARG_P(n), t))
 
 #ifndef SMVM_SOFT_FLOAT
-#define SMVM_MI_CONVERT_float32_TO_int8(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_int16(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_int32(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_int64(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_uint8(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_uint16(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_uint32(a,b) a = b
-#define SMVM_MI_CONVERT_float32_TO_uint64(a,b) a = b
-#define SMVM_MI_CONVERT_int8_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_int16_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_int32_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_int64_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_uint8_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_uint16_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_uint32_TO_float32(a,b) a = b
-#define SMVM_MI_CONVERT_uint64_TO_float32(a,b) a = b
+#define SMVM_MI_CONVERT_float32_TO_int8(a,b) a = (int8_t) b
+#define SMVM_MI_CONVERT_float32_TO_int16(a,b) a = (int16_t) b
+#define SMVM_MI_CONVERT_float32_TO_int32(a,b) a = (int32_t) b
+#define SMVM_MI_CONVERT_float32_TO_int64(a,b) a = (int64_t) b
+#define SMVM_MI_CONVERT_float32_TO_uint8(a,b) a = (uint8_t) b
+#define SMVM_MI_CONVERT_float32_TO_uint16(a,b) a = (uint16_t) b
+#define SMVM_MI_CONVERT_float32_TO_uint32(a,b) a = (uint32_t) b
+#define SMVM_MI_CONVERT_float32_TO_uint64(a,b) a = (uint64_t) b
+#define SMVM_MI_CONVERT_int8_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_int16_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_int32_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_int64_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_uint8_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_uint16_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_uint32_TO_float32(a,b) a = (float) b
+#define SMVM_MI_CONVERT_uint64_TO_float32(a,b) a = (float) b
 #else
 #define SMVM_MI_CONVERT_float32_TO_int8(a,b)   a = (int8_t)   sf_float32_to_int64(b)
 #define SMVM_MI_CONVERT_float32_TO_int16(a,b)  a = (int16_t)  sf_float32_to_int64(b)
