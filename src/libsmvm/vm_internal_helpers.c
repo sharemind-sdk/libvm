@@ -147,7 +147,7 @@ SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,rea
 SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free,)
 #endif
 
-struct SMVM_Program * SMVM_Program_new() {
+struct SMVM_Program * SMVM_Program_new(void) {
     struct SMVM_Program * const p = malloc(sizeof(struct SMVM_Program));
     if (likely(p)) {
         p->state = SMVM_INITIALIZED;
