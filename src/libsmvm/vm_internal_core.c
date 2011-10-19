@@ -228,7 +228,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 
 #define SMVM_UPDATESTATE \
     if (1) { \
-        p->currentIp = ip - p->codeSections.data[p->currentCodeSectionIndex].data; \
+        p->currentIp = (uintptr_t) (ip - codeStart); \
     } else (void) 0
 
 /* Micro-instructions (SMVM_MI_*:) */

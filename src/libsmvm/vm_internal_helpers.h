@@ -203,7 +203,7 @@ struct SMVM_Program {
     uint64_t memorySlotNext;
 
     size_t currentCodeSectionIndex;
-    size_t currentIp;
+    uintptr_t currentIp;
 
     union SM_CodeBlock returnValue;
     int64_t exceptionValue;

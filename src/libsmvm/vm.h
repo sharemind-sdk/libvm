@@ -173,7 +173,7 @@ size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) __attribute_
  * \param[in] p pointer to the SMVM_Program instance.
  * \returns the current instruction pointer of the program.
  */
-size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+uintptr_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

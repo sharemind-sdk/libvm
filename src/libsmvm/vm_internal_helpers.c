@@ -431,7 +431,7 @@ size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) {
     return p->currentCodeSectionIndex;
 }
 
-size_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
+uintptr_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
     return p->currentIp;
 }
 
