@@ -15,13 +15,13 @@
 #ifndef SMVM_SOFT_FLOAT
 #include <fenv.h>
 #include <setjmp.h>
+#endif /* #ifndef SMVM_SOFT_FLOAT */
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif /* SMVM_DEBUG */
 #ifdef __USE_POSIX
 #include <signal.h>
 #endif
-#endif /* #ifndef SMVM_SOFT_FLOAT */
 
 #include <stdlib.h>
 #include "../instrset.h"
