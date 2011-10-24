@@ -37,11 +37,19 @@ SET(OTHER_FILES "config.local.example"
                 "src/trie.h"
                 "src/vector.h"
                 "tests/benchmark.sa"
-                "tests/divbyzero.sa"
-                "tests/divoverflow.sa"
-                "tests/float_divbyzero.sa"
-                "tests/float_overflow.sa"
-                "tests/float_underflow.sa"
+                "tests/except_divbyzero_float32.sa"
+                "tests/except_divbyzero_int8.sa"
+                "tests/except_divbyzero_int16.sa"
+                "tests/except_divbyzero_int32.sa"
+                "tests/except_divbyzero_int64.sa"
+                "tests/except_divbyzero_uint8.sa"
+                "tests/except_divbyzero_uint16.sa"
+                "tests/except_divbyzero_uint32.sa"
+                "tests/except_divbyzero_uint64.sa"
+                "tests/except_divoverflow_int64.sa"
+                "tests/except_invalid_float32.sa"
+                "tests/except_overflow_float32.sa"
+                "tests/except_underflow_float32.sa"
                 "tests/global_return.sa"
                 "tests/mem.sa"
                 "tests/proc.sa"
@@ -276,12 +284,19 @@ FUNCTION(add_test_assemble_execute_exception testfile exceptions)
     SET_TESTS_PROPERTIES("${testfile}" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (${exceptions})")
 ENDFUNCTION()
 
-add_test_assemble_execute_exception("divbyzero" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("divoverflow" "SMVM_E_INTEGER_OVERFLOW")
-add_test_assemble_execute_exception("float_divbyzero" "SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("float_overflow" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("float_underflow" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("float_invalid" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("except_divbyzero_float32" "SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("except_divbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_divoverflow_int64" "SMVM_E_INTEGER_OVERFLOW")
+add_test_assemble_execute_exception("except_invalid_float32" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("except_overflow_float32" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")
