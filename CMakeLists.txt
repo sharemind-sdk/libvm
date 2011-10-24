@@ -50,6 +50,7 @@ SET(OTHER_FILES "config.local.example"
                 "tests/except_invalid_float32.sa"
                 "tests/except_overflow_float32.sa"
                 "tests/except_underflow_float32.sa"
+                "tests/factorial.sa"
                 "tests/global_return.sa"
                 "tests/mem.sa"
                 "tests/proc.sa"
@@ -297,6 +298,7 @@ add_test_assemble_execute_exception("except_divoverflow_int64" "SMVM_E_INTEGER_O
 add_test_assemble_execute_exception("except_invalid_float32" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
 add_test_assemble_execute_exception("except_overflow_float32" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
 add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute("factorial")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")
