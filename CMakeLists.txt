@@ -37,6 +37,22 @@ SET(OTHER_FILES "config.local.example"
                 "src/trie.h"
                 "src/vector.h"
                 "tests/benchmark.sa"
+                "tests/except_bmodbyzero_int8.sa"
+                "tests/except_bmodbyzero_int16.sa"
+                "tests/except_bmodbyzero_int32.sa"
+                "tests/except_bmodbyzero_int64.sa"
+                "tests/except_bmodbyzero_uint8.sa"
+                "tests/except_bmodbyzero_uint16.sa"
+                "tests/except_bmodbyzero_uint32.sa"
+                "tests/except_bmodbyzero_uint64.sa"
+                "tests/except_bmod2byzero_int8.sa"
+                "tests/except_bmod2byzero_int16.sa"
+                "tests/except_bmod2byzero_int32.sa"
+                "tests/except_bmod2byzero_int64.sa"
+                "tests/except_bmod2byzero_uint8.sa"
+                "tests/except_bmod2byzero_uint16.sa"
+                "tests/except_bmod2byzero_uint32.sa"
+                "tests/except_bmod2byzero_uint64.sa"
                 "tests/except_divbyzero_float32.sa"
                 "tests/except_divbyzero_int8.sa"
                 "tests/except_divbyzero_int16.sa"
@@ -49,12 +65,23 @@ SET(OTHER_FILES "config.local.example"
                 "tests/except_divoverflow_int64.sa"
                 "tests/except_invalid_float32.sa"
                 "tests/except_overflow_float32.sa"
+                "tests/except_tmodbyzero_int8.sa"
+                "tests/except_tmodbyzero_int16.sa"
+                "tests/except_tmodbyzero_int32.sa"
+                "tests/except_tmodbyzero_int64.sa"
+                "tests/except_tmodbyzero_uint8.sa"
+                "tests/except_tmodbyzero_uint16.sa"
+                "tests/except_tmodbyzero_uint32.sa"
+                "tests/except_tmodbyzero_uint64.sa"
                 "tests/except_underflow_float32.sa"
+                "tests/bmodoverflow_int64.sa"
+                "tests/bmod2overflow_int64.sa"
                 "tests/factorial.sa"
                 "tests/global_return.sa"
                 "tests/mem.sa"
                 "tests/proc.sa"
-                "tests/run_test_assemble_execute.sh")
+                "tests/run_test_assemble_execute.sh"
+                "tests/tmodoverflow_int64.sa")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
         SET(P ${P} "${CMAKE_CURRENT_SOURCE_DIR}/${OTHER_FILE}")
@@ -285,6 +312,22 @@ FUNCTION(add_test_assemble_execute_exception testfile exceptions)
     SET_TESTS_PROPERTIES("${testfile}" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (${exceptions})")
 ENDFUNCTION()
 
+add_test_assemble_execute_exception("except_bmodbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_bmod2byzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_divbyzero_float32" "SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE")
 add_test_assemble_execute_exception("except_divbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_divbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
@@ -297,11 +340,22 @@ add_test_assemble_execute_exception("except_divbyzero_uint64" "SMVM_E_INTEGER_DI
 add_test_assemble_execute_exception("except_divoverflow_int64" "SMVM_E_INTEGER_OVERFLOW")
 add_test_assemble_execute_exception("except_invalid_float32" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
 add_test_assemble_execute_exception("except_overflow_float32" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("except_tmodbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("except_tmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute("bmodoverflow_int64")
+add_test_assemble_execute("bmod2overflow_int64")
 add_test_assemble_execute("factorial")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")
+add_test_assemble_execute("tmodoverflow_int64")
 
 # Execute benchmarks last, because they take time:
 add_test_assemble_execute("benchmark")
