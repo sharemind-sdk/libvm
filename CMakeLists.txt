@@ -81,7 +81,7 @@ SET(OTHER_FILES "config.local.example"
                 "tests/mem.sa"
                 "tests/proc.sa"
                 "tests/run_test_assemble_execute.sh"
-                "tests/tmodoverflow_int64.sa")
+                "tests/tmod.sa")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
         SET(P ${P} "${CMAKE_CURRENT_SOURCE_DIR}/${OTHER_FILE}")
@@ -355,7 +355,7 @@ add_test_assemble_execute("factorial")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
 add_test_assemble_execute("proc")
-add_test_assemble_execute("tmodoverflow_int64")
+add_test_assemble_execute("tmod")
 
 # Execute benchmarks last, because they take time:
 add_test_assemble_execute("benchmark")
