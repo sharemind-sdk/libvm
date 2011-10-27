@@ -189,10 +189,10 @@ SF_INLINE void sf_mul64To128( sf_bits64 a, sf_bits64 b, sf_bits64 * restrict z0P
     sf_bits32 aHigh, aLow, bHigh, bLow;
     sf_bits64 z0, zMiddleA, zMiddleB, z1;
 
-    aLow = a;
-    aHigh = a>>32;
-    bLow = b;
-    bHigh = b>>32;
+    aLow = (sf_bits32) a;
+    aHigh = (sf_bits32) (a>>32);
+    bLow = (sf_bits32) b;
+    bHigh = (sf_bits32) (b>>32);
     z1 = ( (sf_bits64) aLow ) * bLow;
     zMiddleA = ( (sf_bits64) aLow ) * bHigh;
     zMiddleB = ( (sf_bits64) aHigh ) * bLow;
@@ -304,16 +304,17 @@ static sf_int8 sf_countLeadingZeros32( sf_bits32 a )
     };
     sf_int8 shiftCount;
 
-    shiftCount = 0;
     if ( a < 0x10000 ) {
-        shiftCount += 16;
+        shiftCount = 16;
         a <<= 16;
+    } else {
+        shiftCount = 0;
     }
     if ( a < 0x1000000 ) {
-        shiftCount += 8;
+        shiftCount = (sf_int8) (shiftCount + 8);
         a <<= 8;
     }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
+    shiftCount = (sf_int8) (shiftCount + countLeadingZerosHigh[ a>>24 ]);
     return shiftCount;
 
 }
@@ -327,14 +328,14 @@ static sf_int8 sf_countLeadingZeros64( sf_bits64 a )
 {
     sf_int8 shiftCount;
 
-    shiftCount = 0;
     if ( a < ( (sf_bits64) 1 )<<32 ) {
-        shiftCount += 32;
+        shiftCount = 32;
     }
     else {
+        shiftCount = 0;
         a >>= 32;
     }
-    shiftCount += sf_countLeadingZeros32( a );
+    shiftCount = (sf_int8) (shiftCount + sf_countLeadingZeros32( (sf_bits32) a ));
     return shiftCount;
 
 }

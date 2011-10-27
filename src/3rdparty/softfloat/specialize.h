@@ -99,7 +99,7 @@ static sf_commonNaNT sf_float32ToCommonNaN( sf_float32 a )
     sf_commonNaNT z;
 
     if ( sf_float32_is_signaling_nan( a ) ) sf_float_raise( sf_float_flag_invalid );
-    z.sign = a>>31;
+    z.sign = (sf_flag) (a>>31);
     z.low = 0;
     z.high = ( (sf_bits64) a )<<41;
     return z;
@@ -114,7 +114,7 @@ static sf_commonNaNT sf_float32ToCommonNaN( sf_float32 a )
 static sf_float32 sf_commonNaNToFloat32( sf_commonNaNT a )
 {
 
-    return ( ( (sf_bits32) a.sign )<<31 ) | 0x7FC00000 | ( a.high>>41 );
+    return (sf_float32) (( ( (sf_bits32) a.sign )<<31 ) | 0x7FC00000 | ( a.high>>41 ));
 
 }
 
@@ -194,7 +194,7 @@ static sf_commonNaNT sf_float64ToCommonNaN( sf_float64 a )
     sf_commonNaNT z;
 
     if ( sf_float64_is_signaling_nan( a ) ) sf_float_raise( sf_float_flag_invalid );
-    z.sign = a>>63;
+    z.sign = (sf_flag) (a>>63);
     z.low = 0;
     z.high = a<<12;
     return z;

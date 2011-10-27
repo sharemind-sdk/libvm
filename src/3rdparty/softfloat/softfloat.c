@@ -97,9 +97,9 @@ static sf_int32 sf_roundAndPackInt32( sf_flag zSign, sf_bits64 absZ )
         }
     }
     roundBits = absZ & 0x7F;
-    absZ = ( absZ + roundIncrement )>>7;
-    absZ &= ~ ( ( ( roundBits ^ 0x40 ) == 0 ) & roundNearestEven );
-    z = absZ;
+    absZ = ( absZ + (sf_bits64) roundIncrement )>>7;
+    absZ &= ~ (sf_bits64) ( ( ( roundBits ^ 0x40 ) == 0 ) & roundNearestEven );
+    z = (sf_int32) absZ;
     if ( zSign ) z = - z;
     if ( ( absZ>>32 ) || ( z && ( ( z < 0 ) ^ zSign ) ) ) {
         sf_float_raise( sf_float_flag_invalid );
@@ -148,9 +148,9 @@ static sf_int64 sf_roundAndPackInt64(
     if ( increment ) {
         ++absZ0;
         if ( absZ0 == 0 ) goto overflow;
-        absZ0 &= ~ ( ( (sf_bits64) ( absZ1<<1 ) == 0 ) & roundNearestEven );
+        absZ0 &= ~ (sf_bits64) ( ( (sf_bits64) ( absZ1<<1 ) == 0 ) & roundNearestEven );
     }
-    z = absZ0;
+    z = (sf_int64) absZ0;
     if ( zSign ) z = - z;
     if ( z && ( ( z < 0 ) ^ zSign ) ) {
  overflow:
@@ -193,7 +193,7 @@ SF_INLINE sf_int16 sf_extractFloat32Exp( sf_float32 a )
 SF_INLINE sf_flag sf_extractFloat32Sign( sf_float32 a )
 {
 
-    return a>>31;
+    return (sf_flag) (a>>31);
 
 }
 
@@ -210,7 +210,7 @@ static void
 {
     sf_int8 shiftCount;
 
-    shiftCount = sf_countLeadingZeros32( aSig ) - 8;
+    shiftCount = (sf_int8) (sf_countLeadingZeros32( aSig ) - 8);
     *zSigPtr = aSig<<shiftCount;
     *zExpPtr = 1 - shiftCount;
 
@@ -285,7 +285,7 @@ static sf_float32 sf_roundAndPackFloat32(
     if ( 0xFD <= (sf_bits16) zExp ) {
         if (    ( 0xFD < zExp )
              || (    ( zExp == 0xFD )
-                  && ( (sf_sbits32) ( zSig + roundIncrement ) < 0 ) )
+                  && ( (sf_sbits32) ( zSig + (sf_uint32) roundIncrement ) < 0 ) )
            ) {
             sf_float_raise( sf_float_flag_overflow | sf_float_flag_inexact );
             return sf_packFloat32( zSign, 0xFF, 0 ) - ( roundIncrement == 0 );
@@ -294,7 +294,7 @@ static sf_float32 sf_roundAndPackFloat32(
             isTiny =
                    ( sf_float_detect_tininess == sf_float_tininess_before_rounding )
                 || ( zExp < -1 )
-                || ( zSig + roundIncrement < 0x80000000 );
+                || ( zSig + (sf_uint32) roundIncrement < 0x80000000 );
             sf_shift32RightJamming( zSig, - zExp, &zSig );
             zExp = 0;
             roundBits = zSig & 0x7F;
@@ -302,8 +302,8 @@ static sf_float32 sf_roundAndPackFloat32(
         }
     }
     if ( roundBits ) sf_float_exception_flags |= sf_float_flag_inexact;
-    zSig = ( zSig + roundIncrement )>>7;
-    zSig &= ~ ( ( ( roundBits ^ 0x40 ) == 0 ) & roundNearestEven );
+    zSig = (sf_bits32) ( zSig + (sf_uint32) roundIncrement )>>7;
+    zSig &= ~ (sf_bits32) ( ( ( roundBits ^ 0x40 ) == 0 ) & roundNearestEven );
     if ( zSig == 0 ) zExp = 0;
     return sf_packFloat32( zSign, zExp, zSig );
 
@@ -323,7 +323,7 @@ static sf_float32
 {
     sf_int8 shiftCount;
 
-    shiftCount = sf_countLeadingZeros32( zSig ) - 1;
+    shiftCount = (sf_int8) (sf_countLeadingZeros32( zSig ) - 1);
     return sf_roundAndPackFloat32( zSign, zExp - shiftCount, zSig<<shiftCount );
 
 }
@@ -357,7 +357,7 @@ SF_INLINE sf_int16 sf_extractFloat64Exp( sf_float64 a )
 SF_INLINE sf_flag sf_extractFloat64Sign( sf_float64 a )
 {
 
-    return a>>63;
+    return (sf_flag) (a>>63);
 
 }
 
@@ -374,7 +374,7 @@ static void
 {
     sf_int8 shiftCount;
 
-    shiftCount = sf_countLeadingZeros64( aSig ) - 11;
+    shiftCount = (sf_int8) (sf_countLeadingZeros64( aSig ) - 11);
     *zSigPtr = aSig<<shiftCount;
     *zExpPtr = 1 - shiftCount;
 
@@ -449,7 +449,7 @@ static sf_float64 sf_roundAndPackFloat64(
     if ( 0x7FD <= (sf_bits16) zExp ) {
         if (    ( 0x7FD < zExp )
              || (    ( zExp == 0x7FD )
-                  && ( (sf_sbits64) ( zSig + roundIncrement ) < 0 ) )
+                  && ( (sf_sbits64) ( zSig + (sf_uint64) roundIncrement ) < 0 ) )
            ) {
             sf_float_raise( sf_float_flag_overflow | sf_float_flag_inexact );
             return sf_packFloat64( zSign, 0x7FF, 0 ) - ( roundIncrement == 0 );
@@ -458,7 +458,7 @@ static sf_float64 sf_roundAndPackFloat64(
             isTiny =
                    ( sf_float_detect_tininess == sf_float_tininess_before_rounding )
                 || ( zExp < -1 )
-                || ( zSig + roundIncrement < SF_LIT64( 0x8000000000000000 ) );
+                || ( zSig + (sf_uint64) roundIncrement < SF_LIT64( 0x8000000000000000 ) );
             sf_shift64RightJamming( zSig, - zExp, &zSig );
             zExp = 0;
             roundBits = zSig & 0x3FF;
@@ -466,8 +466,8 @@ static sf_float64 sf_roundAndPackFloat64(
         }
     }
     if ( roundBits ) sf_float_exception_flags |= sf_float_flag_inexact;
-    zSig = ( zSig + roundIncrement )>>10;
-    zSig &= ~ ( ( ( roundBits ^ 0x200 ) == 0 ) & roundNearestEven );
+    zSig = ( zSig + (sf_uint64) roundIncrement )>>10;
+    zSig &= ~ (sf_bits64) ( ( ( roundBits ^ 0x200 ) == 0 ) & roundNearestEven );
     if ( zSig == 0 ) zExp = 0;
     return sf_packFloat64( zSign, zExp, zSig );
 
@@ -487,7 +487,7 @@ static sf_float64
 {
     sf_int8 shiftCount;
 
-    shiftCount = sf_countLeadingZeros64( zSig ) - 1;
+    shiftCount = (sf_int8) (sf_countLeadingZeros64( zSig ) - 1);
     return sf_roundAndPackFloat64( zSign, zExp - shiftCount, zSig<<shiftCount );
 
 }
@@ -507,7 +507,7 @@ sf_float32 sf_int32_to_float32( sf_int32 a )
     if ( a == 0 ) return 0;
     if ( a == (sf_sbits32) 0x80000000 ) return sf_packFloat32( 1, 0x9E, 0 );
     zSign = ( a < 0 );
-    return sf_normalizeRoundAndPackFloat32( zSign, 0x9C, zSign ? - a : a );
+    return sf_normalizeRoundAndPackFloat32( zSign, 0x9C, (sf_bits32) (zSign ? - a : a) );
 
 }
 
@@ -526,8 +526,8 @@ sf_float64 sf_int32_to_float64( sf_int32 a )
 
     if ( a == 0 ) return 0;
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
-    shiftCount = sf_countLeadingZeros32( absA ) + 21;
+    absA = (sf_uint32) (zSign ? - a : a);
+    shiftCount = (sf_int8) (sf_countLeadingZeros32( (sf_bits32) absA ) + 21);
     zSig = absA;
     return sf_packFloat64( zSign, 0x432 - shiftCount, zSig<<shiftCount );
 
@@ -547,20 +547,20 @@ sf_float32 sf_int64_to_float32( sf_int64 a )
 
     if ( a == 0 ) return 0;
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
-    shiftCount = sf_countLeadingZeros64( absA ) - 40;
+    absA = (sf_uint64) (zSign ? - a : a);
+    shiftCount = (sf_int8) (sf_countLeadingZeros64( absA ) - 40);
     if ( 0 <= shiftCount ) {
-        return sf_packFloat32( zSign, 0x95 - shiftCount, absA<<shiftCount );
+        return sf_packFloat32( zSign, 0x95 - shiftCount, (sf_bits32) (absA<<shiftCount) );
     }
     else {
-        shiftCount += 7;
+        shiftCount = (sf_int8) (shiftCount + 7);
         if ( shiftCount < 0 ) {
             sf_shift64RightJamming( absA, - shiftCount, &absA );
         }
         else {
             absA <<= shiftCount;
         }
-        return sf_roundAndPackFloat32( zSign, 0x9C - shiftCount, absA );
+        return sf_roundAndPackFloat32( zSign, 0x9C - shiftCount, (sf_bits32) absA );
     }
 
 }
@@ -580,7 +580,7 @@ sf_float64 sf_int64_to_float64( sf_int64 a )
         return sf_packFloat64( 1, 0x43E, 0 );
     }
     zSign = ( a < 0 );
-    return sf_normalizeRoundAndPackFloat64( zSign, 0x43C, zSign ? - a : a );
+    return sf_normalizeRoundAndPackFloat64( zSign, 0x43C, (sf_bits64) (zSign ? - a : a) );
 
 }
 
@@ -729,7 +729,7 @@ sf_int64 sf_float32_to_int64_round_to_zero( sf_float32 a )
     }
     aSig64 = aSig | 0x00800000;
     aSig64 <<= 40;
-    z = aSig64>>( - shiftCount );
+    z = (sf_int64) (aSig64>>( - shiftCount ));
     if ( (sf_bits64) ( aSig64<<( shiftCount & 63 ) ) ) {
         sf_float_exception_flags |= sf_float_flag_inexact;
     }
@@ -803,6 +803,8 @@ sf_float32 sf_float32_round_to_int( sf_float32 a )
             return aSign ? 0xBF800000 : 0;
          case sf_float_round_up:
             return aSign ? 0x80000000 : 0x3F800000;
+         default:
+            break;
         }
         return sf_packFloat32( aSign, 0, 0 );
     }
@@ -1065,7 +1067,7 @@ sf_float32 sf_float32_mul( sf_float32 a, sf_float32 b )
     aSig = ( aSig | 0x00800000 )<<7;
     bSig = ( bSig | 0x00800000 )<<8;
     sf_shift64RightJamming( ( (sf_bits64) aSig ) * bSig, 32, &zSig64 );
-    zSig = zSig64;
+    zSig = (sf_bits32) zSig64;
     if ( 0 <= (sf_sbits32) ( zSig<<1 ) ) {
         zSig <<= 1;
         --zExp;
@@ -1128,7 +1130,7 @@ sf_float32 sf_float32_div( sf_float32 a, sf_float32 b )
         aSig >>= 1;
         ++zExp;
     }
-    zSig = ( ( (sf_bits64) aSig )<<32 ) / bSig;
+    zSig = (sf_bits32) (( ( (sf_bits64) aSig )<<32 ) / bSig);
     if ( ( zSig & 0x3F ) == 0 ) {
         zSig |= ( (sf_bits64) bSig * zSig != ( (sf_bits64) aSig )<<32 );
     }
@@ -1193,7 +1195,7 @@ sf_float32 sf_float32_rem( sf_float32 a, sf_float32 b )
         q = ( bSig <= aSig );
         if ( q ) aSig -= bSig;
         if ( 0 < expDiff ) {
-            q = ( ( (sf_bits64) aSig )<<32 ) / bSig;
+            q = (sf_bits32) (( ( (sf_bits64) aSig )<<32 ) / bSig);
             q >>= 32 - expDiff;
             bSig >>= 2;
             aSig = ( ( aSig>>1 )<<( expDiff - 1 ) ) - bSig * q;
@@ -1217,16 +1219,16 @@ sf_float32 sf_float32_rem( sf_float32 a, sf_float32 b )
         expDiff += 64;
         q64 = sf_estimateDiv128To64( aSig64, 0, bSig64 );
         q64 = ( 2 < q64 ) ? q64 - 2 : 0;
-        q = q64>>( 64 - expDiff );
+        q = (sf_bits32) (q64>>( 64 - expDiff ));
         bSig <<= 6;
-        aSig = ( ( aSig64>>33 )<<( expDiff - 1 ) ) - bSig * q;
+        aSig = (sf_bits32) (( ( aSig64>>33 )<<( expDiff - 1 ) ) - bSig * q);
     }
     do {
         alternateASig = aSig;
         ++q;
         aSig -= bSig;
     } while ( 0 <= (sf_sbits32) aSig );
-    sigMean = aSig + alternateASig;
+    sigMean = (sf_sbits32) (aSig + alternateASig);
     if ( ( sigMean < 0 ) || ( ( sigMean == 0 ) && ( q & 1 ) ) ) {
         aSig = alternateASig;
     }
@@ -1489,7 +1491,7 @@ sf_int32 sf_float64_to_int32_round_to_zero( sf_float64 a )
     shiftCount = 0x433 - aExp;
     savedASig = aSig;
     aSig >>= shiftCount;
-    z = aSig;
+    z = (sf_int32) aSig;
     if ( aSign ) z = - z;
     if ( ( z < 0 ) ^ aSign ) {
  invalid:
@@ -1580,14 +1582,14 @@ sf_int64 sf_float64_to_int64_round_to_zero( sf_float64 a )
             }
             return (sf_sbits64) SF_LIT64( 0x8000000000000000 );
         }
-        z = aSig<<shiftCount;
+        z = (sf_int64) (aSig<<shiftCount);
     }
     else {
         if ( aExp < 0x3FE ) {
-            if ( aExp | aSig ) sf_float_exception_flags |= sf_float_flag_inexact;
+            if ( ((sf_bits64) aExp) | aSig ) sf_float_exception_flags |= sf_float_flag_inexact;
             return 0;
         }
-        z = aSig>>( - shiftCount );
+        z = (sf_int64) (aSig>>( - shiftCount ));
         if ( (sf_bits64) ( aSig<<( shiftCount & 63 ) ) ) {
             sf_float_exception_flags |= sf_float_flag_inexact;
         }
@@ -1619,7 +1621,7 @@ sf_float32 sf_float64_to_float32( sf_float64 a )
         return sf_packFloat32( aSign, 0xFF, 0 );
     }
     sf_shift64RightJamming( aSig, 22, &aSig );
-    zSig = aSig;
+    zSig = (sf_bits32) aSig;
     if ( aExp || zSig ) {
         zSig |= 0x40000000;
         aExp -= 0x381;
@@ -1665,6 +1667,8 @@ sf_float64 sf_float64_round_to_int( sf_float64 a )
          case sf_float_round_up:
             return
             aSign ? SF_LIT64( 0x8000000000000000 ) : SF_LIT64( 0x3FF0000000000000 );
+         default:
+            break;
         }
         return sf_packFloat64( aSign, 0, 0 );
     }
@@ -1899,7 +1903,7 @@ sf_float64 sf_float64_mul( sf_float64 a, sf_float64 b )
         if ( aSig || ( ( bExp == 0x7FF ) && bSig ) ) {
             return sf_propagateFloat64NaN( a, b );
         }
-        if ( ( bExp | bSig ) == 0 ) {
+        if ( ( ((sf_bits64) bExp) | bSig ) == 0 ) {
             sf_float_raise( sf_float_flag_invalid );
             return sf_float64_default_nan;
         }
@@ -1907,7 +1911,7 @@ sf_float64 sf_float64_mul( sf_float64 a, sf_float64 b )
     }
     if ( bExp == 0x7FF ) {
         if ( bSig ) return sf_propagateFloat64NaN( a, b );
-        if ( ( aExp | aSig ) == 0 ) {
+        if ( ( ((sf_bits64) aExp) | aSig ) == 0 ) {
             sf_float_raise( sf_float_flag_invalid );
             return sf_float64_default_nan;
         }
@@ -1970,7 +1974,7 @@ sf_float64 sf_float64_div( sf_float64 a, sf_float64 b )
     }
     if ( bExp == 0 ) {
         if ( bSig == 0 ) {
-            if ( ( aExp | aSig ) == 0 ) {
+            if ( ( ((sf_bits64) aExp) | aSig ) == 0 ) {
                 sf_float_raise( sf_float_flag_invalid );
                 return sf_float64_default_nan;
             }
@@ -2079,7 +2083,7 @@ sf_float64 sf_float64_rem( sf_float64 a, sf_float64 b )
         ++q;
         aSig -= bSig;
     } while ( 0 <= (sf_sbits64) aSig );
-    sigMean = aSig + alternateASig;
+    sigMean = (sf_sbits64) (aSig + alternateASig);
     if ( ( sigMean < 0 ) || ( ( sigMean == 0 ) && ( q & 1 ) ) ) {
         aSig = alternateASig;
     }
@@ -2112,7 +2116,7 @@ sf_float64 sf_float64_sqrt( sf_float64 a )
         return sf_float64_default_nan;
     }
     if ( aSign ) {
-        if ( ( aExp | aSig ) == 0 ) return a;
+        if ( ( ((sf_bits64) aExp) | aSig ) == 0 ) return a;
         sf_float_raise( sf_float_flag_invalid );
         return sf_float64_default_nan;
     }
@@ -2122,7 +2126,7 @@ sf_float64 sf_float64_sqrt( sf_float64 a )
     }
     zExp = ( ( aExp - 0x3FF )>>1 ) + 0x3FE;
     aSig |= SF_LIT64( 0x0010000000000000 );
-    zSig = sf_estimateSqrt32( aExp, aSig>>21 );
+    zSig = sf_estimateSqrt32( aExp, (sf_bits32) (aSig>>21) );
     aSig <<= 9 - ( aExp & 1 );
     zSig = sf_estimateDiv128To64( aSig, 0, zSig<<32 ) + ( zSig<<30 );
     if ( ( zSig & 0x1FF ) <= 5 ) {
