@@ -342,7 +342,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         ref->pMemory = (r)->pMemory; \
         if (ref->pMemory) \
             ref->pMemory->nrefs++; \
-            ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
+        ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
         ref->size = (rSize); \
     } else (void) 0
 
