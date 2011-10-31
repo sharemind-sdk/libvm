@@ -69,14 +69,14 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,)
 ********************************************************************************/
 
 struct SMVM_Reference {
-    struct SMVM_MemorySlot * pMemory;
-    size_t size;
     void * pData;
+    size_t size;
+    struct SMVM_MemorySlot * pMemory;
 };
 struct SMVM_CReference {
-    struct SMVM_MemorySlot * pMemory;
     const void * pData;
     size_t size;
+    struct SMVM_MemorySlot * pMemory;
 };
 
 void SMVM_Reference_destroy(struct SMVM_Reference * r);

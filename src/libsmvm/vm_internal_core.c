@@ -321,9 +321,9 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
-        ref->pMemory = NULL; \
         ref->pData = (&(b)->uint8[0] + (bOffset)); \
         ref->size = (rSize); \
+        ref->pMemory = NULL; \
     } else (void) 0
 
 #define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), 0u, sizeof(union SM_CodeBlock))
@@ -339,11 +339,11 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
+        ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
+        ref->size = (rSize); \
         ref->pMemory = (r)->pMemory; \
         if (ref->pMemory) \
             ref->pMemory->nrefs++; \
-        ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
-        ref->size = (rSize); \
     } else (void) 0
 
 #define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), 0u, (r)->size)
@@ -356,10 +356,10 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         struct SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
-        ref->pMemory = (slot); \
-        (slot)->nrefs++; \
         ref->pData = ((uint8_t *) (slot)->pData) + (mOffset); \
         ref->size = (rSize); \
+        ref->pMemory = (slot); \
+        (slot)->nrefs++; \
     } else (void) 0
 
 #define SMVM_MI_PUSHREF_MEM_ref(slot)  _SMVM_MI_PUSHREF_MEM(Ref, refstack,  (slot), 0u, (slot)->size)
