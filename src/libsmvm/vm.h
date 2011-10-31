@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-SM_STATIC_ASSERT(sizeof(union SM_CodeBlock) == sizeof(uint64_t));
+SM_STATIC_ASSERT(sizeof(SMVM_CodeBlock) == sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(size_t) <= sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
 SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
@@ -78,29 +78,30 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
 SM_ENUM_CUSTOM_DEFINE(SMVM_Exception, SMVM_ENUM_Exception);
 SM_ENUM_DECLARE_TOSTRING(SMVM_Exception);
 
-struct SMVM_Program;
+struct _SMVM_Program;
+typedef struct _SMVM_Program SMVM_Program;
 
 /**
  * \brief Allocates and initializes a new SMVM_Program instance.
  * \returns a pointer to the new SMVM_Program instance.
  * \retval NULL if allocation failed.
  */
-struct SMVM_Program * SMVM_Program_new(void) __attribute__ ((warn_unused_result));
+SMVM_Program * SMVM_Program_new(void) __attribute__ ((warn_unused_result));
 
 /**
  * \brief Deallocates a SMVM_Program instance.
- * \param[in] p pointer to the SMVM_Program instance to free.
+ * \param[in] program pointer to the SMVM_Program instance to free.
  */
-void SMVM_Program_free(struct SMVM_Program *p) __attribute__ ((nonnull(1)));
+void SMVM_Program_free(SMVM_Program * program) __attribute__ ((nonnull(1)));
 
 /**
  * \brief Loads the program sections from the given data.
- * \param p pointer to the SMVM_Program to initialize.
+ * \param program pointer to the SMVM_Program to initialize.
  * \param[in] data pointer to the sharemind executable file data.
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+int SMVM_Program_load_from_sme(SMVM_Program * program, const uint8_t * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.
@@ -113,14 +114,14 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, siz
  * \param[in] codeSize The length of the code.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_addCodeSection(struct SMVM_Program * program, const union SM_CodeBlock * code, const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+int SMVM_Program_addCodeSection(SMVM_Program * program, const SMVM_CodeBlock * code, const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Prepares the program fully for execution.
  * \param program The program to prepare.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_endPrepare(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_endPrepare(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Starts execution of the given program in the background.
@@ -128,7 +129,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * program) __attribute__ ((nonnu
  * \param program The program to run.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_run(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_run(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Continues execution of the given program in the background.
@@ -136,7 +137,7 @@ int SMVM_Program_run(struct SMVM_Program * program) __attribute__ ((nonnull(1), 
  * \param program The program to continue.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_continue(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_continue(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Stops execution of the given program running in the background.
@@ -149,31 +150,31 @@ int SMVM_Program_continue(struct SMVM_Program * program) __attribute__ ((nonnull
  * \param program The program to stop.
  * \returns an SMVM_Error.
  */
-int SMVM_Program_stop(struct SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
+int SMVM_Program_stop(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SMVM_Program instance.
+ * \param[in] program pointer to the SMVM_Program instance.
  * \returns the return value of the program.
  */
-int64_t SMVM_Program_get_return_value(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SMVM_Program_get_return_value(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SMVM_Program instance.
+ * \param[in] program pointer to the SMVM_Program instance.
  * \returns the exception value of the program.
  */
-int64_t SMVM_Program_get_exception_value(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SMVM_Program_get_exception_value(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SMVM_Program instance.
+ * \param[in] program pointer to the SMVM_Program instance.
  * \returns the current code section of the program.
  */
-size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+size_t SMVM_Program_get_current_codesection(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] p pointer to the SMVM_Program instance.
+ * \param[in] program pointer to the SMVM_Program instance.
  * \returns the current instruction pointer of the program.
  */
-uintptr_t SMVM_Program_get_current_ip(struct SMVM_Program *p) __attribute__ ((nonnull(1), warn_unused_result));
+uintptr_t SMVM_Program_get_current_ip(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

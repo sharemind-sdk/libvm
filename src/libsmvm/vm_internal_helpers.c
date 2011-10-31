@@ -37,11 +37,11 @@ SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
  *  SMVM_MemoryMap
 ********************************************************************************/
 
-#ifndef SMVM_RELEASE
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,struct SMVM_MemorySlot,(uint16_t),malloc,free,)
+#ifdef SMVM_FAST_BUILD
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),malloc,free,)
 #endif
 
-void SMVM_MemoryMap_deallocator(struct SMVM_MemorySlot * s) {
+void SMVM_MemoryMap_deallocator(SMVM_MemorySlot * s) {
     free(s->pData);
 }
 
@@ -50,17 +50,17 @@ void SMVM_MemoryMap_deallocator(struct SMVM_MemorySlot * s) {
  *  SMVM_Reference
 ********************************************************************************/
 
-#ifndef SMVM_RELEASE
-SM_VECTOR_DEFINE(SMVM_ReferenceVector,struct SMVM_Reference,malloc,free,realloc,)
-SM_VECTOR_DEFINE(SMVM_CReferenceVector,struct SMVM_CReference,malloc,free,realloc,)
+#ifdef SMVM_FAST_BUILD
+SM_VECTOR_DEFINE(SMVM_ReferenceVector,SMVM_Reference,malloc,free,realloc,)
+SM_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,)
 #endif
 
-void SMVM_Reference_destroy(struct SMVM_Reference * r) {
+void SMVM_Reference_destroy(SMVM_Reference * r) {
     if (r->pMemory)
         r->pMemory->nrefs--;
 }
 
-void SMVM_CReference_destroy(struct SMVM_CReference * r) {
+void SMVM_CReference_destroy(SMVM_CReference * r) {
     if (r->pMemory)
         r->pMemory->nrefs--;
 }
@@ -70,11 +70,11 @@ void SMVM_CReference_destroy(struct SMVM_CReference * r) {
  *  SMVM_StackFrame
 ********************************************************************************/
 
-#ifndef SMVM_RELEASE
-SM_VECTOR_DEFINE(SMVM_RegisterVector,union SM_CodeBlock,malloc,free,realloc,)
+#ifdef SMVM_FAST_BUILD
+SM_VECTOR_DEFINE(SMVM_RegisterVector,SMVM_CodeBlock,malloc,free,realloc,)
 #endif
 
-void SMVM_StackFrame_init(struct SMVM_StackFrame * f, struct SMVM_StackFrame * prev) {
+void SMVM_StackFrame_init(SMVM_StackFrame * f, SMVM_StackFrame * prev) {
     assert(f);
     SMVM_RegisterVector_init(&f->stack);
     SMVM_ReferenceVector_init(&f->refstack);
@@ -87,7 +87,7 @@ void SMVM_StackFrame_init(struct SMVM_StackFrame * f, struct SMVM_StackFrame * p
 #endif
 }
 
-void SMVM_StackFrame_destroy(struct SMVM_StackFrame * f) {
+void SMVM_StackFrame_destroy(SMVM_StackFrame * f) {
     assert(f);
     SMVM_RegisterVector_destroy(&f->stack);
     SMVM_ReferenceVector_destroy_with(&f->refstack, &SMVM_Reference_destroy);
@@ -98,13 +98,13 @@ void SMVM_StackFrame_destroy(struct SMVM_StackFrame * f) {
  *  SMVM_CodeSection
 ********************************************************************************/
 
-#ifndef SMVM_RELEASE
-SM_VECTOR_DEFINE(SMVM_BreakpointVector,struct SMVM_Breakpoint,malloc,free,realloc,)
+#ifdef SMVM_FAST_BUILD
+SM_VECTOR_DEFINE(SMVM_BreakpointVector,SMVM_Breakpoint,malloc,free,realloc,)
 SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,)
 #endif
 
-int SMVM_CodeSection_init(struct SMVM_CodeSection * s,
-                          const union SM_CodeBlock * const code,
+int SMVM_CodeSection_init(SMVM_CodeSection * s,
+                          const SMVM_CodeBlock * const code,
                           const size_t codeSize)
 {
     assert(s);
@@ -114,12 +114,12 @@ int SMVM_CodeSection_init(struct SMVM_CodeSection * s,
     if (unlikely(realCodeSize < codeSize))
         return 0;
 
-    size_t memSize = realCodeSize * sizeof(union SM_CodeBlock);
-    if (unlikely(memSize / sizeof(union SM_CodeBlock) != realCodeSize))
+    size_t memSize = realCodeSize * sizeof(SMVM_CodeBlock);
+    if (unlikely(memSize / sizeof(SMVM_CodeBlock) != realCodeSize))
         return 0;
 
 
-    s->data = (union SM_CodeBlock *) malloc(memSize);
+    s->data = (SMVM_CodeBlock *) malloc(memSize);
     if (unlikely(!s->data))
         return 0;
 
@@ -131,7 +131,7 @@ int SMVM_CodeSection_init(struct SMVM_CodeSection * s,
     return 1;
 }
 
-void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) {
+void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) {
     assert(s);
     free(s->data);
     SMVM_InstrSet_destroy(&s->instrset);
@@ -142,13 +142,13 @@ void SMVM_CodeSection_destroy(struct SMVM_CodeSection * const s) {
  *  SMVM_Program
 ********************************************************************************/
 
-#ifndef SMVM_RELEASE
-SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,struct SMVM_CodeSection,malloc,free,realloc,)
-SM_STACK_DEFINE(SMVM_FrameStack,struct SMVM_StackFrame,malloc,free,)
+#ifdef SMVM_FAST_BUILD
+SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,)
+SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
 #endif
 
-struct SMVM_Program * SMVM_Program_new(void) {
-    struct SMVM_Program * const p = (struct SMVM_Program *) malloc(sizeof(struct SMVM_Program));
+SMVM_Program * SMVM_Program_new(void) {
+    SMVM_Program * const p = (SMVM_Program *) malloc(sizeof(SMVM_Program));
     if (likely(p)) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
@@ -166,7 +166,7 @@ struct SMVM_Program * SMVM_Program_new(void) {
     return p;
 }
 
-void SMVM_Program_free(struct SMVM_Program * const p) {
+void SMVM_Program_free(SMVM_Program * const p) {
     assert(p);
     SMVM_CodeSectionsVector_destroy_with(&p->codeSections, &SMVM_CodeSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
@@ -176,14 +176,14 @@ void SMVM_Program_free(struct SMVM_Program * const p) {
     free(p);
 }
 
-int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, size_t dataSize) {
+int SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dataSize) {
     assert(p);
     assert(data);
 
-    if (dataSize < sizeof(struct SME_Common_Header))
+    if (dataSize < sizeof(SME_Common_Header))
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-    const struct SME_Common_Header * ch;
+    const SME_Common_Header * ch;
     if (SME_Common_Header_read(data, &ch) != SME_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
@@ -191,39 +191,39 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, siz
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
 
 
-    const uint8_t * pos = data + sizeof(struct SME_Common_Header);
+    const uint8_t * pos = data + sizeof(SME_Common_Header);
 
-    const struct SME_Header_0x0 * h;
+    const SME_Header_0x0 * h;
     if (SME_Header_0x0_read(pos, &h) != SME_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
-    pos += sizeof(struct SME_Header_0x0);
+    pos += sizeof(SME_Header_0x0);
 
     for (unsigned ui = 0; ui <= h->number_of_units_minus_one; ui++) {
-        const struct SME_Unit_Header_0x0 * uh;
+        const SME_Unit_Header_0x0 * uh;
         if (SME_Unit_Header_0x0_read(pos, &uh) != SME_READ_OK)
             return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-        pos += sizeof(struct SME_Unit_Header_0x0);
+        pos += sizeof(SME_Unit_Header_0x0);
         for (unsigned si = 0; si <= uh->sections_minus_one; si++) {
-            const struct SME_Section_Header_0x0 * sh;
+            const SME_Section_Header_0x0 * sh;
             if (SME_Section_Header_0x0_read(pos, &sh) != SME_READ_OK)
                 return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-            pos += sizeof(struct SME_Section_Header_0x0);
+            pos += sizeof(SME_Section_Header_0x0);
 
-            enum SME_Section_Type type = SME_Section_Header_0x0_type(sh);
-            assert(type != (enum SME_Section_Type) -1);
+            SME_Section_Type type = SME_Section_Header_0x0_type(sh);
+            assert(type != (SME_Section_Type) -1);
             if (type == SME_SECTION_TYPE_TEXT) {
                 union {
                     const void * v;
-                    const union SM_CodeBlock * cb;
+                    const SMVM_CodeBlock * cb;
                 } c = { .v = pos };
 
                 int r = SMVM_Program_addCodeSection(p, c.cb, sh->length);
                 if (r != SMVM_OK)
                     return r;
 
-                pos += sh->length * sizeof(union SM_CodeBlock);
+                pos += sh->length * sizeof(SMVM_CodeBlock);
             } else {
                 /** \todo also add other sections. */
                 abort();
@@ -243,11 +243,11 @@ int SMVM_Program_load_from_sme(struct SMVM_Program *p, const uint8_t * data, siz
 }
 
 #ifdef SMVM_DEBUG
-static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix);
+static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix);
 #endif /* SMVM_DEBUG */
 
-int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
-                                const union SM_CodeBlock * const code,
+int SMVM_Program_addCodeSection(SMVM_Program * const p,
+                                const SMVM_CodeBlock * const code,
                                 const size_t codeSize)
 {
     assert(p);
@@ -257,7 +257,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     if (unlikely(p->state != SMVM_INITIALIZED))
         return SMVM_INVALID_INPUT_STATE;
 
-    struct SMVM_CodeSection * s = SMVM_CodeSectionsVector_push(&p->codeSections);
+    SMVM_CodeSection * s = SMVM_CodeSectionsVector_push(&p->codeSections);
     if (unlikely(!s))
         return SMVM_OUT_OF_MEMORY;
 
@@ -297,7 +297,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 #define SMVM_PREPARE_END_AS(index,numargs) \
     if (1) { \
         c[SMVM_PREPARE_CURRENT_I].uint64[0] = (index); \
-        struct SMVM_Prepare_IBlock pb = { .block = &c[SMVM_PREPARE_CURRENT_I], .type = 0 }; \
+        SMVM_Prepare_IBlock pb = { .block = &c[SMVM_PREPARE_CURRENT_I], .type = 0 }; \
         if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, (void *) &pb) != SMVM_OK) \
             abort(); \
         SMVM_PREPARE_CURRENT_I += (numargs); \
@@ -311,7 +311,7 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
 #define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
-    static int prepare_pass2_ ## name (struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i) { \
+    static int prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \
         (void) p; (void) s; (void) c; (void) i; \
         int returnCode = SMVM_OK; \
         code \
@@ -324,14 +324,14 @@ int SMVM_Program_addCodeSection(struct SMVM_Program * const p,
     { .code = bytecode, .f = prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     uint64_t code;
-    int (*f)(struct SMVM_Program * const p, struct SMVM_CodeSection * s, union SM_CodeBlock * c, size_t * i);
+    int (*f)(SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i);
 };
 struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include "../m4/preprocess_pass2_functions.h"
     { .code = 0u, .f = NULL }
 };
 
-int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
+int SMVM_Program_endPrepare(SMVM_Program * const p) {
     assert(p);
 
     if (unlikely(p->state != SMVM_INITIALIZED))
@@ -342,13 +342,13 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
 
     for (size_t j = 0u; j < p->codeSections.size; j++) {
         int returnCode = SMVM_OK;
-        struct SMVM_CodeSection * s = &p->codeSections.data[j];
+        SMVM_CodeSection * s = &p->codeSections.data[j];
 
-        union SM_CodeBlock * c = s->data;
+        SMVM_CodeBlock * c = s->data;
 
         /* Initialize instructions hashmap: */
         for (size_t i = 0u; i < s->size; i++) {
-            const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
+            const SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
             if (!instr) {
                 SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
@@ -361,7 +361,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
         }
 
         for (size_t i = 0u; i < s->size; i++) {
-            const struct SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
+            const SMVMI_Instruction * const instr = SMVMI_Instruction_from_code(c[i].uint64[0]);
             if (!instr) {
                 SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
@@ -382,7 +382,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
 
         /* Initialize exception pointer: */
         c[s->size].uint64[0] = 0u; /* && eof */
-        struct SMVM_Prepare_IBlock pb = { .block = &c[s->size], .type = 2 };
+        SMVM_Prepare_IBlock pb = { .block = &c[s->size], .type = 2 };
         if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, &pb) != SMVM_OK)
             abort();
 
@@ -410,7 +410,7 @@ int SMVM_Program_endPrepare(struct SMVM_Program * const p) {
     return SMVM_OK;
 }
 
-int SMVM_Program_run(struct SMVM_Program * const program) {
+int SMVM_Program_run(SMVM_Program * const program) {
     assert(program);
 
     if (unlikely(program->state != SMVM_PREPARED))
@@ -419,19 +419,19 @@ int SMVM_Program_run(struct SMVM_Program * const program) {
     return _SMVM(program, SMVM_I_RUN, NULL);
 }
 
-int64_t SMVM_Program_get_return_value(struct SMVM_Program *p) {
+int64_t SMVM_Program_get_return_value(SMVM_Program *p) {
     return p->returnValue.int64[0];
 }
 
-int64_t SMVM_Program_get_exception_value(struct SMVM_Program *p) {
+int64_t SMVM_Program_get_exception_value(SMVM_Program *p) {
     return p->exceptionValue;
 }
 
-size_t SMVM_Program_get_current_codesection(struct SMVM_Program *p) {
+size_t SMVM_Program_get_current_codesection(SMVM_Program *p) {
     return p->currentCodeSectionIndex;
 }
 
-uintptr_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
+uintptr_t SMVM_Program_get_current_ip(SMVM_Program *p) {
     return p->currentIp;
 }
 
@@ -441,14 +441,14 @@ uintptr_t SMVM_Program_get_current_ip(struct SMVM_Program *p) {
 
 #ifdef SMVM_DEBUG
 
-void SMVM_RegisterVector_printStateBencoded(struct SMVM_RegisterVector * const v, FILE * const f) {
+void SMVM_RegisterVector_printStateBencoded(SMVM_RegisterVector * const v, FILE * const f) {
     fprintf(f, "l");
     for (size_t i = 0u; i < v->size; i++)
         fprintf(f, "i%" PRIu64 "e", v->data[i].uint64[0]);
     fprintf(f, "e");
 }
 
-void SMVM_StackFrame_printStateBencoded(struct SMVM_StackFrame * const s, FILE * const f) {
+void SMVM_StackFrame_printStateBencoded(SMVM_StackFrame * const s, FILE * const f) {
     assert(s);
     fprintf(f, "d");
     fprintf(f, "5:Stack");
@@ -458,7 +458,7 @@ void SMVM_StackFrame_printStateBencoded(struct SMVM_StackFrame * const s, FILE *
     fprintf(f, "e");
 }
 
-void SMVM_Program_printStateBencoded(struct SMVM_Program * const p, FILE * const f) {
+void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) {
     assert(p);
     fprintf(f, "d");
         fprintf(f, "5:Statei%de", p->state);
@@ -476,7 +476,7 @@ void SMVM_Program_printStateBencoded(struct SMVM_Program * const p, FILE * const
     fprintf(f, "e");
 }
 
-static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, size_t size, const char * linePrefix) {
+static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix) {
     size_t skip = 0u;
     for (size_t i = 0u; i < size; i++) {
         fprintf(stream, "%s %08zx ", linePrefix, i);
@@ -485,7 +485,7 @@ static void printCodeSection(FILE * stream, const union SM_CodeBlock * code, siz
                b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
 
         if (!skip) {
-            const struct SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
+            const SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
             if (instr) {
                 fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullname));
                 skip = instr->numargs;

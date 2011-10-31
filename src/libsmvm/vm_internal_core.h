@@ -11,13 +11,11 @@
 #define LIBSMVM_VM_INTERNAL_CORE_H
 
 #include <stdint.h>
+#include "vm_internal_helpers.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct SMVM_Program;
-enum SMVM_InnerCommand;
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
 #define _SMVM_NOCLONE noclone,
@@ -25,8 +23,8 @@ enum SMVM_InnerCommand;
 #define _SMVM_NOCLONE
 #endif
 
-int _SMVM(struct SMVM_Program * p,
-          const enum SMVM_InnerCommand c,
+int _SMVM(SMVM_Program * p,
+          const SMVM_InnerCommand c,
           void * d) __attribute__ ((_SMVM_NOCLONE
                                     noinline
                                     warn_unused_result,
