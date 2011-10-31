@@ -540,9 +540,9 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
                     free(pData); \
                     (dptr)->uint64[0] = 0u; /* NULL */ \
                 } else { \
-                    slot->nrefs = 0u; \
-                    slot->size = dataSize; \
                     slot->pData = pData; \
+                    slot->size = dataSize; \
+                    slot->nrefs = 0u; \
                 } \
             } \
         } \

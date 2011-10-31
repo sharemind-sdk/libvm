@@ -51,9 +51,9 @@ enum SMVM_InnerCommand {
 ********************************************************************************/
 
 struct SMVM_MemorySlot {
-    uint64_t nrefs;
-    size_t size;
     void * pData;
+    size_t size;
+    uint64_t nrefs;
 };
 
 #ifdef SMVM_RELEASE
