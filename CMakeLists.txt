@@ -74,8 +74,8 @@ SET(OTHER_FILES "config.local.example"
                 "tests/except_tmodbyzero_uint32.sa"
                 "tests/except_tmodbyzero_uint64.sa"
                 "tests/except_underflow_float32.sa"
-                "tests/bmodoverflow_int64.sa"
-                "tests/bmod2overflow_int64.sa"
+                "tests/bmod.sa"
+                "tests/bmod2.sa"
                 "tests/factorial.sa"
                 "tests/global_return.sa"
                 "tests/mem.sa"
@@ -349,8 +349,8 @@ add_test_assemble_execute_exception("except_tmodbyzero_uint16" "SMVM_E_INTEGER_D
 add_test_assemble_execute_exception("except_tmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_tmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute("bmodoverflow_int64")
-add_test_assemble_execute("bmod2overflow_int64")
+add_test_assemble_execute("bmod")
+add_test_assemble_execute("bmod2")
 add_test_assemble_execute("factorial")
 add_test_assemble_execute("global_return")
 add_test_assemble_execute("mem")
