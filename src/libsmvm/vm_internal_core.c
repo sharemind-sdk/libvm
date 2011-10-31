@@ -58,7 +58,7 @@ static void _SMVM_Program_SIGFPE_handler(int signalNumber,
     (void) signalNumber;
     (void) context;
 
-    enum SMVM_HardwareExceptionType e;
+    SMVM_HardwareExceptionType e;
     switch (signalInfo->si_code) {
         case FPE_INTDIV: e = SMVM_HET_FPE_INTDIV; break;
         case FPE_INTOVF: e = SMVM_HET_FPE_INTOVF; break;
@@ -219,7 +219,7 @@ static inline void _SMVM_Program_restoreSignalHandlers(SMVM_Program * program) {
 #define SMVM_DO_HALT if (1) { goto halt; } else (void) 0
 #define SMVM_DO_TRAP if (1) { goto trap; } else (void) 0
 #else
-enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
+typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_DO_EXCEPT if (1) { return HC_EXCEPT; } else (void) 0
 #define SMVM_DO_HALT if (1) { return HC_HALT; } else (void) 0
 #define SMVM_DO_TRAP if (1) { return HC_TRAP; } else (void) 0
@@ -247,7 +247,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
 #define SMVM_MI_DISPATCH(ip) if (1) { SMVM_DISPATCH(ip); } else (void) 0
 #else
 #define SMVM_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCrefStack) \
-    ((*((enum HaltCode (*)(SMVM_Program * const, \
+    ((*((HaltCode (*)(SMVM_Program * const, \
                            const SMVM_CodeBlock *, \
                            const SMVM_CodeBlock *, \
                            SMVM_RegisterVector * const, \
@@ -578,7 +578,7 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP };
     label_impl_ ## name : code
 #else
 #define SMVM_IMPL_INNER(name,code) \
-    static inline enum HaltCode name ( \
+    static inline HaltCode name ( \
         SMVM_Program * const p, \
         const SMVM_CodeBlock * const codeStart, \
         const SMVM_CodeBlock * ip, \
