@@ -9,6 +9,7 @@
 
 #include "vm_internal_core.h"
 
+#include <limits.h>
 #include <stddef.h>
 #ifdef SMVM_SOFT_FLOAT
 #include "../3rdparty/softfloat/softfloat.h"
