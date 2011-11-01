@@ -290,7 +290,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_TRY_EXCEPT(cond,e) \
     if (unlikely(!(cond))) { \
         SMVM_MI_DO_EXCEPT((e)); \
-    } else (void)0
+    } else (void) 0
 
 #define SMVM_MI_TRY_OOM(e) SMVM_MI_TRY_EXCEPT((e),SMVM_E_OUT_OF_MEMORY)
 
@@ -707,6 +707,8 @@ int _SMVM(SMVM_Program * const p,
             p->exceptionValue = SMVM_E_JUMP_TO_INVALID_ADDRESS;
 
         except:
+            assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
+            assert(SMVM_Exception_toString((int) p->exceptionValue) != 0);
 #ifndef SMVM_SOFT_FLOAT
             _SMVM_Program_restoreSignalHandlers(p);
             /** \todo Check for errors */

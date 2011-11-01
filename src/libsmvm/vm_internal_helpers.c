@@ -11,6 +11,7 @@
 #include "vm_internal_helpers.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
 #include "../libsme/libsme.h"
 #include "../libsme/libsme_0x0.h"
@@ -176,7 +177,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     free(p);
 }
 
-int SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dataSize) {
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dataSize) {
     assert(p);
     assert(data);
 
@@ -219,7 +220,7 @@ int SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dat
                     const SMVM_CodeBlock * cb;
                 } c = { .v = pos };
 
-                int r = SMVM_Program_addCodeSection(p, c.cb, sh->length);
+                SMVM_Error r = SMVM_Program_addCodeSection(p, c.cb, sh->length);
                 if (r != SMVM_OK)
                     return r;
 
@@ -246,9 +247,9 @@ int SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dat
 static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix);
 #endif /* SMVM_DEBUG */
 
-int SMVM_Program_addCodeSection(SMVM_Program * const p,
-                                const SMVM_CodeBlock * const code,
-                                const size_t codeSize)
+SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
+                                       const SMVM_CodeBlock * const code,
+                                       const size_t codeSize)
 {
     assert(p);
     assert(code);
@@ -308,12 +309,12 @@ int SMVM_Program_addCodeSection(SMVM_Program * const p,
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
-#define SMVM_PREPARE_IS_EXCEPTIONCODE(c) (SMVM_Exception_toString((c)) != NULL)
+#define SMVM_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= INT_MIN && (c) <= INT_MAX && SMVM_Exception_toString((int) (c)) != NULL)
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
-    static int prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \
+    static SMVM_Error prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \
         (void) p; (void) s; (void) c; (void) i; \
-        int returnCode = SMVM_OK; \
+        SMVM_Error returnCode = SMVM_OK; \
         code \
         return returnCode; \
     }
@@ -324,14 +325,14 @@ int SMVM_Program_addCodeSection(SMVM_Program * const p,
     { .code = bytecode, .f = prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     uint64_t code;
-    int (*f)(SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i);
+    SMVM_Error (*f)(SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i);
 };
 struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include "../m4/preprocess_pass2_functions.h"
     { .code = 0u, .f = NULL }
 };
 
-int SMVM_Program_endPrepare(SMVM_Program * const p) {
+SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
     assert(p);
 
     if (unlikely(p->state != SMVM_INITIALIZED))
@@ -341,7 +342,7 @@ int SMVM_Program_endPrepare(SMVM_Program * const p) {
         return SMVM_PREPARE_ERROR_NO_CODE_SECTION;
 
     for (size_t j = 0u; j < p->codeSections.size; j++) {
-        int returnCode = SMVM_OK;
+        SMVM_Error returnCode = SMVM_OK;
         SMVM_CodeSection * s = &p->codeSections.data[j];
 
         SMVM_CodeBlock * c = s->data;
@@ -410,7 +411,7 @@ int SMVM_Program_endPrepare(SMVM_Program * const p) {
     return SMVM_OK;
 }
 
-int SMVM_Program_run(SMVM_Program * const program) {
+SMVM_Error SMVM_Program_run(SMVM_Program * const program) {
     assert(program);
 
     if (unlikely(program->state != SMVM_PREPARED))
@@ -423,8 +424,10 @@ int64_t SMVM_Program_get_return_value(SMVM_Program *p) {
     return p->returnValue.int64[0];
 }
 
-int64_t SMVM_Program_get_exception_value(SMVM_Program *p) {
-    return p->exceptionValue;
+SMVM_Exception SMVM_Program_get_exception(SMVM_Program *p) {
+    assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
+    assert(SMVM_Exception_toString((SMVM_Exception) p->exceptionValue) != 0);
+    return (SMVM_Exception) p->exceptionValue;
 }
 
 size_t SMVM_Program_get_current_codesection(SMVM_Program *p) {
