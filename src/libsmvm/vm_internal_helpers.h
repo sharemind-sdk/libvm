@@ -163,16 +163,14 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) __attribute__ ((nonnul
 
 #ifndef SMVM_SOFT_FLOAT
 typedef enum {
-    SMVM_HET_OTHER       = 0x00, /* Unknown hardware exception */
-    SMVM_HET_FPE_UNKNOWN = 0x01, /* Unknown arithmetic or floating-point error */
-    SMVM_HET_FPE_INTDIV  = 0x02, /* integer divide by zero */
-    SMVM_HET_FPE_INTOVF  = 0x03, /* integer overflow */
-    SMVM_HET_FPE_FLTDIV  = 0x04, /* floating-point divide by zero */
-    SMVM_HET_FPE_FLTOVF  = 0x05, /* floating-point overflow */
-    SMVM_HET_FPE_FLTUND  = 0x06, /* floating-point underflow */
-    SMVM_HET_FPE_FLTRES  = 0x07, /* floating-point inexact result */
-    SMVM_HET_FPE_FLTINV  = 0x08, /* floating-point invalid operation */
-    SMVM_HET_FPE_FLTSUB  = 0x09, /* subscript out of range */
+    SMVM_HET_FPE_UNKNOWN = 0x00, /* Unknown arithmetic or floating-point error */
+    SMVM_HET_FPE_INTDIV  = 0x01, /* integer divide by zero */
+    SMVM_HET_FPE_INTOVF  = 0x02, /* integer overflow */
+    SMVM_HET_FPE_FLTDIV  = 0x03, /* floating-point divide by zero */
+    SMVM_HET_FPE_FLTOVF  = 0x04, /* floating-point overflow */
+    SMVM_HET_FPE_FLTUND  = 0x05, /* floating-point underflow */
+    SMVM_HET_FPE_FLTRES  = 0x06, /* floating-point inexact result */
+    SMVM_HET_FPE_FLTINV  = 0x07, /* floating-point invalid operation */
     _SMVM_HET_COUNT
 } SMVM_HardwareExceptionType;
 #endif
