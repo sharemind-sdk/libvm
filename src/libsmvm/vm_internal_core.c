@@ -517,10 +517,13 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SMVM_MI_MEM_ALLOC(dptr,sizereg) \
     if (1) { \
-        if (p->memorySlotsUsed >= UINT64_MAX) { \
+        if (p->memorySlotsUsed >= UINT64_MAX \
+            || (sizereg)->uint64[0] == 0u \
+            || (sizereg)->uint64[0] > SIZE_MAX) \
+        { \
             (dptr)->uint64[0] = 0u; /* NULL */ \
         } else { \
-            size_t dataSize = (sizereg)->uint64[0]; /* SIZE_MAX == UINT64_MAX */ \
+            size_t dataSize = (size_t) (sizereg)->uint64[0]; /* SIZE_MAX == UINT64_MAX */ \
             void * pData = malloc(dataSize); \
             if (!pData) { \
                 (dptr)->uint64[0] = 0u; /* NULL */ \
@@ -530,7 +533,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
                     slot = SMVM_MemoryMap_get(&p->memoryMap, p->memorySlotNext); \
                     if (!slot) \
                         (dptr)->uint64[0] = p->memorySlotNext; \
-                    if (++p->memorySlotNext == 0) \
+                    p->memorySlotNext++; \
+                    if (p->memorySlotNext == 0) \
                         p->memorySlotNext++; \
                     if (!slot) \
                         break; \
@@ -540,6 +544,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
                     free(pData); \
                     (dptr)->uint64[0] = 0u; /* NULL */ \
                 } else { \
+                    assert(p->memorySlotsUsed < UINT64_MAX); \
+                    p->memorySlotsUsed++; \
                     slot->pData = pData; \
                     slot->size = dataSize; \
                     slot->nrefs = 0u; \
@@ -562,6 +568,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MI_TRY_EXCEPT(slot->nrefs == 0u, SMVM_E_MEMORY_POINTER_IN_USE); \
         free(slot->pData); \
         SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
+        assert(p->memorySlotsUsed > 0); \
+        p->memorySlotsUsed--; \
     } else (void) 0
 
 #define SMVM_MI_MEM_GET_SIZE(ptr,sizedest) \

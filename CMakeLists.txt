@@ -36,6 +36,7 @@ SET(OTHER_FILES "config.local.example"
                 "src/static_assert.h"
                 "src/trie.h"
                 "src/vector.h"
+                "tests/alloc_zero.sa"
                 "tests/benchmark.sa"
                 "tests/except_bmodbyzero_int8.sa"
                 "tests/except_bmodbyzero_int16.sa"
@@ -349,6 +350,7 @@ add_test_assemble_execute_exception("except_tmodbyzero_uint16" "SMVM_E_INTEGER_D
 add_test_assemble_execute_exception("except_tmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_tmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute("alloc_zero")
 add_test_assemble_execute("bmod")
 add_test_assemble_execute("bmod2")
 add_test_assemble_execute("factorial")
