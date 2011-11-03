@@ -309,7 +309,7 @@ SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
 #define SMVM_PREPARE_CURRENT_CODE_SECTION s
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
-#define SMVM_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= INT_MIN && (c) <= INT_MAX && SMVM_Exception_toString((int) (c)) != NULL)
+#define SMVM_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= INT_MIN && (c) <= INT_MAX && (c) != SMVM_E_NONE && SMVM_Exception_toString((int) (c)) != NULL)
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
     static SMVM_Error prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \
