@@ -84,7 +84,8 @@ struct _SMVM_MemorySlotSpecials {
 #define SMVM_MemorySlot_destroy_DEFINE \
     SMVM_MemorySlot_destroy_DECLARE { \
         if (m->specials) { \
-            m->specials->free(m); \
+            if (m->specials->free) \
+                m->specials->free(m); \
         } else { \
             free(m->pData); \
         } \
