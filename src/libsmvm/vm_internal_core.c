@@ -471,6 +471,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_REFERENCE_GET_CONST_PTR(r) ((const uint8_t *) (r)->pData)
 #define SMVM_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
+#define SMVM_MI_REF_CAN_READ(ref) (ref->pMemory == NULL || SMVM_MI_MEM_CAN_READ(ref->pMemory))
+#define SMVM_MI_REF_CAN_WRITE(ref) (ref->pMemory == NULL || SMVM_MI_MEM_CAN_WRITE(ref->pMemory))
+
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
 #define SMVM_MI_BLOCK_AS_P(b,t) (&b->t[0])
 #define SMVM_MI_ARG(n)        (* SMVM_MI_ARG_P(n))
@@ -513,6 +516,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_CONVERT_uint32_TO_float32(a,b) a = sf_int64_to_float32((int64_t) b)
 #define SMVM_MI_CONVERT_uint64_TO_float32(a,b) a = sf_int64_to_float32((int64_t) b)
 #endif
+
+#define SMVM_MI_MEM_CAN_READ(slot) (slot->specials == NULL || slot->specials->readable)
+#define SMVM_MI_MEM_CAN_WRITE(slot) (slot->specials == NULL || slot->specials->writeable)
 
 #define SMVM_MI_MEM_ALLOC(dptr,sizereg) \
     if (1) { \

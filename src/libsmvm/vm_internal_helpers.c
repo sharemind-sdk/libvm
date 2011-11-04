@@ -144,6 +144,7 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) {
 
 #ifdef SMVM_FAST_BUILD
 SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,)
+SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,)
 SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
 #endif
 
@@ -213,24 +214,66 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
 
             SME_Section_Type type = SME_Section_Header_0x0_type(sh);
             assert(type != (SME_Section_Type) -1);
-            if (type == SME_SECTION_TYPE_TEXT) {
-                SMVM_Error r = SMVM_Program_addCodeSection(p, (const SMVM_CodeBlock *) pos, sh->length);
-                if (r != SMVM_OK)
-                    return r;
 
-                pos = ((const uint8_t *) pos) + sh->length * sizeof(SMVM_CodeBlock);
-            } else {
-                /** \todo also add other sections. */
-                abort();
-                /*
-                int r = SMVM_Program_addSection(p, pos, sh->length);
-                if (r != SMVM_OK)
-                    return r;
+#if SIZE_MAX < UIN32_MAX
+            if (unlikely(sh->length > SIZE_MAX))
+                return SMVM_OUT_OF_MEMORY;
+#endif
 
-                pos = ((const uint8_t *) pos) + sh->length;
-                */
+#define LOAD_DATASECTION_CASE(utype,ltype,copyCode) \
+    case SME_SECTION_TYPE_ ## utype: { \
+        SMVM_DataSection * s = SMVM_DataSectionsVector_push(&p->ltype ## Sections); \
+        if (unlikely(!s)) \
+            return SMVM_OUT_OF_MEMORY; \
+        s->data = malloc(sh->length); \
+        if (unlikely(!s->data)) { \
+            SMVM_DataSectionsVector_pop(&p->ltype ## Sections); \
+            return SMVM_OUT_OF_MEMORY; \
+        } \
+        s->size = sh->length; \
+        copyCode \
+    } break;
+#define COPYSECTION \
+    memcpy(s->data, pos, sh->length); \
+    pos = ((const uint8_t *) pos) + sh->length;
+#define ZEROSECTION \
+    memset(s->data, 0, sh->length);
+
+            switch (type) {
+                case SME_SECTION_TYPE_TEXT: {
+                    SMVM_Error r = SMVM_Program_addCodeSection(p, (const SMVM_CodeBlock *) pos, sh->length);
+                    if (r != SMVM_OK)
+                        return r;
+
+                    pos = ((const uint8_t *) pos) + sh->length * sizeof(SMVM_CodeBlock);
+                } break;
+                LOAD_DATASECTION_CASE(RODATA,rodata,COPYSECTION)
+                LOAD_DATASECTION_CASE(DATA,data,COPYSECTION)
+                LOAD_DATASECTION_CASE(BSS,bss,ZEROSECTION)
+                case SME_SECTION_TYPE_BIND: {
+
+                } break;
+                default:
+                    /** \todo also add other sections (currently ignoring). */
+                    break;
             }
         }
+
+        if (unlikely(p->codeSections.size == ui))
+            return SMVM_PREPARE_ERROR_NO_CODE_SECTION;
+
+#define PUSH_EMPTY_DATASECTION(ltype) \
+    if (p->ltype ## Sections.size == ui) { \
+        SMVM_DataSection * s = SMVM_DataSectionsVector_push(&p->ltype ## Sections); \
+        if (unlikely(!s)) \
+            return SMVM_OUT_OF_MEMORY; \
+        s->data = NULL; \
+        s->size = 0u; \
+    }
+
+        PUSH_EMPTY_DATASECTION(rodata)
+        PUSH_EMPTY_DATASECTION(data)
+        PUSH_EMPTY_DATASECTION(bss)
     }
     p->currentCodeSectionIndex = h->active_linking_unit;
 
@@ -256,8 +299,10 @@ SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
     if (unlikely(!s))
         return SMVM_OUT_OF_MEMORY;
 
-    if (unlikely(!SMVM_CodeSection_init(s, code, codeSize)))
+    if (unlikely(!SMVM_CodeSection_init(s, code, codeSize))) {
+        SMVM_CodeSectionsVector_pop(&p->codeSections);
         return SMVM_OUT_OF_MEMORY;
+    }
 
     #ifdef SMVM_DEBUG
     fprintf(stderr, "Added code section %zu:\n", p->codeSections.size - 1);
@@ -332,14 +377,14 @@ SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
     if (unlikely(p->state != SMVM_INITIALIZED))
         return SMVM_INVALID_INPUT_STATE;
 
-    if (unlikely(!p->codeSections.size))
-        return SMVM_PREPARE_ERROR_NO_CODE_SECTION;
+    assert(p->codeSections.size > 0u);
 
     for (size_t j = 0u; j < p->codeSections.size; j++) {
         SMVM_Error returnCode = SMVM_OK;
         SMVM_CodeSection * s = &p->codeSections.data[j];
 
         SMVM_CodeBlock * c = s->data;
+        assert(c);
 
         /* Initialize instructions hashmap: */
         for (size_t i = 0u; i < s->size; i++) {

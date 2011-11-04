@@ -61,6 +61,8 @@ typedef struct _SMVM_MemorySlot {
 } SMVM_MemorySlot;
 
 struct _SMVM_MemorySlotSpecials {
+    int readable;
+    int writeable;
     void (*free)(SMVM_MemorySlot *);
 };
 
@@ -198,6 +200,16 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) __attribute__ ((nonnul
 
 
 /*******************************************************************************
+ *  SMVM_DataSection
+********************************************************************************/
+
+typedef struct {
+    void * data;
+    size_t size;
+} SMVM_DataSection;
+
+
+/*******************************************************************************
  *  SMVM_Program
 ********************************************************************************/
 
@@ -218,10 +230,13 @@ typedef enum {
 #ifndef SMVM_FAST_BUILD
 SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,inline)
 SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,inline)
+SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,inline)
 SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,inline)
 SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,inline)
 #else
 SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,)
+SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,)
 SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
 #endif
 
@@ -230,6 +245,9 @@ struct _SMVM_Program {
     SMVM_Error error;
 
     SMVM_CodeSectionsVector codeSections;
+    SMVM_DataSectionsVector rodataSections;
+    SMVM_DataSectionsVector dataSections;
+    SMVM_DataSectionsVector bssSections;
 
     SMVM_FrameStack frames;
     SMVM_StackFrame * globalFrame;
