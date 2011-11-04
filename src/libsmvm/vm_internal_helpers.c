@@ -176,7 +176,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     free(p);
 }
 
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, size_t dataSize) {
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t dataSize) {
     assert(p);
     assert(data);
 
@@ -191,39 +191,34 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, siz
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
 
 
-    const uint8_t * pos = data + sizeof(SME_Common_Header);
+    const void * pos = ((const uint8_t *) data) + sizeof(SME_Common_Header);
 
     const SME_Header_0x0 * h;
     if (SME_Header_0x0_read(pos, &h) != SME_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
-    pos += sizeof(SME_Header_0x0);
+    pos = ((const uint8_t *) pos) + sizeof(SME_Header_0x0);
 
     for (unsigned ui = 0; ui <= h->number_of_units_minus_one; ui++) {
         const SME_Unit_Header_0x0 * uh;
         if (SME_Unit_Header_0x0_read(pos, &uh) != SME_READ_OK)
             return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-        pos += sizeof(SME_Unit_Header_0x0);
+        pos = ((const uint8_t *) pos) + sizeof(SME_Unit_Header_0x0);
         for (unsigned si = 0; si <= uh->sections_minus_one; si++) {
             const SME_Section_Header_0x0 * sh;
             if (SME_Section_Header_0x0_read(pos, &sh) != SME_READ_OK)
                 return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-            pos += sizeof(SME_Section_Header_0x0);
+            pos = ((const uint8_t *) pos) + sizeof(SME_Section_Header_0x0);
 
             SME_Section_Type type = SME_Section_Header_0x0_type(sh);
             assert(type != (SME_Section_Type) -1);
             if (type == SME_SECTION_TYPE_TEXT) {
-                union {
-                    const void * v;
-                    const SMVM_CodeBlock * cb;
-                } c = { .v = pos };
-
-                SMVM_Error r = SMVM_Program_addCodeSection(p, c.cb, sh->length);
+                SMVM_Error r = SMVM_Program_addCodeSection(p, (const SMVM_CodeBlock *) pos, sh->length);
                 if (r != SMVM_OK)
                     return r;
 
-                pos += sh->length * sizeof(SMVM_CodeBlock);
+                pos = ((const uint8_t *) pos) + sh->length * sizeof(SMVM_CodeBlock);
             } else {
                 /** \todo also add other sections. */
                 abort();
@@ -232,7 +227,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const uint8_t * data, siz
                 if (r != SMVM_OK)
                     return r;
 
-                pos += sh->length;
+                pos = ((const uint8_t *) pos) + sh->length;
                 */
             }
         }

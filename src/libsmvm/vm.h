@@ -101,7 +101,7 @@ void SMVM_Program_free(SMVM_Program * program) __attribute__ ((nonnull(1)));
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SMVM_Error.
  */
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const uint8_t * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.
