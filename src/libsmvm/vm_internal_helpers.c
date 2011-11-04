@@ -374,6 +374,8 @@ struct preprocess_pass2_function preprocess_pass2_functions[] = {
 SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
     assert(p);
 
+    SMVM_Prepare_IBlock pb;
+
     if (unlikely(p->state != SMVM_INITIALIZED))
         return SMVM_INVALID_INPUT_STATE;
 
@@ -422,7 +424,8 @@ SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
 
         /* Initialize exception pointer: */
         c[s->size].uint64[0] = 0u; /* && eof */
-        SMVM_Prepare_IBlock pb = { .block = &c[s->size], .type = 2 };
+        pb.block = &c[s->size];
+        pb.type = 2;
         if (_SMVM(p, SMVM_I_GET_IMPL_LABEL, &pb) != SMVM_OK)
             abort();
 
