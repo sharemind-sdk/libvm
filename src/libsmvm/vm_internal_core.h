@@ -23,17 +23,20 @@ extern "C" {
 #define _SMVM_NOCLONE
 #endif
 
-int _SMVM(SMVM_Program * p,
-          const SMVM_InnerCommand c,
-          void * d) __attribute__ ((_SMVM_NOCLONE
-                                    noinline
-                                    warn_unused_result,
-                                    optimize("O2",
-                                             "-fexpensive-optimizations",
-                                             "-fno-gcse"),
-                                    hot,
-                                    nonnull(1)
-                                  ));
+SMVM_Error _SMVM(SMVM_Program * p,
+                 const SMVM_InnerCommand c,
+                 void * d)
+    __attribute__
+    ((
+         _SMVM_NOCLONE
+         noinline
+         warn_unused_result,
+         optimize("O2",
+                  "-fexpensive-optimizations",
+                  "-fno-gcse"),
+         hot,
+         nonnull(1)
+    ));
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -615,9 +615,9 @@ SMVM_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-int _SMVM(SMVM_Program * const p,
-          const SMVM_InnerCommand _SMVM_command,
-          void * const _SMVM_data)
+SMVM_Error _SMVM(SMVM_Program * const p,
+                 const SMVM_InnerCommand _SMVM_command,
+                 void * const _SMVM_data)
 {
     if (_SMVM_command == SMVM_I_GET_IMPL_LABEL) {
 
