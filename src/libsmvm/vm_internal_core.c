@@ -545,9 +545,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
                 } else { \
                     assert(p->memorySlotsUsed < UINT64_MAX); \
                     p->memorySlotsUsed++; \
-                    slot->pData = pData; \
-                    slot->size = dataSize; \
-                    slot->nrefs = 0u; \
+                    SMVM_MemorySlot_init(slot, pData, dataSize, NULL); \
                 } \
             } \
         } \
@@ -565,7 +563,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MemorySlot * slot; \
         SMVM_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
         SMVM_MI_TRY_EXCEPT(slot->nrefs == 0u, SMVM_E_MEMORY_POINTER_IN_USE); \
-        free(slot->pData); \
+        SMVM_MemorySlot_destroy(slot); \
         SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
         assert(p->memorySlotsUsed > 0); \
         p->memorySlotsUsed--; \

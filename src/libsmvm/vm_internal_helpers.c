@@ -39,12 +39,11 @@ SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 ********************************************************************************/
 
 #ifdef SMVM_FAST_BUILD
+SMVM_MemorySlot_init_DEFINE
+SMVM_MemorySlot_destroy_DEFINE
+
 SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),malloc,free,)
 #endif
-
-void SMVM_MemoryMap_deallocator(SMVM_MemorySlot * s) {
-    free(s->pData);
-}
 
 
 /*******************************************************************************
@@ -172,7 +171,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     SMVM_CodeSectionsVector_destroy_with(&p->codeSections, &SMVM_CodeSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
-    SMVM_MemoryMap_foreach_void(&p->memoryMap, &SMVM_MemoryMap_deallocator);
+    SMVM_MemoryMap_foreach_void(&p->memoryMap, &SMVM_MemorySlot_destroy);
     SMVM_MemoryMap_destroy(&p->memoryMap);
     free(p);
 }

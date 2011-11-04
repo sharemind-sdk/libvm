@@ -50,16 +50,55 @@ typedef enum {
  *  SMVM_MemoryMap
 ********************************************************************************/
 
-typedef struct {
+struct _SMVM_MemorySlotSpecials;
+typedef struct _SMVM_MemorySlotSpecials SMVM_MemorySlotSpecials;
+
+typedef struct _SMVM_MemorySlot {
     void * pData;
     size_t size;
     uint64_t nrefs;
+    SMVM_MemorySlotSpecials * specials;
 } SMVM_MemorySlot;
 
+struct _SMVM_MemorySlotSpecials {
+    void (*free)(SMVM_MemorySlot *);
+};
+
+#define SMVM_MemorySlot_init_DECLARE \
+    void SMVM_MemorySlot_init(SMVM_MemorySlot * m, \
+                              void * pData, \
+                              size_t size, \
+                              SMVM_MemorySlotSpecials * specials)
+
+#define SMVM_MemorySlot_init_DEFINE \
+    SMVM_MemorySlot_init_DECLARE { \
+        m->pData = pData; \
+        m->size = size; \
+        m->nrefs = 0u; \
+        m->specials = specials; \
+    }
+
+#define SMVM_MemorySlot_destroy_DECLARE \
+    void SMVM_MemorySlot_destroy(SMVM_MemorySlot * m)
+
+#define SMVM_MemorySlot_destroy_DEFINE \
+    SMVM_MemorySlot_destroy_DECLARE { \
+        if (m->specials) { \
+            m->specials->free(m); \
+        } else { \
+            free(m->pData); \
+        } \
+    }
+
 #ifndef SMVM_FAST_BUILD
+inline SMVM_MemorySlot_init_DEFINE
+inline SMVM_MemorySlot_destroy_DEFINE
+
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,inline)
 SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),malloc,free,inline)
 #else
+SMVM_MemorySlot_init_DECLARE;
+SMVM_MemorySlot_destroy_DECLARE;
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,)
 #endif
 
