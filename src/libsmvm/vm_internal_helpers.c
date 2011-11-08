@@ -47,26 +47,6 @@ SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),malloc,free,)
 
 
 /*******************************************************************************
- *  SMVM_Reference
-********************************************************************************/
-
-#ifdef SMVM_FAST_BUILD
-SM_VECTOR_DEFINE(SMVM_ReferenceVector,SMVM_Reference,malloc,free,realloc,)
-SM_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,)
-#endif
-
-void SMVM_Reference_destroy(SMVM_Reference * r) {
-    if (r->pMemory)
-        r->pMemory->nrefs--;
-}
-
-void SMVM_CReference_destroy(SMVM_CReference * r) {
-    if (r->pMemory)
-        r->pMemory->nrefs--;
-}
-
-
-/*******************************************************************************
  *  SMVM_StackFrame
 ********************************************************************************/
 
