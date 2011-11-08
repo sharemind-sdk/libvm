@@ -208,6 +208,7 @@ typedef struct {
     size_t size;
 } SMVM_DataSection;
 
+void SMVM_DataSection_destroy(SMVM_DataSection * ds);
 
 /*******************************************************************************
  *  SMVM_Program

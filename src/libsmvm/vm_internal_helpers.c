@@ -139,6 +139,15 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) {
 
 
 /*******************************************************************************
+ *  SMVM_DataSection
+********************************************************************************/
+
+void SMVM_DataSection_destroy(SMVM_DataSection * ds) {
+    free(ds->data);
+}
+
+
+/*******************************************************************************
  *  SMVM_Program
 ********************************************************************************/
 
@@ -154,6 +163,9 @@ SMVM_Program * SMVM_Program_new(void) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
         SMVM_CodeSectionsVector_init(&p->codeSections);
+        SMVM_DataSectionsVector_init(&p->dataSections);
+        SMVM_DataSectionsVector_init(&p->rodataSections);
+        SMVM_DataSectionsVector_init(&p->bssSections);
         SMVM_FrameStack_init(&p->frames);
         SMVM_MemoryMap_init(&p->memoryMap);
         p->memorySlotsUsed = 0u;
@@ -170,6 +182,9 @@ SMVM_Program * SMVM_Program_new(void) {
 void SMVM_Program_free(SMVM_Program * const p) {
     assert(p);
     SMVM_CodeSectionsVector_destroy_with(&p->codeSections, &SMVM_CodeSection_destroy);
+    SMVM_DataSectionsVector_destroy_with(&p->dataSections, &SMVM_DataSection_destroy);
+    SMVM_DataSectionsVector_destroy_with(&p->rodataSections, &SMVM_DataSection_destroy);
+    SMVM_DataSectionsVector_destroy_with(&p->bssSections, &SMVM_DataSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
     SMVM_MemoryMap_foreach_void(&p->memoryMap, &SMVM_MemorySlot_destroy);
