@@ -19,6 +19,7 @@ ENDIF (NOT Boost_FOUND)
 LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wc++-compat -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
+ADD_DEFINITIONS("-D_XOPEN_SOURCE=500")
 
 SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for the vm binary.")
 
@@ -31,6 +32,7 @@ SET(OTHER_FILES "config.local.example"
                 "src/instrset.h"
                 "src/likely.h"
                 "src/map.h"
+                "src/modapi.h"
                 "src/preprocessor.h"
                 "src/stack.h"
                 "src/static_assert.h"
@@ -226,11 +228,17 @@ IF(NOT VM_SOFT_FLOAT)
 ELSE(NOT VM_SOFT_FLOAT)
   SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_SOFT_FLOAT")
   ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/references.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c"
               "src/3rdparty/softfloat/softfloat.c")
 ENDIF(NOT VM_SOFT_FLOAT)
-SET(OTHER_FILES ${OTHER_FILES} "src/libsmvm/vm.h")
+SET(OTHER_FILES ${OTHER_FILES}
+    "src/libsmvm/references.h"
+    "src/libsmvm/syscall.h"
+    "src/libsmvm/vm.h"
+    "src/libsmvm/vm_internal_helpers.h"
+    "src/libsmvm/vm_internal_core.h")
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
@@ -266,12 +274,12 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 # vm
 ################################################################################
 
-PREPARE_OTHER_FILES()
-ADD_EXECUTABLE("vm" "src/vm/main.c"
-               ${PREPARED_OTHER_FILES}) # <-- hack for Qt Creator to include other files
+
+ADD_EXECUTABLE("vm" "src/vm/main.c" "src/vm/modules.c" "src/vm/api_0x1.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
+SET(OTHER_FILES ${OTHER_FILES} "src/vm/modules.h" "src/vm/api_0x1.h")
 IF(VM_OUT_OF_MEMORY_DEBUG)
   # This is because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44736 :
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_FLAGS "-fno-builtin-malloc")
@@ -281,14 +289,29 @@ IF(VM_OUT_OF_MEMORY_DEBUG)
     SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_DEFINITIONS "VM_OUT_OF_MEMORY_DEBUG")
   ENDIF(VM_OUT_OF_MEMORY_DEBUG_FAIL_BACKTRACE)
 ENDIF(VM_OUT_OF_MEMORY_DEBUG)
-TARGET_LINK_LIBRARIES("vm" "libsmvmi" "libsmvm")
+TARGET_LINK_LIBRARIES("vm" "dl" "libsmvmi" "libsmvm")
+
+
+################################################################################
+# libmod_putchar
+################################################################################
+
+PREPARE_OTHER_FILES()
+ADD_LIBRARY("libmod_putchar" SHARED
+            "src/mod_putchar/mod_putchar.c"
+               ${PREPARED_OTHER_FILES}) # <-- hack for Qt Creator to include other files
+SET_TARGET_PROPERTIES("libmod_putchar" PROPERTIES
+                      OUTPUT_NAME "smvm_mod_putchar"
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
 
 
 ################################################################################
 # Installs:
 ################################################################################
 
-INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas"
+INSTALL(TARGETS "libsmvmi" "libsme" "libsmas" "libsmvm" "vm" "smas" "libmod_putchar"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         PUBLIC_HEADER DESTINATION "include")
