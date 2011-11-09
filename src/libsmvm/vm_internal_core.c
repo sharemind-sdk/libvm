@@ -719,7 +719,7 @@ SMVM_Error _SMVM(SMVM_Program * const p,
         except:
             assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
             assert(p->exceptionValue != SMVM_E_NONE);
-            assert(SMVM_Exception_toString((int) p->exceptionValue) != 0);
+            assert(SMVM_Exception_toString((SMVM_Exception) p->exceptionValue) != 0);
 #ifndef SMVM_SOFT_FLOAT
             _SMVM_Program_restoreSignalHandlers(p);
             /** \todo Check for errors */
