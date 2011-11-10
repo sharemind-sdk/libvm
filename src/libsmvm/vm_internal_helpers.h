@@ -99,7 +99,7 @@ inline SMVM_MemorySlot_init_DEFINE
 inline SMVM_MemorySlot_destroy_DEFINE
 
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,inline)
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,malloc,free,inline)
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,malloc,free,inline)
 #else
 SMVM_MemorySlot_init_DECLARE;
 SMVM_MemorySlot_destroy_DECLARE;
