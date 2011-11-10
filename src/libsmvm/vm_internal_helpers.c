@@ -50,6 +50,7 @@ static inline void SMVM_MemoryMap_destroyer(const uint64_t * key, SMVM_MemorySlo
     SMVM_MemorySlot_destroy(value);
 }
 
+
 /*******************************************************************************
  *  SMVM_StackFrame
 ********************************************************************************/

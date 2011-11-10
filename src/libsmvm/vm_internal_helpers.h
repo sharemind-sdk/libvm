@@ -28,7 +28,7 @@
 #include "../map.h"
 #include "../stack.h"
 #include "../vector.h"
-#include "references.h"
+#include "../modapi_0x1.h"
 
 
 #ifdef __cplusplus
@@ -54,12 +54,12 @@ typedef enum {
 struct _SMVM_MemorySlotSpecials;
 typedef struct _SMVM_MemorySlotSpecials SMVM_MemorySlotSpecials;
 
-struct _SMVM_MemorySlot {
+typedef struct _SMVM_MemorySlot {
     void * pData;
     size_t size;
     uint64_t nrefs;
     SMVM_MemorySlotSpecials * specials;
-};
+} SMVM_MemorySlot;
 
 struct _SMVM_MemorySlotSpecials {
     int readable;
@@ -105,6 +105,35 @@ SMVM_MemorySlot_init_DECLARE;
 SMVM_MemorySlot_destroy_DECLARE;
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
 #endif
+
+
+/*******************************************************************************
+ *  SMVM_Reference and SMVM_CReference
+********************************************************************************/
+
+typedef struct {
+    SMVM_MODAPI_0x1_Reference _r;
+    SMVM_MemorySlot * pMemory;
+} SMVM_Reference;
+typedef struct {
+    SMVM_MODAPI_0x1_CReference _r;
+    SMVM_MemorySlot * pMemory;
+} SMVM_CReference;
+
+inline void SMVM_Reference_destroy(SMVM_Reference * r) {
+    if (r->pMemory)
+        r->pMemory->nrefs--;
+}
+
+inline void SMVM_CReference_destroy(SMVM_CReference * r) {
+    if (r->pMemory)
+        r->pMemory->nrefs--;
+}
+
+SM_VECTOR_DECLARE(SMVM_ReferenceVector,SMVM_Reference,,inline)
+SM_VECTOR_DEFINE(SMVM_ReferenceVector,SMVM_Reference,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_CReferenceVector,SMVM_CReference,,inline)
+SM_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,inline)
 
 
 /*******************************************************************************

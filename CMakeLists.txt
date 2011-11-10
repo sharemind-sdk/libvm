@@ -224,19 +224,20 @@ SET(LIBSMVM_DEFINES "SMVM_NO_THREADS")
 
 IF(NOT VM_SOFT_FLOAT)
   ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/syscall.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c")
 ELSE(NOT VM_SOFT_FLOAT)
   SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_SOFT_FLOAT")
   ADD_LIBRARY("libsmvm" SHARED
-              "src/libsmvm/references.c"
+              "src/libsmvm/syscall.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c"
               "src/3rdparty/softfloat/softfloat.c")
 ENDIF(NOT VM_SOFT_FLOAT)
 SET(OTHER_FILES ${OTHER_FILES}
-    "src/libsmvm/references.h"
     "src/libsmvm/syscall.h"
+    "src/libsmvm/syscallmap.h"
     "src/libsmvm/vm.h"
     "src/libsmvm/vm_internal_helpers.h"
     "src/libsmvm/vm_internal_core.h")
@@ -276,15 +277,13 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 ################################################################################
 
 
-ADD_EXECUTABLE("vm" "src/vm/api_0x1.c" "src/vm/main.c" "src/vm/modules.c" "src/vm/syscall.c")
+ADD_EXECUTABLE("vm" "src/vm/api_0x1.c" "src/vm/main.c" "src/vm/modules.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
 SET(OTHER_FILES ${OTHER_FILES}
     "src/vm/modules.h"
-    "src/vm/api_0x1.h"
-    "src/vm/syscall.h"
-    "src/vm/syscallmap.h")
+    "src/vm/api_0x1.h")
 IF(VM_OUT_OF_MEMORY_DEBUG)
   # This is because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44736 :
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_FLAGS "-fno-builtin-malloc")

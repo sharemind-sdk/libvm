@@ -10,7 +10,6 @@
 #ifndef SHAREMIND_LIBSMVM_SYSCALL_H
 #define SHAREMIND_LIBSMVM_SYSCALL_H
 
-#include "references.h"
 #include "vm.h"
 
 
@@ -18,57 +17,27 @@
 extern "C" {
 #endif
 
-/** Additional context provided for system calls: */
-struct _SMVM_syscall_context;
-typedef struct _SMVM_syscall_context SMVM_syscall_context;
-struct _SMVM_syscall_context {
-    /**
-      A handle to the private data of the module instance. This is the same
-      handle as provided to SMVM_module_context on module initialization.
-    */
-    void * const moduleHandle;
+struct _SMVM_Module;
 
-    /** Access to public dynamic memory inside the VM process: */
-    uint64_t (* const publicAlloc)(size_t nBytes, SMVM_syscall_context * c);
-    int (* const publicFree)(uint64_t ptr, SMVM_syscall_context * c);
-    size_t (* const publicMemPtrSize)(uint64_t ptr, SMVM_syscall_context * c);
-    void * (* const publicMemPtrData)(uint64_t ptr, SMVM_syscall_context * c);
+typedef struct {
+    /** Unique name of the system call. */
+    char * name;
 
-    /** Access to dynamic memory not exposed to VM instructions: */
-    void * (* const allocPrivate)(size_t nBytes, SMVM_syscall_context * c);
-    int (* const freePrivate)(void * ptr, SMVM_syscall_context * c);
+    /** Pointer to implementation function if current API, otherwise to a wrapper function. */
+    void * impl_or_wrapper;
 
-    /**
-      Used to get access to internal data of protection domain per-process data
-      (see below for pdProcessHandle):
-    */
-    void * (* const get_pd_process_handle)(uint64_t pd_index,
-                                           SMVM_syscall_context * p);
+    /** NULL if current API, otherwise pointer to implementation function. */
+    void * null_or_impl;
 
-    /* OTHER STUFF */
-};
+    /** Pointer to module providing this syscall. */
+    struct _SMVM_Module * module;
+} SMVM_Syscall;
 
-typedef SMVM_Exception (* SMVM_syscall_f)(
-    /** Arguments passed to syscall: */
-    SMVM_CodeBlock * args,
-    size_t num_args,
+int SMVM_Syscall_init(SMVM_Syscall * sc, const char * name, void * impl, void * wrapper, struct _SMVM_Module * m);
 
-    /** Mutable references passed to syscall: */
-    const SMVM_Reference * refs,
-    size_t num_refs,
+SMVM_Syscall * SMVM_Syscall_copy(SMVM_Syscall * dest, const SMVM_Syscall * src);
 
-    /** Immutable references passed to syscall: */
-    const SMVM_CReference * crefs,
-    size_t num_crefs,
-
-    /**
-      The pointer to where the return value of the syscall resides, or NULL if
-      no return value is expected:
-    */
-    SMVM_CodeBlock * returnValue,
-
-    SMVM_syscall_context * c
-);
+void SMVM_Syscall_destroy(SMVM_Syscall * sc);
 
 #ifdef __cplusplus
 } /* extern "C" { */
