@@ -45,6 +45,10 @@ SMVM_MemorySlot_destroy_DEFINE
 SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
 #endif
 
+static inline void SMVM_MemoryMap_destroyer(const uint64_t * key, SMVM_MemorySlot * value) {
+    (void) key;
+    SMVM_MemorySlot_destroy(value);
+}
 
 /*******************************************************************************
  *  SMVM_StackFrame
@@ -167,8 +171,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     SMVM_DataSectionsVector_destroy_with(&p->bssSections, &SMVM_DataSection_destroy);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
-    SMVM_MemoryMap_foreach_void(&p->memoryMap, &SMVM_MemorySlot_destroy);
-    SMVM_MemoryMap_destroy(&p->memoryMap);
+    SMVM_MemoryMap_destroy_with(&p->memoryMap, &SMVM_MemoryMap_destroyer);
     free(p);
 }
 
