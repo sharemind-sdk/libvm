@@ -29,6 +29,7 @@ SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for 
 
 SET(OTHER_FILES "config.local.example"
                 "src/codeblock.h"
+                "src/fnv.h"
                 "src/instrset.h"
                 "src/likely.h"
                 "src/map.h"
@@ -275,11 +276,15 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 ################################################################################
 
 
-ADD_EXECUTABLE("vm" "src/vm/main.c" "src/vm/modules.c" "src/vm/api_0x1.c")
+ADD_EXECUTABLE("vm" "src/vm/api_0x1.c" "src/vm/main.c" "src/vm/modules.c" "src/vm/syscall.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
-SET(OTHER_FILES ${OTHER_FILES} "src/vm/modules.h" "src/vm/api_0x1.h")
+SET(OTHER_FILES ${OTHER_FILES}
+    "src/vm/modules.h"
+    "src/vm/api_0x1.h"
+    "src/vm/syscall.h"
+    "src/vm/syscallmap.h")
 IF(VM_OUT_OF_MEMORY_DEBUG)
   # This is because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44736 :
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_FLAGS "-fno-builtin-malloc")
