@@ -42,7 +42,7 @@ SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 SMVM_MemorySlot_init_DEFINE
 SMVM_MemorySlot_destroy_DEFINE
 
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
+SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
 #endif
 
 
