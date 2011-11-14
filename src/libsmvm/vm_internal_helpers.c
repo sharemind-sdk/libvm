@@ -7,6 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
+#include <stdio.h>
+
 #include "vm.h"
 #include "vm_internal_helpers.h"
 
@@ -151,6 +153,7 @@ SMVM_Program * SMVM_Program_new(void) {
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
         SMVM_DataSectionsVector_init(&p->bssSections);
+        SMVM_SyscallBindings_init(&p->bindings);
         SMVM_FrameStack_init(&p->frames);
         SMVM_MemoryMap_init(&p->memoryMap);
         p->memorySlotsUsed = 0u;
@@ -170,15 +173,19 @@ void SMVM_Program_free(SMVM_Program * const p) {
     SMVM_DataSectionsVector_destroy_with(&p->dataSections, &SMVM_DataSection_destroy);
     SMVM_DataSectionsVector_destroy_with(&p->rodataSections, &SMVM_DataSection_destroy);
     SMVM_DataSectionsVector_destroy_with(&p->bssSections, &SMVM_DataSection_destroy);
+    SMVM_SyscallBindings_destroy(&p->bindings);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
     SMVM_MemoryMap_destroy_with(&p->memoryMap, &SMVM_MemoryMap_destroyer);
     free(p);
 }
 
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t dataSize) {
+static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
+
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t dataSize, SMVM_SyscallMap * syscallMap) {
     assert(p);
     assert(data);
+    assert(syscallMap);
 
     if (dataSize < sizeof(SME_Common_Header))
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
@@ -234,7 +241,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
     } break;
 #define COPYSECTION \
     memcpy(s->data, pos, sh->length); \
-    pos = ((const uint8_t *) pos) + sh->length;
+    pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8];
 #define ZEROSECTION \
     memset(s->data, 0, sh->length);
 
@@ -250,7 +257,29 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
                 LOAD_DATASECTION_CASE(DATA,data,COPYSECTION)
                 LOAD_DATASECTION_CASE(BSS,bss,ZEROSECTION)
                 case SME_SECTION_TYPE_BIND: {
+                    if (sh->length <= 0)
+                        break;
 
+                    const char * endPos = ((const char *) pos) + sh->length;
+
+                    // Check for 0-termination:
+                    if (unlikely(*(endPos - 1)))
+                        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
+
+                    do {
+                        SMVM_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
+                        if (!binding)
+                            return SMVM_OUT_OF_MEMORY;
+
+                        (*binding) = SMVM_SyscallMap_get(syscallMap, (const char *) pos);
+                        if (!*binding) {
+                            fprintf(stderr, "No syscall named\"%s\"\n", (const char *) pos);
+                            return SMVM_PREPARE_UNDEFINED_BIND;
+                        }
+
+                        pos = ((const char *) pos) + strlen((const char *) pos) + 1;
+                    } while (pos != endPos);
+                    pos = ((const char *) pos) + extraPadding[sh->length % 8];
                 } break;
                 default:
                     /** \todo also add other sections (currently ignoring). */
@@ -348,6 +377,12 @@ SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
 
 #define SMVM_PREPARE_IS_INSTR(addr) SMVM_InstrSet_contains(&s->instrset, (addr))
 #define SMVM_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= 0x00 && (c) <= SMVM_E_COUNT && (c) != SMVM_E_NONE && SMVM_Exception_toString((SMVM_Exception) (c)) != NULL)
+#define SMVM_PREPARE_SYSCALL(argNum) \
+    if (1) { \
+        SMVM_PREPARE_CHECK_OR_ERROR(c[(*i)+(argNum)].uint64[0] < p->bindings.size, \
+                                    SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
+        c[(*i)+(argNum)].p[0] = p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
+    } else (void) 0
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
     static SMVM_Error prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \

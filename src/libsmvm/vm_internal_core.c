@@ -18,6 +18,7 @@
 #include <stdio.h>
 #endif
 #include <string.h>
+#include "modules.h"
 
 
 #ifdef SMVM_DEBUG
@@ -240,8 +241,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     } else (void) 0
 #define SMVM_MI_TRAP SMVM_DO_TRAP
 
-#define SMVM_TODO(msg)
-
 #ifndef SMVM_FAST_BUILD
 #define SMVM_DISPATCH(ip) goto *((ip)->p[0])
 #define SMVM_MI_DISPATCH(ip) if (1) { SMVM_DISPATCH(ip); } else (void) 0
@@ -320,9 +319,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
-        ref->_r.pData = (&(b)->uint8[0] + (bOffset)); \
-        ref->_r.size = (rSize); \
-        ref->pMemory = NULL; \
+        ref->pData = (&(b)->uint8[0] + (bOffset)); \
+        ref->size = (rSize); \
+        ref->internal = NULL; \
     } else (void) 0
 
 #define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), 0u, sizeof(SMVM_CodeBlock))
@@ -332,21 +331,21 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define _SMVM_MI_PUSHREF_REF(prefix,something,constPerhaps,r,rOffset,rSize) \
     if (1) { \
-        if ((r)->pMemory && (r)->pMemory->nrefs + 1u == 0u) { \
+        if ((r)->internal && ((SMVM_MemorySlot *) (r)->internal)->nrefs + 1u == 0u) { \
             SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
         } \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
-        ref->_r.pData = ((constPerhaps uint8_t *) (r)->_r.pData) + (rOffset); \
-        ref->_r.size = (rSize); \
-        ref->pMemory = (r)->pMemory; \
-        if (ref->pMemory) \
-            ref->pMemory->nrefs++; \
+        ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
+        ref->size = (rSize); \
+        ref->internal = (r)->internal; \
+        if (ref->internal) \
+            ((SMVM_MemorySlot *) ref->internal)->nrefs++; \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), 0u, (r)->_r.size)
-#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, const, (r), 0u, (r)->_r.size)
+#define SMVM_MI_PUSHREF_REF_ref(r)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), 0u, (r)->size)
+#define SMVM_MI_PUSHREF_REF_cref(r) _SMVM_MI_PUSHREF_REF(CRef,crefstack, const, (r), 0u, (r)->size)
 #define SMVM_MI_PUSHREFPART_REF_ref(r,o,s)  _SMVM_MI_PUSHREF_REF(Ref, refstack,,        (r), (o), (s))
 #define SMVM_MI_PUSHREFPART_REF_cref(r,o,s) _SMVM_MI_PUSHREF_REF(CRef,crefstack, const, (r), (o), (s))
 
@@ -355,9 +354,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         SMVM_ ## prefix ## erence * ref = SMVM_ ## prefix ## erenceVector_push(&p->nextFrame->something); \
         SMVM_MI_TRY_EXCEPT(ref, SMVM_E_OUT_OF_MEMORY); \
-        ref->_r.pData = ((uint8_t *) (slot)->pData) + (mOffset); \
-        ref->_r.size = (rSize); \
-        ref->pMemory = (slot); \
+        ref->pData = ((uint8_t *) (slot)->pData) + (mOffset); \
+        ref->size = (rSize); \
+        ref->internal = (slot); \
         (slot)->nrefs++; \
     } else (void) 0
 
@@ -407,6 +406,44 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     if (1) { \
         SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR((a)->uint64[0]), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
         SMVM_MI_CALL((a)->uint64[0],r,nargs); \
+    } else (void) 0
+
+#define SMVM_MI_SYSCALL(sc,r,nargs) \
+    if (1) { \
+        SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
+        p->nextFrame->returnValueAddr = (r); \
+        SMVM_MODAPI_0x1_Syscall rc = (SMVM_MODAPI_0x1_Syscall) ((SMVM_Syscall *) sc)->impl_or_wrapper; \
+        SMVM_MODAPI_0x1_Syscall_Context ctx; \
+        ctx.moduleHandle = ((SMVM_Syscall *) sc)->module->moduleHandle; \
+        ctx.internal = (sc); \
+        SMVM_MODAPI_0x1_Syscall_Code st; \
+        st = rc(p->nextFrame->stack.data, p->nextFrame->stack.size, \
+                p->nextFrame->refstack.data, p->nextFrame->refstack.size, \
+                p->nextFrame->crefstack.data, p->nextFrame->crefstack.size, \
+                (r), &ctx); \
+        SMVM_StackFrame_destroy(SMVM_FrameStack_top(&p->frames)); \
+        SMVM_FrameStack_pop(&p->frames); \
+        p->nextFrame = NULL; \
+        switch (st) { \
+            case SMVM_MODAPI_0x1_SC_OK: \
+                break; \
+            case SMVM_MODAPI_0x1_SC_OUT_OF_MEMORY: \
+                SMVM_MI_DO_EXCEPT(SMVM_E_OUT_OF_MEMORY); \
+                break; \
+            case SMVM_MODAPI_0x1_SC_INVALID_CALL: \
+                SMVM_MI_DO_EXCEPT(SMVM_E_INVALID_SYSCALL_INVOCATION); \
+                break; \
+            default: \
+                SMVM_MI_DO_EXCEPT(SMVM_E_SYSCALL_FAILURE); \
+                break; \
+        } \
+    } else (void) 0
+
+#define SMVM_MI_CHECK_SYSCALL(a,r,nargs) \
+    if (1) { \
+        SMVM_MI_TRY_EXCEPT((a)->uint64[0] < p->bindings.size, \
+                           SMVM_E_NO_SUCH_SYSCALL); \
+        SMVM_MI_SYSCALL(p->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
     } else (void) 0
 
 #define SMVM_MI_RETURN(r) \
@@ -466,13 +503,13 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MI_TRY_EXCEPT((r),SMVM_E_INVALID_INDEX_CONST_REFERENCE); \
     } else (void) 0
 
-#define SMVM_MI_REFERENCE_GET_MEMORY_PTR(r) ((r)->pMemory)
-#define SMVM_MI_REFERENCE_GET_PTR(r) ((uint8_t *) (r)->_r.pData)
-#define SMVM_MI_REFERENCE_GET_CONST_PTR(r) ((const uint8_t *) (r)->_r.pData)
-#define SMVM_MI_REFERENCE_GET_SIZE(r) ((r)->_r.size)
+#define SMVM_MI_REFERENCE_GET_MEMORY_PTR(r) ((SMVM_MemorySlot *) (r)->internal)
+#define SMVM_MI_REFERENCE_GET_PTR(r) ((uint8_t *) (r)->pData)
+#define SMVM_MI_REFERENCE_GET_CONST_PTR(r) ((const uint8_t *) (r)->pData)
+#define SMVM_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
-#define SMVM_MI_REF_CAN_READ(ref) (ref->pMemory == NULL || SMVM_MI_MEM_CAN_READ(ref->pMemory))
-#define SMVM_MI_REF_CAN_WRITE(ref) (ref->pMemory == NULL || SMVM_MI_MEM_CAN_WRITE(ref->pMemory))
+#define SMVM_MI_REF_CAN_READ(ref) ((SMVM_MemorySlot *) ref->internal == NULL || SMVM_MI_MEM_CAN_READ((SMVM_MemorySlot *) ref->internal))
+#define SMVM_MI_REF_CAN_WRITE(ref) ((SMVM_MemorySlot *) ref->internal == NULL || SMVM_MI_MEM_CAN_WRITE((SMVM_MemorySlot *) ref->internal))
 
 #define SMVM_MI_BLOCK_AS(b,t) (b->t[0])
 #define SMVM_MI_BLOCK_AS_P(b,t) (&b->t[0])
@@ -517,8 +554,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_CONVERT_uint64_TO_float32(a,b) a = sf_int64_to_float32((int64_t) b)
 #endif
 
-#define SMVM_MI_MEM_CAN_READ(slot) (slot->specials == NULL || slot->specials->readable)
-#define SMVM_MI_MEM_CAN_WRITE(slot) (slot->specials == NULL || slot->specials->writeable)
+#define SMVM_MI_MEM_CAN_READ(slot) ((slot)->specials == NULL || (slot)->specials->readable)
+#define SMVM_MI_MEM_CAN_WRITE(slot) ((slot)->specials == NULL || (slot)->specials->writeable)
 
 #define SMVM_MI_MEM_ALLOC(dptr,sizereg) \
     if (1) { \

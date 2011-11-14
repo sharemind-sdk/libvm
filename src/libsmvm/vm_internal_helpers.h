@@ -26,9 +26,10 @@
 #include <stdlib.h>
 #include "../instrset.h"
 #include "../map.h"
+#include "../modapi_0x1.h"
 #include "../stack.h"
 #include "../vector.h"
-#include "../modapi_0x1.h"
+#include "syscall.h"
 
 
 #ifdef __cplusplus
@@ -45,6 +46,13 @@ typedef enum {
     SMVM_I_RUN,
     SMVM_I_CONTINUE
 } SMVM_InnerCommand;
+
+/*******************************************************************************
+ *  SMVM_SyscallBindings
+********************************************************************************/
+
+SM_VECTOR_DECLARE(SMVM_SyscallBindings,SMVM_Syscall *,,inline)
+SM_VECTOR_DEFINE(SMVM_SyscallBindings,SMVM_Syscall *,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -111,23 +119,17 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
  *  SMVM_Reference and SMVM_CReference
 ********************************************************************************/
 
-typedef struct {
-    SMVM_MODAPI_0x1_Reference _r;
-    SMVM_MemorySlot * pMemory;
-} SMVM_Reference;
-typedef struct {
-    SMVM_MODAPI_0x1_CReference _r;
-    SMVM_MemorySlot * pMemory;
-} SMVM_CReference;
+typedef SMVM_MODAPI_0x1_Reference SMVM_Reference;
+typedef SMVM_MODAPI_0x1_CReference SMVM_CReference;
 
 inline void SMVM_Reference_destroy(SMVM_Reference * r) {
-    if (r->pMemory)
-        r->pMemory->nrefs--;
+    if (r->internal)
+        ((SMVM_MemorySlot *) r->internal)->nrefs--;
 }
 
 inline void SMVM_CReference_destroy(SMVM_CReference * r) {
-    if (r->pMemory)
-        r->pMemory->nrefs--;
+    if (r->internal)
+        ((SMVM_MemorySlot *) r->internal)->nrefs--;
 }
 
 SM_VECTOR_DECLARE(SMVM_ReferenceVector,SMVM_Reference,,inline)
@@ -250,6 +252,8 @@ struct _SMVM_Program {
     SMVM_DataSectionsVector rodataSections;
     SMVM_DataSectionsVector dataSections;
     SMVM_DataSectionsVector bssSections;
+
+    SMVM_SyscallBindings bindings;
 
     SMVM_FrameStack frames;
     SMVM_StackFrame * globalFrame;

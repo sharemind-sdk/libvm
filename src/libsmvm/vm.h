@@ -13,6 +13,7 @@
 #include "../codeblock.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
+#include "syscallmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,7 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_State);
     ((SMVM_PREPARE_ERROR_INVALID_HEADER,)) \
     ((SMVM_PREPARE_ERROR_INVALID_INSTRUCTION,)) \
     ((SMVM_PREPARE_ERROR_INVALID_ARGUMENTS,)) \
+    ((SMVM_PREPARE_UNDEFINED_BIND,)) \
     ((SMVM_RUNTIME_EXCEPTION,)) \
     ((SMVM_RUNTIME_TRAP,))
 SM_ENUM_CUSTOM_DEFINE(SMVM_Error, SMVM_ENUM_Error);
@@ -56,11 +58,14 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
     ((SMVM_E_NONE, = 0x00)) \
     ((SMVM_E_OUT_OF_MEMORY, = 0x01)) \
     ((SMVM_E_INVALID_ARGUMENT, = 0x02)) \
+    ((SMVM_E_INVALID_SYSCALL_INVOCATION, = 0x03)) \
+    ((SMVM_E_SYSCALL_FAILURE, = 0x04)) \
     ((SMVM_E_INVALID_INDEX_REGISTER, = 0x100)) \
     ((SMVM_E_INVALID_INDEX_STACK, = 0x101)) \
     ((SMVM_E_INVALID_INDEX_REFERENCE, = 0x102)) \
     ((SMVM_E_INVALID_INDEX_CONST_REFERENCE, = 0x103)) \
     ((SMVM_E_JUMP_TO_INVALID_ADDRESS, = 0x200)) \
+    ((SMVM_E_NO_SUCH_SYSCALL, = 0x201)) \
     ((SMVM_E_INVALID_MEMORY_POINTER, = 0x300)) \
     ((SMVM_E_MEMORY_POINTER_IN_USE, = 0x301)) \
     ((SMVM_E_OUT_OF_BOUNDS_READ, = 0x302)) \
@@ -104,7 +109,7 @@ void SMVM_Program_free(SMVM_Program * program) __attribute__ ((nonnull(1)));
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SMVM_Error.
  */
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize, SMVM_SyscallMap * syscallMap) __attribute__ ((nonnull(1, 2, 4), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.

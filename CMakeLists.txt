@@ -34,6 +34,7 @@ SET(OTHER_FILES "config.local.example"
                 "src/likely.h"
                 "src/map.h"
                 "src/modapi.h"
+                "src/modapi_0x1.h"
                 "src/preprocessor.h"
                 "src/stack.h"
                 "src/static_assert.h"
@@ -224,18 +225,24 @@ SET(LIBSMVM_DEFINES "SMVM_NO_THREADS")
 
 IF(NOT VM_SOFT_FLOAT)
   ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/api_0x1.c"
+              "src/libsmvm/modules.c"
               "src/libsmvm/syscall.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c")
 ELSE(NOT VM_SOFT_FLOAT)
   SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_SOFT_FLOAT")
   ADD_LIBRARY("libsmvm" SHARED
+              "src/libsmvm/api_0x1.c"
+              "src/libsmvm/modules.c"
               "src/libsmvm/syscall.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c"
               "src/3rdparty/softfloat/softfloat.c")
 ENDIF(NOT VM_SOFT_FLOAT)
 SET(OTHER_FILES ${OTHER_FILES}
+    "src/libsmvm/api_0x1.h"
+    "src/libsmvm/modules.h"
     "src/libsmvm/syscall.h"
     "src/libsmvm/syscallmap.h"
     "src/libsmvm/vm.h"
@@ -277,13 +284,10 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 ################################################################################
 
 
-ADD_EXECUTABLE("vm" "src/vm/api_0x1.c" "src/vm/main.c" "src/vm/modules.c")
+ADD_EXECUTABLE("vm" "src/vm/main.c")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
-SET(OTHER_FILES ${OTHER_FILES}
-    "src/vm/modules.h"
-    "src/vm/api_0x1.h")
 IF(VM_OUT_OF_MEMORY_DEBUG)
   # This is because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44736 :
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_FLAGS "-fno-builtin-malloc")
@@ -329,62 +333,70 @@ SET(TESTS_DIR_B "${CMAKE_CURRENT_BINARY_DIR}/tests")
 SET(TESTS_DIR_S "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 FILE(MAKE_DIRECTORY "${TESTS_DIR_B}")
 
-FUNCTION(add_test_assemble_execute testfile)
-    ADD_TEST(NAME "${testfile}"
+FUNCTION(add_test_assemble_execute smas_args vm_args testfile suffix)
+    ADD_TEST(NAME "${testfile}${suffix}"
              COMMAND "${TESTS_DIR_S}/run_test_assemble_execute.sh"
-                 $<TARGET_FILE:smas> $<TARGET_FILE:vm> "${TESTS_DIR_S}/${testfile}.sa" "${TESTS_DIR_B}/${testfile}.sb")
+                 $<TARGET_FILE:smas> "${smas_args}" $<TARGET_FILE:vm> "${vm_args}" "${TESTS_DIR_S}/${testfile}.sa" "${TESTS_DIR_B}/${testfile}.sb" ${ARGN})
+    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES COST 1.0)
 ENDFUNCTION()
 
-FUNCTION(add_test_assemble_execute_exception testfile exceptions)
-    add_test_assemble_execute("${testfile}")
-    SET_TESTS_PROPERTIES("${testfile}" PROPERTIES PASS_REGULAR_EXPRESSION "Exception (${exceptions})")
+FUNCTION(add_test_assemble_execute_regex smas_args vm_args testfile suffix regex)
+    add_test_assemble_execute("${smas_args}" "${vm_args}" "${testfile}" "${suffix}" "${ARGN}")
+    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
 ENDFUNCTION()
 
-add_test_assemble_execute_exception("except_bmodbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_bmod2byzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_float32" "SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("except_divbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_divoverflow_int64" "SMVM_E_INTEGER_OVERFLOW")
-add_test_assemble_execute_exception("except_invalid_float32" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("except_overflow_float32" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute_exception("except_tmodbyzero_int8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_int16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_int32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_int64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_uint8" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_uint16" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_uint32" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_tmodbyzero_uint64" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
-add_test_assemble_execute_exception("except_underflow_float32" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
-add_test_assemble_execute("alloc_zero")
-add_test_assemble_execute("bmod")
-add_test_assemble_execute("bmod2")
-add_test_assemble_execute("factorial")
-add_test_assemble_execute("global_return")
-add_test_assemble_execute("mem")
-add_test_assemble_execute("proc")
-add_test_assemble_execute("tmod")
+FUNCTION(add_test_assemble_execute_exception smas_args vm_args testfile suffix exceptions)
+    add_test_assemble_execute_regex("${smas_args}" "${vm_args}" "${testfile}" "${suffix}" "Exception (${exceptions})" "${ARGN}")
+ENDFUNCTION()
 
-# Execute benchmarks last, because they take time:
-add_test_assemble_execute("benchmark")
+
+add_test_assemble_execute("" "" "benchmark" "")
+SET_TESTS_PROPERTIES("benchmark" PROPERTIES COST "0.0")
+
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_int8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_int16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_int32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_int64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_uint8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_uint16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_uint32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmodbyzero_uint64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_int8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_int16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_int32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_int64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_uint8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_uint16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_uint32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_bmod2byzero_uint64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_float32" "" "SMVM_E_FLOATING_POINT_DIVIDE_BY_ZERO|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("" "" "except_divbyzero_int8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_int16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_int32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_int64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_uint8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_uint16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_uint32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divbyzero_uint64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_divoverflow_int64" "" "SMVM_E_INTEGER_OVERFLOW")
+add_test_assemble_execute_exception("" "" "except_invalid_float32" "" "SMVM_E_FLOATING_POINT_INVALID_OPERATION|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("" "" "except_overflow_float32" "" "SMVM_E_FLOATING_POINT_OVERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_int8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_int16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_int32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_int64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
+add_test_assemble_execute_exception("" "" "except_underflow_float32" "" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute("" "" "alloc_zero" "")
+add_test_assemble_execute("" "" "bmod" "")
+add_test_assemble_execute("" "" "bmod2" "")
+add_test_assemble_execute("" "" "factorial" "")
+add_test_assemble_execute("" "" "global_return" "")
+add_test_assemble_execute("" "" "mem" "")
+add_test_assemble_execute("" "" "proc" "")
+add_test_assemble_execute("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_1")
+add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_2" "Tere, Maailm!")
+add_test_assemble_execute("" "" "tmod" "")
