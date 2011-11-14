@@ -319,7 +319,7 @@ FUNCTION(add_test_assemble_execute smas_args vm_args testfile suffix)
     ADD_TEST(NAME "${testfile}${suffix}"
              COMMAND "${TESTS_DIR_S}/run_test_assemble_execute.sh"
                  $<TARGET_FILE:smas> "${smas_args}" $<TARGET_FILE:vm> "${vm_args}" "${TESTS_DIR_S}/${testfile}.sa" "${TESTS_DIR_B}/${testfile}.sb" ${ARGN})
-    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES COST 1.0)
+    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES COST "1.0")
 ENDFUNCTION()
 
 FUNCTION(add_test_assemble_execute_regex smas_args vm_args testfile suffix regex)
