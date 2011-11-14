@@ -39,11 +39,11 @@ typedef struct _SMVM_Module {
     void * handle;
     char * filename;
     char * name;
-    uint32_t api_version;
+    uint32_t apiVersion;
     uint32_t version;
 
-    const char * error_string;
-    void * api_data;
+    const char * errorString;
+    void * apiData;
     void * moduleHandle;
 } SMVM_Module;
 

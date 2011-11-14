@@ -194,7 +194,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
     if (SME_Common_Header_read(data, &ch) != SME_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-    if (ch->file_format_version > 0u)
+    if (ch->fileFormatVersion > 0u)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
 
 
@@ -205,13 +205,13 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
     pos = ((const uint8_t *) pos) + sizeof(SME_Header_0x0);
 
-    for (unsigned ui = 0; ui <= h->number_of_units_minus_one; ui++) {
+    for (unsigned ui = 0; ui <= h->numberOfUnitsMinusOne; ui++) {
         const SME_Unit_Header_0x0 * uh;
         if (SME_Unit_Header_0x0_read(pos, &uh) != SME_READ_OK)
             return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
         pos = ((const uint8_t *) pos) + sizeof(SME_Unit_Header_0x0);
-        for (unsigned si = 0; si <= uh->sections_minus_one; si++) {
+        for (unsigned si = 0; si <= uh->sectionsMinusOne; si++) {
             const SME_Section_Header_0x0 * sh;
             if (SME_Section_Header_0x0_read(pos, &sh) != SME_READ_OK)
                 return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
@@ -303,7 +303,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
         PUSH_EMPTY_DATASECTION(data)
         PUSH_EMPTY_DATASECTION(bss)
     }
-    p->currentCodeSectionIndex = h->active_linking_unit;
+    p->currentCodeSectionIndex = h->activeLinkingUnit;
 
     return SMVM_Program_endPrepare(p);
 }
@@ -429,11 +429,11 @@ SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
                 SMVM_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
 
-            SMVM_PREPARE_CHECK_OR_ERROR_OUTER(i + instr->numargs < s->size,
+            SMVM_PREPARE_CHECK_OR_ERROR_OUTER(i + instr->numArgs < s->size,
                                               SMVM_PREPARE_ERROR_INVALID_ARGUMENTS);
             SMVM_PREPARE_CHECK_OR_ERROR_OUTER(SMVM_InstrSet_insert(&s->instrset, i),
                                               SMVM_OUT_OF_MEMORY);
-            i += instr->numargs;
+            i += instr->numArgs;
         }
 
         for (size_t i = 0u; i < s->size; i++) {

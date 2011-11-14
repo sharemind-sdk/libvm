@@ -39,8 +39,8 @@ SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, SMVM_Syscal
     const uint32_t * modVersion;
     size_t i;
 
-    m->error_string = NULL;
-    m->api_data = NULL;
+    m->errorString = NULL;
+    m->apiData = NULL;
     m->moduleHandle = NULL;
 
     m->filename = strdup(filename);
@@ -53,7 +53,7 @@ SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, SMVM_Syscal
     (void) dlerror();
     m->handle = dlopen(filename, RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
     if (!m->handle) {
-        m->error_string = dlerror();
+        m->errorString = dlerror();
         status = SMVM_MOD_UNABLE_TO_OPEN_MODULE;
         goto loadModule_fail_1;
     }
@@ -61,22 +61,22 @@ SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, SMVM_Syscal
     /* Determine API version to use: */
     modApiVersions = (const uint32_t (*)[]) dlsym(m->handle, "SMVM_MOD_api_versions");
     if (!modApiVersions || (*modApiVersions)[0] == 0u) {
-        m->error_string = dlerror();
+        m->errorString = dlerror();
         status = SMVM_MOD_INVALID_MODULE;
         goto loadModule_fail_2;
     }
     i = 0u;
-    m->api_version = 0u;
+    m->apiVersion = 0u;
     do {
-        if ((*modApiVersions)[i] > m->api_version
+        if ((*modApiVersions)[i] > m->apiVersion
             && (*modApiVersions)[i] >= SMVM_MOD_API_MIN_VERSION
             && (*modApiVersions)[i] <= SMVM_MOD_API_VERSION)
         {
-            m->api_version = (*modApiVersions)[i];
+            m->apiVersion = (*modApiVersions)[i];
         }
     } while ((*modApiVersions)[++i] == 0u);
-    if (m->api_version <= 0u) {
-        m->error_string = dlerror();
+    if (m->apiVersion <= 0u) {
+        m->errorString = dlerror();
         status = SMVM_MOD_API_NOT_SUPPORTED;
         goto loadModule_fail_2;
     }
@@ -84,7 +84,7 @@ SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, SMVM_Syscal
     /* Determine module name: */
     modName = (const char **) dlsym(m->handle, "SMVM_MOD_name");
     if (!modName) {
-        m->error_string = dlerror();
+        m->errorString = dlerror();
         status = SMVM_MOD_INVALID_MODULE;
         goto loadModule_fail_2;
     }
@@ -101,13 +101,13 @@ SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, SMVM_Syscal
     /* Determine module version: */
     modVersion = (const uint32_t *) dlsym(m->handle, "SMVM_MOD_version");
     if (!modVersion) {
-        m->error_string = dlerror();
+        m->errorString = dlerror();
         status = SMVM_MOD_INVALID_MODULE;
         goto loadModule_fail_3;
     }
     m->version = *modVersion;
 
-    status = apis[m->api_version - 1u].module_load(m, syscallMap);
+    status = apis[m->apiVersion - 1u].module_load(m, syscallMap);
     if (status == SMVM_MOD_OK)
         return SMVM_MOD_OK;
 
@@ -129,18 +129,18 @@ loadModule_fail_0:
 }
 
 void unloadModule(SMVM_Module * m, SMVM_SyscallMap * syscallMap) {
-    apis[m->api_version - 1u].module_unload(m, syscallMap);
+    apis[m->apiVersion - 1u].module_unload(m, syscallMap);
     dlclose(m->handle);
     free(m->filename);
     free(m->name);
 }
 
 SMVM_Module_Error initModule(SMVM_Module * m) {
-    return apis[m->api_version - 1u].module_init(m);
+    return apis[m->apiVersion - 1u].module_init(m);
 }
 
 void deinitModule(SMVM_Module * m) {
-    apis[m->api_version - 1u].module_deinit(m);
+    apis[m->apiVersion - 1u].module_deinit(m);
 }
 
 void deinitAndUnloadModule(SMVM_Module * m, SMVM_SyscallMap * syscallMap) {

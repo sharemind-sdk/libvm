@@ -126,7 +126,7 @@ SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap) 
         goto loadModule_0x1_fail_2;
     }
 
-    m->api_data = (void *) apiData;
+    m->apiData = (void *) apiData;
 
     return SMVM_MOD_OK;
 
@@ -145,9 +145,9 @@ loadModule_0x1_fail_0:
 
 void unloadModule_0x1(SMVM_Module * const m, SMVM_SyscallMap * syscallMap) {
     assert(m);
-    assert(m->api_data);
+    assert(m->apiData);
 
-    ApiData * const apiData = (ApiData *) m->api_data;
+    ApiData * const apiData = (ApiData *) m->apiData;
 
     int r = SMVM_SyscallMap_foreach_with_syscallMap(&apiData->syscalls, &disjoint_syscallmap_subtractor, syscallMap);
     assert(r); (void) r;
@@ -157,7 +157,7 @@ void unloadModule_0x1(SMVM_Module * const m, SMVM_SyscallMap * syscallMap) {
 }
 
 SMVM_Module_Error initModule_0x1(SMVM_Module * const m) {
-    ApiData * const data = (ApiData *) m->api_data;
+    ApiData * const data = (ApiData *) m->apiData;
 
     SMVM_MODAPI_0x1_Initializer_Code r = data->initializer(&data->context);
     switch (r) {
@@ -174,7 +174,7 @@ SMVM_Module_Error initModule_0x1(SMVM_Module * const m) {
 }
 
 void deinitModule_0x1(SMVM_Module * const m) {
-    ApiData * const data = (ApiData *) m->api_data;
+    ApiData * const data = (ApiData *) m->apiData;
 
     data->deinitializer(&data->context);
 }
