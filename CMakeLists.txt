@@ -113,22 +113,10 @@ ENDIF(NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 
 SET(M4_2_H_SOURCES
     "dispatches.m4"
+    "instruction_index.m4"
     "instruction_structs.m4"
     "static_label_structs.m4"
     "preprocess_pass2_functions.m4")
-IF(VM_FAST_BUILD)
-  SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
-      "instruction_index.m4")
-  SET(OTHER_FILES ${OTHER_FILES}
-      "${M4_DIR}/instruction_from_code_cases.m4"
-      "${M4_DIR}/instruction_from_name_cases.m4")
-ELSE(VM_FAST_BUILD)
-  SET(M4_2_H_SOURCES ${M4_2_H_SOURCES}
-      "instruction_from_code_cases.m4"
-      "instruction_from_name_cases.m4")
-  SET(OTHER_FILES ${OTHER_FILES}
-      "${M4_DIR}/instruction_index.m4")
-ENDIF(VM_FAST_BUILD)
 SET(OTHER_FILES ${OTHER_FILES}
                 "${M4_DIR}/datatypebyte.m4"
                 "${M4_DIR}/foreach.m4"
@@ -164,14 +152,8 @@ SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
-IF(VM_FAST_BUILD)
-  SET_TARGET_PROPERTIES("libsmvmi" PROPERTIES COMPILE_DEFINITIONS "SMVMI_FAST_BUILD")
-  SET_SOURCE_FILES_PROPERTIES("src/libsmvmi/instr.c" PROPERTIES OBJECT_DEPENDS
-                              "${M4_DIR_B}/instruction_index.h;${M4_DIR_B}/instruction_structs.h")
-ELSE(VM_FAST_BUILD)
-  SET_SOURCE_FILES_PROPERTIES("src/libsmvmi/instr.c" PROPERTIES OBJECT_DEPENDS
-                              "${M4_DIR_B}/instruction_from_code_cases.h;${M4_DIR_B}/instruction_from_name_cases.h;${M4_DIR_B}/instruction_structs.h")
-ENDIF(VM_FAST_BUILD)
+SET_SOURCE_FILES_PROPERTIES("src/libsmvmi/instr.c" PROPERTIES OBJECT_DEPENDS
+                            "${M4_DIR_B}/instruction_structs.h;${M4_DIR_B}/instruction_index.h")
 INSTALL(DIRECTORY "src/libsmvmi/"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmvmi"
         FILES_MATCHING PATTERN "*.h")
