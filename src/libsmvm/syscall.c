@@ -47,8 +47,8 @@ SMVM_Syscall * SMVM_Syscall_copy(SMVM_Syscall * dest, const SMVM_Syscall * src) 
 
 void SMVM_Syscall_destroy(SMVM_Syscall * sc) {
     assert(sc);
-    assert(sc->name);
     assert(sc->impl_or_wrapper);
+    assert(sc->name);
 
     free(sc->name);
 }

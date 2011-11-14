@@ -10,8 +10,6 @@
 #ifndef SHAREMIND_LIBSMVM_SYSCALL_H
 #define SHAREMIND_LIBSMVM_SYSCALL_H
 
-#include "vm.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +18,6 @@ extern "C" {
 struct _SMVM_Module;
 
 typedef struct {
-    /** Unique name of the system call. */
-    char * name;
 
     /** Pointer to implementation function if current API, otherwise to a wrapper function. */
     void * impl_or_wrapper;
@@ -29,8 +25,12 @@ typedef struct {
     /** NULL if current API, otherwise pointer to implementation function. */
     void * null_or_impl;
 
+    /** Unique name of the system call. */
+    char * name;
+
     /** Pointer to module providing this syscall. */
     struct _SMVM_Module * module;
+
 } SMVM_Syscall;
 
 int SMVM_Syscall_init(SMVM_Syscall * sc, const char * name, void * impl, void * wrapper, struct _SMVM_Module * m);
