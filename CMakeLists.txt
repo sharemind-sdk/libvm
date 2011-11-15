@@ -86,6 +86,7 @@ SET(OTHER_FILES "config.local.example"
                 "tests/mem.sa"
                 "tests/proc.sa"
                 "tests/run_test_assemble_execute.sh"
+                "tests/syscall_putchar.sa"
                 "tests/tmod.sa")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
