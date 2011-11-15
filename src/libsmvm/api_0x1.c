@@ -17,17 +17,19 @@
 
 
 /* Functions for fast union of disjoint syscall maps: */
-inline int disjoint_syscallmap_inserter(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * dest) {
+static int disjoint_syscallmap_inserter(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * dest) {
     assert(!SMVM_SyscallMap_get(dest, key));
     SMVM_Syscall * sc = SMVM_SyscallMap_insert(dest, *key);
     return SMVM_Syscall_copy(sc, value) != NULL;
 }
-inline int disjoint_syscallmap_subtractor(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * from) {
+static int disjoint_syscallmap_subtractor(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * from) {
     (void) value;
     return SMVM_SyscallMap_remove_with(from, *key, &SMVM_Syscall_destroy);
 }
-SM_MAP_DECLARE_FOREACH_WITH(SMVM_SyscallMap,const char * const,SMVM_Syscall,syscallMap,SMVM_SyscallMap *,inline)
-SM_MAP_DEFINE_FOREACH_WITH(SMVM_SyscallMap,const char * const,SMVM_Syscall,syscallMap,SMVM_SyscallMap *,SMVM_SyscallMap * other,other,inline)
+static void SMVM_SyscallMap_destroyer(const char * const * key, SMVM_Syscall * value) {
+    (void) key;
+    SMVM_Syscall_destroy(value);
+}
 int SMVM_SyscallMap_unite(SMVM_SyscallMap * dest, SMVM_SyscallMap * src) {
     if (SMVM_SyscallMap_foreach_with_syscallMap(src, &disjoint_syscallmap_inserter, dest))
         return 1;

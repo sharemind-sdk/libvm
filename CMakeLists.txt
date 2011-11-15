@@ -223,6 +223,7 @@ ELSE(NOT VM_SOFT_FLOAT)
               "src/libsmvm/api_0x1.c"
               "src/libsmvm/modules.c"
               "src/libsmvm/syscall.c"
+              "src/libsmvm/syscallmap.c"
               "src/libsmvm/vm_internal_core.c"
               "src/libsmvm/vm_internal_helpers.c"
               "src/3rdparty/softfloat/softfloat.c")
