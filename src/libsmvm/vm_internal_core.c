@@ -597,7 +597,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
     if (1) { \
         (dest) = SMVM_MemoryMap_get(&p->memoryMap, (index)); \
-        SMVM_MI_TRY_EXCEPT((dest),SMVM_E_INVALID_MEMORY_POINTER); \
+        SMVM_MI_TRY_EXCEPT((dest),SMVM_E_INVALID_REFERENCE); \
     } else (void) 0
 
 /* The following can be optimized: */
@@ -605,7 +605,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     if (1) { \
         SMVM_MemorySlot * slot; \
         SMVM_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
-        SMVM_MI_TRY_EXCEPT(slot->nrefs == 0u, SMVM_E_MEMORY_POINTER_IN_USE); \
+        SMVM_MI_TRY_EXCEPT(slot->nrefs == 0u, SMVM_E_MEMORY_IN_USE); \
         SMVM_MemorySlot_destroy(slot); \
         SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
         assert(p->memorySlotsUsed > 0); \
