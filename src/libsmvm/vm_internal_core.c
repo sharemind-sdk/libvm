@@ -442,7 +442,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_CHECK_SYSCALL(a,r,nargs) \
     if (1) { \
         SMVM_MI_TRY_EXCEPT((a)->uint64[0] < p->bindings.size, \
-                           SMVM_E_NO_SUCH_SYSCALL); \
+                           SMVM_E_INVALID_INDEX_SYSCALL); \
         SMVM_MI_SYSCALL(p->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
     } else (void) 0
 
