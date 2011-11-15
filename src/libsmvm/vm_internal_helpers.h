@@ -206,11 +206,9 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) __attribute__ ((nonnul
  *  SMVM_DataSection
 ********************************************************************************/
 
-typedef struct {
-    void * data;
-    size_t size;
-} SMVM_DataSection;
+typedef SMVM_MemorySlot SMVM_DataSection;
 
+int SMVM_DataSection_init(SMVM_DataSection * ds, size_t size, SMVM_MemorySlotSpecials * specials);
 void SMVM_DataSection_destroy(SMVM_DataSection * ds);
 
 /*******************************************************************************

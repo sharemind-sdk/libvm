@@ -129,8 +129,25 @@ void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) {
  *  SMVM_DataSection
 ********************************************************************************/
 
+int SMVM_DataSection_init(SMVM_DataSection * ds, size_t size, SMVM_MemorySlotSpecials * specials) {
+    assert(ds);
+    assert(specials);
+
+    if (size != 0) {
+        ds->pData = malloc(size);
+        if (unlikely(!ds->pData))
+            return 0;
+    } else {
+        ds->pData = NULL;
+    }
+    ds->size = size;
+    ds->nrefs = 1u;
+    ds->specials = specials;
+    return 1;
+}
+
 void SMVM_DataSection_destroy(SMVM_DataSection * ds) {
-    free(ds->data);
+    free(ds->pData);
 }
 
 
@@ -182,6 +199,9 @@ void SMVM_Program_free(SMVM_Program * const p) {
 
 static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
+static SMVM_MemorySlotSpecials rwDataSpecials = { .writeable = 1, .readable = 1, .free = NULL };
+static SMVM_MemorySlotSpecials roDataSpecials = { .writeable = 0, .readable = 1, .free = NULL };
+
 SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t dataSize, SMVM_SyscallMap * syscallMap) {
     assert(p);
     assert(data);
@@ -226,24 +246,22 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
                 return SMVM_OUT_OF_MEMORY;
 #endif
 
-#define LOAD_DATASECTION_CASE(utype,ltype,copyCode) \
+#define LOAD_DATASECTION_CASE(utype,ltype,copyCode,spec) \
     case SME_SECTION_TYPE_ ## utype: { \
         SMVM_DataSection * s = SMVM_DataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
             return SMVM_OUT_OF_MEMORY; \
-        s->data = malloc(sh->length); \
-        if (unlikely(!s->data)) { \
+        if (unlikely(!SMVM_DataSection_init(s, sh->length, (spec)))) { \
             SMVM_DataSectionsVector_pop(&p->ltype ## Sections); \
             return SMVM_OUT_OF_MEMORY; \
         } \
-        s->size = sh->length; \
         copyCode \
     } break;
 #define COPYSECTION \
-    memcpy(s->data, pos, sh->length); \
+    memcpy(s->pData, pos, sh->length); \
     pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8];
 #define ZEROSECTION \
-    memset(s->data, 0, sh->length);
+    memset(s->pData, 0, sh->length);
 
             switch (type) {
                 case SME_SECTION_TYPE_TEXT: {
@@ -253,9 +271,9 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
 
                     pos = ((const uint8_t *) pos) + sh->length * sizeof(SMVM_CodeBlock);
                 } break;
-                LOAD_DATASECTION_CASE(RODATA,rodata,COPYSECTION)
-                LOAD_DATASECTION_CASE(DATA,data,COPYSECTION)
-                LOAD_DATASECTION_CASE(BSS,bss,ZEROSECTION)
+                LOAD_DATASECTION_CASE(RODATA,rodata,COPYSECTION,&roDataSpecials)
+                LOAD_DATASECTION_CASE(DATA,data,COPYSECTION,&rwDataSpecials)
+                LOAD_DATASECTION_CASE(BSS,bss,ZEROSECTION,&rwDataSpecials)
                 case SME_SECTION_TYPE_BIND: {
                     if (sh->length <= 0)
                         break;
@@ -290,18 +308,17 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
         if (unlikely(p->codeSections.size == ui))
             return SMVM_PREPARE_ERROR_NO_CODE_SECTION;
 
-#define PUSH_EMPTY_DATASECTION(ltype) \
+#define PUSH_EMPTY_DATASECTION(ltype,spec) \
     if (p->ltype ## Sections.size == ui) { \
         SMVM_DataSection * s = SMVM_DataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
             return SMVM_OUT_OF_MEMORY; \
-        s->data = NULL; \
-        s->size = 0u; \
+        SMVM_DataSection_init(s, 0u, (spec)); \
     }
 
-        PUSH_EMPTY_DATASECTION(rodata)
-        PUSH_EMPTY_DATASECTION(data)
-        PUSH_EMPTY_DATASECTION(bss)
+        PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)
+        PUSH_EMPTY_DATASECTION(data,&rwDataSpecials)
+        PUSH_EMPTY_DATASECTION(bss,&rwDataSpecials)
     }
     p->currentCodeSectionIndex = h->activeLinkingUnit;
 

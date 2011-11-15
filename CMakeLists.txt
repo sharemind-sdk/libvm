@@ -79,6 +79,7 @@ SET(OTHER_FILES "config.local.example"
                 "tests/except_tmodbyzero_uint32.sa"
                 "tests/except_tmodbyzero_uint64.sa"
                 "tests/except_underflow_float32.sa"
+                "tests/except_write_to_rodata.sa"
                 "tests/bmod.sa"
                 "tests/bmod2.sa"
                 "tests/factorial.sa"
@@ -87,6 +88,9 @@ SET(OTHER_FILES "config.local.example"
                 "tests/proc.sa"
                 "tests/run_test_assemble_execute.sh"
                 "tests/syscall_putchar.sa"
+                "tests/section_bss.sa"
+                "tests/section_data.sa"
+                "tests/section_rodata.sa"
                 "tests/tmod.sa")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
@@ -373,6 +377,7 @@ add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint16" "" "SMVM_E_
 add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint32" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("" "" "except_tmodbyzero_uint64" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("" "" "except_underflow_float32" "" "SMVM_E_FLOATING_POINT_UNDERFLOW|SMVM_E_UNKNOWN_FPE")
+add_test_assemble_execute_exception("" "" "except_write_to_rodata" "" "SMVM_E_WRITE_DENIED")
 add_test_assemble_execute("" "" "alloc_zero" "")
 add_test_assemble_execute("" "" "bmod" "")
 add_test_assemble_execute("" "" "bmod2" "")
@@ -380,6 +385,9 @@ add_test_assemble_execute("" "" "factorial" "")
 add_test_assemble_execute("" "" "global_return" "")
 add_test_assemble_execute("" "" "mem" "")
 add_test_assemble_execute("" "" "proc" "")
+add_test_assemble_execute("" "" "section_bss" "")
+add_test_assemble_execute("" "" "section_data" "")
+add_test_assemble_execute("" "" "section_rodata" "")
 add_test_assemble_execute("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_1")
 add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_2" "Tere, Maailm!")
 add_test_assemble_execute("" "" "tmod" "")
