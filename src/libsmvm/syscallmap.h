@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef SHAREMIND_SYSCALLMAP_H
-#define SHAREMIND_SYSCALLMAP_H
+#ifndef SHAREMIND_LIBSMVM_SYSCALLMAP_H
+#define SHAREMIND_LIBSMVM_SYSCALLMAP_H
 
 #include "../map.h"
 #include "syscall.h"
@@ -27,4 +27,4 @@ SM_MAP_DECLARE_FOREACH_WITH(SMVM_SyscallMap,const char * const,SMVM_Syscall,sysc
 } /* extern "C" { */
 #endif
 
-#endif /* SHAREMIND_SYSCALLMAP_H */
+#endif /* SHAREMIND_LIBSMVM_SYSCALLMAP_H */

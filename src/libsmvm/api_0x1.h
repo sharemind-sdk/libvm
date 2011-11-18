@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef API_0x1_H
-#define API_0x1_H
+#ifndef SHAREMIND_LIBSMVM_API_0x1_H
+#define SHAREMIND_LIBSMVM_API_0x1_H
 
 #include "syscallmap.h"
 #include "modules.h"
@@ -30,4 +30,4 @@ void deinitModule_0x1(SMVM_Module * m);
 } /* extern "C" { */
 #endif
 
-#endif /* API_0x1_H */
+#endif /* SHAREMIND_LIBSMVM_API_0x1_H */

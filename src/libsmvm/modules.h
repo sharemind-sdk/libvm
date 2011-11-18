@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef MODULES_H
-#define MODULES_H
+#ifndef SHAREMIND_LIBSMVM_MODULES_H
+#define SHAREMIND_LIBSMVM_MODULES_H
 
 #include <stdlib.h>
 #include "../preprocessor.h"
@@ -80,4 +80,4 @@ inline void deinitAndUnloadModules(SMVM_Modules * ms, struct _SMVM_SyscallMap * 
 } /* extern "C" { */
 #endif
 
-#endif /* MODULES_H */
+#endif /* SHAREMIND_LIBSMVM_MODULES_H */

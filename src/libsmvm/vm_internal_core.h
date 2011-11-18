@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef LIBSMVM_VM_INTERNAL_CORE_H
-#define LIBSMVM_VM_INTERNAL_CORE_H
+#ifndef SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
+#define SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
 
 #include <stdint.h>
 #include "vm_internal_helpers.h"
@@ -45,4 +45,4 @@ SMVM_Error _SMVM(SMVM_Program * p,
 } /* extern "C" { */
 #endif
 
-#endif /* LIBSMVM_VM_INTERNAL_CORE_H */
+#endif /* SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H */

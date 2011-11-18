@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef LIBSMVM_VM_H
-#define LIBSMVM_VM_H
+#ifndef SHAREMIND_LIBSMVM_VM_H
+#define SHAREMIND_LIBSMVM_VM_H
 
 #include "../codeblock.h"
 #include "../preprocessor.h"
@@ -188,4 +188,4 @@ uintptr_t SMVM_Program_get_current_ip(SMVM_Program * program) __attribute__ ((no
 } /* extern "C" { */
 #endif
 
-#endif /* LIBSMVM_VM_H */
+#endif /* SHAREMIND_LIBSMVM_VM_H */

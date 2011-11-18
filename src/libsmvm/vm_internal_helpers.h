@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef LIBSMVM_VM_INTERNAL_HELPERS_H
-#define LIBSMVM_VM_INTERNAL_HELPERS_H
+#ifndef SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H
+#define SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H
 
 #include "vm.h"
 
@@ -298,4 +298,4 @@ void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) __a
 } /* extern "C" { */
 #endif
 
-#endif /* LIBSMVM_VM_INTERNAL_HELPERS_H */
+#endif /* SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H */
