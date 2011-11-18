@@ -18,7 +18,7 @@
 
 /* Functions for fast union of disjoint syscall maps: */
 static int disjoint_syscallmap_inserter(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * dest) {
-    assert(!SMVM_SyscallMap_get(dest, key));
+    assert(!SMVM_SyscallMap_get(dest, *key));
     SMVM_Syscall * sc = SMVM_SyscallMap_insert(dest, *key);
     return SMVM_Syscall_copy(sc, value) != NULL;
 }
