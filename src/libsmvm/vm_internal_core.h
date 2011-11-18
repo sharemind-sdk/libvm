@@ -13,9 +13,11 @@
 #include <stdint.h>
 #include "vm_internal_helpers.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
 #define _SMVM_NOCLONE noclone,
@@ -37,6 +39,7 @@ SMVM_Error _SMVM(SMVM_Program * p,
          hot,
          nonnull(1)
     ));
+
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -36,6 +36,7 @@
 extern "C" {
 #endif
 
+
 typedef struct {
     SMVM_CodeBlock * block;
     unsigned type;
@@ -291,6 +292,7 @@ void SMVM_RegisterVector_printStateBencoded(SMVM_RegisterVector * const v, FILE 
 void SMVM_StackFrame_printStateBencoded(SMVM_StackFrame * const s, FILE * const f) __attribute__ ((nonnull(1)));
 void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) __attribute__ ((nonnull(1)));
 #endif /* SMVM_DEBUG */
+
 
 #ifdef __cplusplus
 } /* extern "C" { */

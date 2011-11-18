@@ -14,10 +14,20 @@
 #include "modules.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap);
 void unloadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap);
 
 SMVM_Module_Error initModule_0x1(SMVM_Module * m);
 void deinitModule_0x1(SMVM_Module * m);
+
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
 
 #endif /* API_0x1_H */

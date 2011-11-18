@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+
 struct _SMVM_Module;
 
 typedef struct {
@@ -38,6 +39,7 @@ int SMVM_Syscall_init(SMVM_Syscall * sc, const char * name, void * impl, void * 
 SMVM_Syscall * SMVM_Syscall_copy(SMVM_Syscall * dest, const SMVM_Syscall * src);
 
 void SMVM_Syscall_destroy(SMVM_Syscall * sc);
+
 
 #ifdef __cplusplus
 } /* extern "C" { */

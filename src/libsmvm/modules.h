@@ -15,6 +15,11 @@
 #include "../vector.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 struct _SMVM_SyscallMap;
 
 #define SMVM_MOD_API_VERSION     1u
@@ -69,5 +74,10 @@ inline void deinitAndUnloadModules(SMVM_Modules * ms, struct _SMVM_SyscallMap * 
     SMVM_Modules_foreach_with_syscallMap(ms, &_deinitAndUnloadModule, syscallMap);
     SMVM_Modules_destroy(ms);
 }
+
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
 
 #endif /* MODULES_H */
