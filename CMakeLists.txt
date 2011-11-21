@@ -9,7 +9,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION "2.8")
 CMAKE_POLICY(SET CMP0015 NEW)
-PROJECT("SHAREMIND_VM" "C")
+PROJECT("SHAREMIND_VM" "C" "CXX")
 
 FIND_PACKAGE(Boost)
 IF (NOT Boost_FOUND)
@@ -19,6 +19,7 @@ ENDIF (NOT Boost_FOUND)
 LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wc++-compat -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
+SET(CMAKE_CXX_FLAGS "-std=gnu++98 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
 ADD_DEFINITIONS("-D_XOPEN_SOURCE=500")
 
 SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for the vm binary.")
@@ -231,6 +232,7 @@ ENDIF(NOT VM_SOFT_FLOAT)
 SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmvm/api_0x1.h"
     "src/libsmvm/modules.h"
+    "src/libsmvm/modules_cxx.h"
     "src/libsmvm/syscall.h"
     "src/libsmvm/syscallmap.h"
     "src/libsmvm/vm.h"
@@ -272,7 +274,7 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 ################################################################################
 
 
-ADD_EXECUTABLE("vm" "src/vm/main.c")
+ADD_EXECUTABLE("vm" "src/vm/main.cpp")
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
