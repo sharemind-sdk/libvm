@@ -20,7 +20,6 @@ extern "C" {
 
 
 SM_MAP_DECLARE(SMVM_SyscallMap,char *,const char * const,SMVM_Syscall,)
-SM_MAP_DECLARE_FOREACH_WITH(SMVM_SyscallMap,const char * const,SMVM_Syscall,syscallMap,SMVM_SyscallMap *,)
 
 
 #ifdef __cplusplus

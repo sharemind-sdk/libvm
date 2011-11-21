@@ -28,6 +28,37 @@
 
 
 /*******************************************************************************
+ *  SMVM
+********************************************************************************/
+
+struct _SMVM {
+    SMVM_Context * context;
+};
+
+SMVM * SMVM_new(SMVM_Context * context) {
+    SMVM * smvm = (SMVM *) malloc(sizeof(SMVM));
+    smvm->context = context;
+    return smvm;
+}
+
+void SMVM_free(SMVM * smvm) {
+    if (smvm->context) {
+        if (smvm->context->destructor) {
+            (*(smvm->context->destructor))(smvm->context);
+        }
+    }
+    free(smvm);
+}
+
+const SMVM_Syscall * SMVM_get_syscall(SMVM * smvm, const char * signature) {
+    if (!smvm->context || !smvm->context->get_syscall)
+        return NULL;
+
+    return (*(smvm->context->get_syscall))(smvm->context, signature);
+}
+
+
+/*******************************************************************************
  *  Public enum methods
 ********************************************************************************/
 
@@ -161,11 +192,12 @@ SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,)
 SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
 #endif
 
-SMVM_Program * SMVM_Program_new(void) {
+SMVM_Program * SMVM_Program_new(SMVM * smvm) {
     SMVM_Program * const p = (SMVM_Program *) malloc(sizeof(SMVM_Program));
     if (likely(p)) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
+        p->smvm = smvm;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -202,10 +234,9 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 static SMVM_MemorySlotSpecials rwDataSpecials = { .writeable = 1, .readable = 1, .free = NULL };
 static SMVM_MemorySlotSpecials roDataSpecials = { .writeable = 0, .readable = 1, .free = NULL };
 
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t dataSize, SMVM_SyscallMap * syscallMap) {
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_t dataSize) {
     assert(p);
     assert(data);
-    assert(syscallMap);
 
     if (dataSize < sizeof(SME_Common_Header))
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
@@ -285,13 +316,13 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program *p, const void * data, size_t
                         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
                     do {
-                        SMVM_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
+                        const SMVM_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
                         if (!binding)
                             return SMVM_OUT_OF_MEMORY;
 
-                        (*binding) = SMVM_SyscallMap_get(syscallMap, (const char *) pos);
+                        (*binding) = SMVM_get_syscall(p->smvm, (const char *) pos);
                         if (!*binding) {
-                            fprintf(stderr, "No syscall named\"%s\"\n", (const char *) pos);
+                            fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
                             return SMVM_PREPARE_UNDEFINED_BIND;
                         }
 
@@ -398,7 +429,7 @@ SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
     if (1) { \
         SMVM_PREPARE_CHECK_OR_ERROR(c[(*i)+(argNum)].uint64[0] < p->bindings.size, \
                                     SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
-        c[(*i)+(argNum)].p[0] = p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
+        c[(*i)+(argNum)].cp[0] = p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
     } else (void) 0
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \

@@ -10,7 +10,6 @@
 #ifndef SHAREMIND_LIBSMVM_API_0x1_H
 #define SHAREMIND_LIBSMVM_API_0x1_H
 
-#include "syscallmap.h"
 #include "modules.h"
 
 
@@ -19,11 +18,13 @@ extern "C" {
 #endif
 
 
-SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap);
-void unloadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap);
+SMVM_Module_Error loadModule_0x1(SMVM_Module * m);
+void unloadModule_0x1(SMVM_Module * m);
 
 SMVM_Module_Error initModule_0x1(SMVM_Module * m);
 void deinitModule_0x1(SMVM_Module * m);
+
+const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, const char * signature);
 
 
 #ifdef __cplusplus

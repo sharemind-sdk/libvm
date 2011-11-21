@@ -13,14 +13,13 @@
 #include <stdlib.h>
 #include "../preprocessor.h"
 #include "../vector.h"
+#include "syscall.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-struct _SMVM_SyscallMap;
 
 #define SMVM_MOD_API_VERSION     1u
 #define SMVM_MOD_API_MIN_VERSION 1u
@@ -50,30 +49,17 @@ typedef struct _SMVM_Module {
     const char * errorString;
     void * apiData;
     void * moduleHandle;
+
+    int isInitialized;
 } SMVM_Module;
 
-SM_VECTOR_DECLARE(SMVM_Modules,SMVM_Module,,inline)
-SM_VECTOR_DEFINE(SMVM_Modules,SMVM_Module,malloc,free,realloc,inline)
+SMVM_Module_Error SMVM_Module_load(SMVM_Module * m, const char * filename);
+void SMVM_Module_unload(SMVM_Module * m);
 
-SM_VECTOR_DECLARE_FOREACH_WITH(SMVM_Modules,SMVM_Module,syscallMap,struct _SMVM_SyscallMap *,inline)
-SM_VECTOR_DEFINE_FOREACH_WITH(SMVM_Modules,SMVM_Module,syscallMap,struct _SMVM_SyscallMap *,struct _SMVM_SyscallMap * map,map,inline)
+SMVM_Module_Error SMVM_Module_mod_init(SMVM_Module * m);
+void SMVM_Module_mod_deinit(SMVM_Module * m);
 
-SMVM_Module_Error loadModule(SMVM_Module * m, const char * filename, struct _SMVM_SyscallMap * syscallMap);
-void unloadModule(SMVM_Module * m, struct _SMVM_SyscallMap * syscallMap);
-
-SMVM_Module_Error initModule(SMVM_Module * m);
-void deinitModule(SMVM_Module * m);
-
-void deinitAndUnloadModule(SMVM_Module * m, struct _SMVM_SyscallMap * syscallMap);
-inline int _deinitAndUnloadModule(SMVM_Module * m, struct _SMVM_SyscallMap * syscallMap) {
-    deinitAndUnloadModule(m, syscallMap);
-    return 1;
-}
-
-inline void deinitAndUnloadModules(SMVM_Modules * ms, struct _SMVM_SyscallMap * syscallMap) {
-    SMVM_Modules_foreach_with_syscallMap(ms, &_deinitAndUnloadModule, syscallMap);
-    SMVM_Modules_destroy(ms);
-}
+const SMVM_Syscall * SMVM_Module_get_syscall(const SMVM_Module * m, const char * signature);
 
 
 #ifdef __cplusplus

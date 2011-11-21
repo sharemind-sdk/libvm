@@ -52,12 +52,20 @@ typedef enum {
     SMVM_I_CONTINUE
 } SMVM_InnerCommand;
 
+
+/*******************************************************************************
+ *  SMVM
+********************************************************************************/
+
+const SMVM_Syscall * SMVM_get_syscall(SMVM * smvm, const char * signature);
+
+
 /*******************************************************************************
  *  SMVM_SyscallBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_SyscallBindings,SMVM_Syscall *,,inline)
-SM_VECTOR_DEFINE(SMVM_SyscallBindings,SMVM_Syscall *,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_SyscallBindings,const SMVM_Syscall *,,inline)
+SM_VECTOR_DEFINE(SMVM_SyscallBindings,const SMVM_Syscall *,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -263,7 +271,6 @@ struct _SMVM_Program {
     SMVM_StackFrame * nextFrame;
     SMVM_StackFrame * thisFrame;
 
-
     SMVM_MemoryMap memoryMap;
     uint64_t memorySlotsUsed;
     uint64_t memorySlotNext;
@@ -273,6 +280,8 @@ struct _SMVM_Program {
 
     SMVM_CodeBlock returnValue;
     int64_t exceptionValue;
+
+    SMVM * smvm;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;

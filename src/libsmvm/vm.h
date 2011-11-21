@@ -13,7 +13,7 @@
 #include "../codeblock.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
-#include "syscallmap.h"
+#include "syscall.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +25,35 @@ SM_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
 SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
 SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
+
+
+struct _SMVM_Context;
+typedef struct _SMVM_Context SMVM_Context;
+struct _SMVM_Context {
+
+    /**
+      A destructor (e.g. free) for this SMVM_context.
+      \param[in] context a pointer to this struct.
+    */
+    void (*destructor)(void * context);
+
+    /**
+      \param[in] context a pointer to this struct.
+      \param[in] signature the system call signature.
+      \returns a system call with the given signature.
+      \retval NULL if no such system call is provided.
+    */
+    const SMVM_Syscall * (*get_syscall)(SMVM_Context * context, const char * signature);
+
+    /** Pointer to any SMVM_Context data. Not used by libsmvm. */
+    void * internal;
+
+};
+
+struct _SMVM;
+typedef struct _SMVM SMVM;
+SMVM * SMVM_new(SMVM_Context * context);
+void SMVM_free(SMVM * smvm);
 
 #define SMVM_ENUM_State \
     (SMVM_INITIALIZED) \
@@ -94,7 +123,7 @@ typedef struct _SMVM_Program SMVM_Program;
  * \returns a pointer to the new SMVM_Program instance.
  * \retval NULL if allocation failed.
  */
-SMVM_Program * SMVM_Program_new(void) __attribute__ ((warn_unused_result));
+SMVM_Program * SMVM_Program_new(SMVM * smvm) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Deallocates a SMVM_Program instance.
@@ -109,7 +138,7 @@ void SMVM_Program_free(SMVM_Program * program) __attribute__ ((nonnull(1)));
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SMVM_Error.
  */
-SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize, SMVM_SyscallMap * syscallMap) __attribute__ ((nonnull(1, 2, 4), warn_unused_result));
+SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
  * \brief Adds a code section to the program and prepares it for direct execution.

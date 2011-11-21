@@ -14,27 +14,12 @@
 #include <string.h>
 #include "../modapi_0x1.h"
 #include "../vector.h"
+#include "syscallmap.h"
 
 
-/* Functions for fast union of disjoint syscall maps: */
-static int disjoint_syscallmap_inserter(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * dest) {
-    assert(!SMVM_SyscallMap_get(dest, *key));
-    SMVM_Syscall * sc = SMVM_SyscallMap_insert(dest, *key);
-    return SMVM_Syscall_copy(sc, value) != NULL;
-}
-static int disjoint_syscallmap_subtractor(const char * const * key, SMVM_Syscall * value, SMVM_SyscallMap * from) {
-    (void) value;
-    return SMVM_SyscallMap_remove_with(from, *key, &SMVM_Syscall_destroy);
-}
 static void SMVM_SyscallMap_destroyer(const char * const * key, SMVM_Syscall * value) {
     (void) key;
     SMVM_Syscall_destroy(value);
-}
-int SMVM_SyscallMap_unite(SMVM_SyscallMap * dest, SMVM_SyscallMap * src) {
-    if (SMVM_SyscallMap_foreach_with_syscallMap(src, &disjoint_syscallmap_inserter, dest))
-        return 1;
-    (void) SMVM_SyscallMap_foreach_with_syscallMap(src, &disjoint_syscallmap_subtractor, dest); /* Rollback: */
-    return 0;
 }
 
 /** \todo Protection domains */
@@ -50,7 +35,7 @@ typedef struct {
 } ApiData;
 
 
-SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap) {
+SMVM_Module_Error loadModule_0x1(SMVM_Module * m) {
     assert(m);
 
     SMVM_Module_Error status;
@@ -95,9 +80,7 @@ SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap) 
                 goto loadModule_0x1_fail_2;
             }
 
-            if (SMVM_SyscallMap_get(&apiData->syscalls, (*scs)[i].name)
-                || SMVM_SyscallMap_get(syscallMap, (*scs)[i].name))
-            {
+            if (SMVM_SyscallMap_get(&apiData->syscalls, (*scs)[i].name)) {
                 status = SMVM_MOD_DUPLICATE_SYSCALL;
                 goto loadModule_0x1_fail_2;
             }
@@ -123,11 +106,6 @@ SMVM_Module_Error loadModule_0x1(SMVM_Module * m, SMVM_SyscallMap * syscallMap) 
 
     /** \todo Handle protection domain definitions: */
 
-    if (!SMVM_SyscallMap_unite(syscallMap, &apiData->syscalls)) {
-        status = SMVM_MOD_OUT_OF_MEMORY;
-        goto loadModule_0x1_fail_2;
-    }
-
     m->apiData = (void *) apiData;
 
     return SMVM_MOD_OK;
@@ -145,26 +123,23 @@ loadModule_0x1_fail_0:
     return status;
 }
 
-void unloadModule_0x1(SMVM_Module * const m, SMVM_SyscallMap * syscallMap) {
+void unloadModule_0x1(SMVM_Module * const m) {
     assert(m);
     assert(m->apiData);
 
     ApiData * const apiData = (ApiData *) m->apiData;
-
-    int r = SMVM_SyscallMap_foreach_with_syscallMap(&apiData->syscalls, &disjoint_syscallmap_subtractor, syscallMap);
-    assert(r); (void) r;
 
     SMVM_SyscallMap_destroy_with(&apiData->syscalls, &SMVM_SyscallMap_destroyer);
     free(apiData);
 }
 
 SMVM_Module_Error initModule_0x1(SMVM_Module * const m) {
-    ApiData * const data = (ApiData *) m->apiData;
+    ApiData * const apiData = (ApiData *) m->apiData;
 
-    SMVM_MODAPI_0x1_Initializer_Code r = data->initializer(&data->context);
+    SMVM_MODAPI_0x1_Initializer_Code r = apiData->initializer(&apiData->context);
     switch (r) {
         case SMVM_MODAPI_0x1_IC_OK:
-            m->moduleHandle = data->context.moduleHandle;
+            m->moduleHandle = apiData->context.moduleHandle;
             return SMVM_MOD_OK;
         case SMVM_MODAPI_0x1_IC_OUT_OF_MEMORY:
             return SMVM_MOD_OUT_OF_MEMORY;
@@ -176,7 +151,13 @@ SMVM_Module_Error initModule_0x1(SMVM_Module * const m) {
 }
 
 void deinitModule_0x1(SMVM_Module * const m) {
-    ApiData * const data = (ApiData *) m->apiData;
+    ApiData * const apiData = (ApiData *) m->apiData;
 
-    data->deinitializer(&data->context);
+    apiData->deinitializer(&apiData->context);
+}
+
+const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, const char * signature) {
+    ApiData * const apiData = (ApiData *) m->apiData;
+
+    return SMVM_SyscallMap_get(&apiData->syscalls, signature);
 }
