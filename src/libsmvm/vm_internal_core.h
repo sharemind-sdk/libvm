@@ -10,6 +10,10 @@
 #ifndef SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
 #define SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
 
+#ifndef _SHAREMIND_INTERNAL
+#define _SHAREMIND_INTERNAL
+#endif
+
 #include <stdint.h>
 #include "vm_internal_helpers.h"
 
