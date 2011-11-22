@@ -24,7 +24,9 @@ void unloadModule_0x1(SMVM_Module * m);
 SMVM_Module_Error initModule_0x1(SMVM_Module * m);
 void deinitModule_0x1(SMVM_Module * m);
 
-const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, const char * signature);
+size_t getNumSyscalls_0x1(const SMVM_Module * m);
+const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, size_t index);
+const SMVM_Syscall * findSyscall_0x1(const SMVM_Module * m, const char * signature);
 
 
 #ifdef __cplusplus

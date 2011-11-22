@@ -57,7 +57,7 @@ typedef enum {
  *  SMVM
 ********************************************************************************/
 
-const SMVM_Syscall * SMVM_get_syscall(SMVM * smvm, const char * signature);
+const SMVM_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature);
 
 
 /*******************************************************************************

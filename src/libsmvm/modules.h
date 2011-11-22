@@ -59,7 +59,9 @@ void SMVM_Module_unload(SMVM_Module * m);
 SMVM_Module_Error SMVM_Module_mod_init(SMVM_Module * m);
 void SMVM_Module_mod_deinit(SMVM_Module * m);
 
-const SMVM_Syscall * SMVM_Module_get_syscall(const SMVM_Module * m, const char * signature);
+size_t SMVM_Module_get_num_syscalls(const SMVM_Module * m);
+const SMVM_Syscall * SMVM_Module_get_syscall(const SMVM_Module * m, size_t index);
+const SMVM_Syscall * SMVM_Module_find_syscall(const SMVM_Module * m, const char * signature);
 
 
 #ifdef __cplusplus

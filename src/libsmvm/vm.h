@@ -43,7 +43,7 @@ struct _SMVM_Context {
       \returns a system call with the given signature.
       \retval NULL if no such system call is provided.
     */
-    const SMVM_Syscall * (*get_syscall)(SMVM_Context * context, const char * signature);
+    const SMVM_Syscall * (*find_syscall)(SMVM_Context * context, const char * signature);
 
     /** Pointer to any SMVM_Context data. Not used by libsmvm. */
     void * internal;

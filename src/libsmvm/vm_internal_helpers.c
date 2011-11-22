@@ -50,11 +50,11 @@ void SMVM_free(SMVM * smvm) {
     free(smvm);
 }
 
-const SMVM_Syscall * SMVM_get_syscall(SMVM * smvm, const char * signature) {
-    if (!smvm->context || !smvm->context->get_syscall)
+const SMVM_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature) {
+    if (!smvm->context || !smvm->context->find_syscall)
         return NULL;
 
-    return (*(smvm->context->get_syscall))(smvm->context, signature);
+    return (*(smvm->context->find_syscall))(smvm->context, signature);
 }
 
 
@@ -320,7 +320,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                         if (!binding)
                             return SMVM_OUT_OF_MEMORY;
 
-                        (*binding) = SMVM_get_syscall(p->smvm, (const char *) pos);
+                        (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos);
                         if (!*binding) {
                             fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
                             return SMVM_PREPARE_UNDEFINED_BIND;

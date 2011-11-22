@@ -21,13 +21,17 @@ typedef const struct {
     SMVM_Module_Error (* const module_init)(SMVM_Module * m);
     void (* const module_deinit)(SMVM_Module * m);
 
-    const SMVM_Syscall * (* const module_get_syscall)(const SMVM_Module * m, const char * signature);
+    size_t (* const module_get_num_syscalls)(const SMVM_Module * m);
+    const SMVM_Syscall * (* const module_get_syscall)(const SMVM_Module * m, size_t index);
+    const SMVM_Syscall * (* const module_find_syscall)(const SMVM_Module * m, const char * signature);
 } API;
 
 API apis[] = {
     { .module_load = &loadModule_0x1, .module_unload = &unloadModule_0x1,
       .module_init = &initModule_0x1, .module_deinit = &deinitModule_0x1,
-      .module_get_syscall = &getSyscall_0x1 }
+      .module_get_num_syscalls = &getNumSyscalls_0x1,
+      .module_get_syscall = &getSyscall_0x1,
+      .module_find_syscall = &findSyscall_0x1 }
 };
 
 SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Module_Error, SMVM_ENUM_Module_Error)
@@ -156,6 +160,14 @@ void SMVM_Module_mod_deinit(SMVM_Module * m) {
     m->isInitialized = 0;
 }
 
-const SMVM_Syscall * SMVM_Module_get_syscall(const SMVM_Module * m, const char * signature) {
-    return (*(apis[m->apiVersion - 1u].module_get_syscall))(m, signature);
+size_t SMVM_Module_get_num_syscalls(const SMVM_Module * m) {
+    return (*(apis[m->apiVersion - 1u].module_get_num_syscalls))(m);
+}
+
+const SMVM_Syscall * SMVM_Module_get_syscall(const SMVM_Module * m, size_t index) {
+    return (*(apis[m->apiVersion - 1u].module_get_syscall))(m, index);
+}
+
+const SMVM_Syscall * SMVM_Module_find_syscall(const SMVM_Module * m, const char * signature) {
+    return (*(apis[m->apiVersion - 1u].module_find_syscall))(m, signature);
 }

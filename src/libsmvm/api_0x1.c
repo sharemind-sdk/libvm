@@ -156,7 +156,20 @@ void deinitModule_0x1(SMVM_Module * const m) {
     apiData->deinitializer(&apiData->context);
 }
 
-const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, const char * signature) {
+size_t getNumSyscalls_0x1(const SMVM_Module * m) {
+    ApiData * const apiData = (ApiData *) m->apiData;
+
+    return apiData->syscalls.size;
+}
+
+const SMVM_Syscall * getSyscall_0x1(const SMVM_Module * m, size_t index) {
+    ApiData * const apiData = (ApiData *) m->apiData;
+
+    return SMVM_SyscallMap_value_at(&apiData->syscalls, index);
+}
+
+
+const SMVM_Syscall * findSyscall_0x1(const SMVM_Module * m, const char * signature) {
     ApiData * const apiData = (ApiData *) m->apiData;
 
     return SMVM_SyscallMap_get(&apiData->syscalls, signature);

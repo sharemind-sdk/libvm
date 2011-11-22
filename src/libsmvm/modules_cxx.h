@@ -30,21 +30,27 @@ public: /* Methods: */
     inline SMVM_Module_Error init(void) { return SMVM_Module_mod_init(&m_mod); }
     inline void deinit(void) { SMVM_Module_mod_deinit(&m_mod); }
 
-    void * handle() { return m_mod.handle; }
-    const void * handle() const { return m_mod.handle; }
-    const char * name() const { return m_mod.name; }
-    const char * filename() const { return m_mod.filename; }
-    uint32_t apiVersion() const { return m_mod.apiVersion; }
-    uint32_t version() const { return m_mod.version; }
-    const char * errorString() const { return m_mod.errorString; }
-    void * apiData() { return m_mod.apiData; }
-    const void * apiData() const { return m_mod.apiData; }
-    void * moduleHandle() { return m_mod.moduleHandle; }
-    const void * moduleHandle() const { return m_mod.moduleHandle; }
-    bool isInitialized() const { return m_mod.isInitialized; }
+    inline void * handle() { return m_mod.handle; }
+    inline const void * handle() const { return m_mod.handle; }
+    inline const char * name() const { return m_mod.name; }
+    inline const char * filename() const { return m_mod.filename; }
+    inline uint32_t apiVersion() const { return m_mod.apiVersion; }
+    inline uint32_t version() const { return m_mod.version; }
+    inline const char * errorString() const { return m_mod.errorString; }
+    inline void * apiData() { return m_mod.apiData; }
+    inline const void * apiData() const { return m_mod.apiData; }
+    inline void * moduleHandle() { return m_mod.moduleHandle; }
+    inline const void * moduleHandle() const { return m_mod.moduleHandle; }
+    inline bool isInitialized() const { return m_mod.isInitialized; }
 
-    const SMVM_Syscall * getSyscall(const char * signature) const {
-        return SMVM_Module_get_syscall(&m_mod, signature);
+    inline size_t getNumSyscalls() const {
+        return SMVM_Module_get_num_syscalls(&m_mod);
+    }
+    inline const SMVM_Syscall * getSyscall(size_t index) const {
+        return SMVM_Module_get_syscall(&m_mod, index);
+    }
+    inline const SMVM_Syscall * findSyscall(const char * signature) const {
+        return SMVM_Module_find_syscall(&m_mod, signature);
     }
 
 private: /* Fields: */
