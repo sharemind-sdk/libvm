@@ -20,7 +20,7 @@ LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wc++-compat -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
 SET(CMAKE_CXX_FLAGS "-std=gnu++98 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
-ADD_DEFINITIONS("-D_XOPEN_SOURCE=500")
+ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
 
 SET(VM_OUT_OF_MEMORY_DEBUG FALSE CACHE BOOL "Enable out of memory debugging for the vm binary.")
 
@@ -34,8 +34,6 @@ SET(OTHER_FILES "config.local.example"
                 "src/instrset.h"
                 "src/likely.h"
                 "src/map.h"
-                "src/modapi.h"
-                "src/modapi_0x1.h"
                 "src/preprocessor.h"
                 "src/stack.h"
                 "src/static_assert.h"
@@ -206,49 +204,65 @@ INSTALL(DIRECTORY "src/libsmas/"
 
 
 ################################################################################
+# libsmmod
+################################################################################
+
+ADD_LIBRARY("libsmmod" SHARED
+            "src/libsmmod/modapi.c"
+            "src/libsmmod/modapi_0x1.c"
+            "src/libsmmod/pd.c"
+            "src/libsmmod/pdk.c"
+            "src/libsmmod/pdkmap.c"
+            "src/libsmmod/pdpi.c"
+            "src/libsmmod/syscall.c"
+            "src/libsmmod/syscallmap.c")
+SET(OTHER_FILES ${OTHER_FILES}
+    "src/libsmmod/modapi.h"
+    "src/libsmmod/modapi_internal.h"
+    "src/libsmmod/modapi_0x1.h"
+    "src/libsmmod/modapi_0x1_internal.h"
+    "src/libsmmod/pd.h"
+    "src/libsmmod/pdk.h"
+    "src/libsmmod/pdkmap.h"
+    "src/libsmmod/pdpi.h"
+    "src/libsmmod/syscall.h"
+    "src/libsmmod/syscallmap.h")
+SET_TARGET_PROPERTIES("libsmmod" PROPERTIES
+                      OUTPUT_NAME "smmod"
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
+INSTALL(FILES "src/libsmmod/modapi.h"
+        DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmmod")
+
+
+################################################################################
 # libsmvm
 ################################################################################
 
 SET(LIBSMVM_DEFINES "SMVM_NO_THREADS")
-
-IF(NOT VM_SOFT_FLOAT)
-  ADD_LIBRARY("libsmvm" SHARED
-              "src/libsmvm/api_0x1.c"
-              "src/libsmvm/modules.c"
-              "src/libsmvm/syscall.c"
-              "src/libsmvm/vm_internal_core.c"
-              "src/libsmvm/vm_internal_helpers.c")
-ELSE(NOT VM_SOFT_FLOAT)
+IF(VM_FAST_BUILD)
+  SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_FAST_BUILD")
+ENDIF(VM_FAST_BUILD)
+SET(LIBSMVM_SOURCES
+    "src/libsmvm/vm_internal_core.c"
+    "src/libsmvm/vm_internal_helpers.c")
+IF(VM_SOFT_FLOAT)
+  SET(LIBSMVM_SOURCES ${LIBSMVM_SOURCES} "src/3rdparty/softfloat/softfloat.c")
   SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_SOFT_FLOAT")
-  ADD_LIBRARY("libsmvm" SHARED
-              "src/libsmvm/api_0x1.c"
-              "src/libsmvm/modules.c"
-              "src/libsmvm/syscall.c"
-              "src/libsmvm/syscallmap.c"
-              "src/libsmvm/vm_internal_core.c"
-              "src/libsmvm/vm_internal_helpers.c"
-              "src/3rdparty/softfloat/softfloat.c")
-ENDIF(NOT VM_SOFT_FLOAT)
+ENDIF(VM_SOFT_FLOAT)
 SET(OTHER_FILES ${OTHER_FILES}
-    "src/libsmvm/api_0x1.h"
-    "src/libsmvm/modules.h"
-    "src/libsmvm/modules_cxx.h"
-    "src/libsmvm/syscall.h"
-    "src/libsmvm/syscallmap.h"
     "src/libsmvm/vm.h"
     "src/libsmvm/vm_internal_helpers.h"
     "src/libsmvm/vm_internal_core.h")
+ADD_LIBRARY("libsmvm" SHARED ${LIBSMVM_SOURCES})
 SET_TARGET_PROPERTIES("libsmvm" PROPERTIES
                       OUTPUT_NAME "smvm"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1"
-                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
-
-IF(VM_FAST_BUILD)
-  SET(LIBSMVM_DEFINES "${LIBSMVM_DEFINES};SMVM_FAST_BUILD")
-ENDIF(VM_FAST_BUILD)
-SET_TARGET_PROPERTIES("libsmvm" PROPERTIES COMPILE_DEFINITIONS "${LIBSMVM_DEFINES}")
+                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
+                      COMPILE_DEFINITIONS "${LIBSMVM_DEFINES}")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/preprocess_pass2_functions.h")
 SET_SOURCE_FILES_PROPERTIES("src/libsmvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
@@ -273,11 +287,28 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 # vm
 ################################################################################
 
-
-ADD_EXECUTABLE("vm" "src/vm/main.cpp")
+SET(VM_FILES "src/vm/lasterror.cpp"
+             "src/vm/main.cpp"
+             "src/vm/vm/modules.cpp"
+             "src/vm/vm/pd.cpp"
+             "src/vm/vm/pdi.cpp"
+             "src/vm/vm/vm.cpp")
+IF(VM_OUT_OF_MEMORY_DEBUG)
+  SET(VM_FILES ${VM_FILES} "src/vm/oomd.c")
+ENDIF(VM_OUT_OF_MEMORY_DEBUG)
+ADD_EXECUTABLE("vm" ${VM_FILES})
 SET_TARGET_PROPERTIES("vm" PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "bin/"
                       VERSION "0.1.0.0")
+SET(OTHER_FILES ${OTHER_FILES}
+    "src/vm/lasterror.h"
+    "src/vm/oomd.h"
+    "src/vm/stringscopedobjectmap.h"
+    "src/vm/vm/modules.h"
+    "src/vm/vm/pd.h"
+    "src/vm/vm/pdi.h"
+    "src/vm/vm/pdk.h"
+    "src/vm/vm/vm.h")
 IF(VM_OUT_OF_MEMORY_DEBUG)
   # This is because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44736 :
   SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_FLAGS "-fno-builtin-malloc")
@@ -287,7 +318,7 @@ IF(VM_OUT_OF_MEMORY_DEBUG)
     SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_DEFINITIONS "VM_OUT_OF_MEMORY_DEBUG")
   ENDIF(VM_OUT_OF_MEMORY_DEBUG_FAIL_BACKTRACE)
 ENDIF(VM_OUT_OF_MEMORY_DEBUG)
-TARGET_LINK_LIBRARIES("vm" "dl" "libsmvmi" "libsmvm")
+TARGET_LINK_LIBRARIES("vm" "dl" "libsmmod" "libsmvmi" "libsmvm")
 
 
 ################################################################################

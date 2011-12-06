@@ -11,8 +11,9 @@
 #define SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H
 
 #ifndef _SHAREMIND_INTERNAL
-#define _SHAREMIND_INTERNAL
+#error including an internal header!
 #endif
+
 
 #include "vm.h"
 
@@ -29,11 +30,13 @@
 
 #include <stdlib.h>
 #include "../instrset.h"
+#include "../libsmmod/modapi_0x1.h"
+#include "../libsmmod/pd.h"
+#include "../libsmmod/pdpi.h"
+#include "../libsmmod/syscall.h"
 #include "../map.h"
-#include "../modapi_0x1.h"
 #include "../stack.h"
 #include "../vector.h"
-#include "syscall.h"
 
 
 #ifdef __cplusplus
@@ -54,18 +57,19 @@ typedef enum {
 
 
 /*******************************************************************************
- *  SMVM
-********************************************************************************/
-
-const SMVM_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature);
-
-
-/*******************************************************************************
  *  SMVM_SyscallBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_SyscallBindings,const SMVM_Syscall *,,inline)
-SM_VECTOR_DEFINE(SMVM_SyscallBindings,const SMVM_Syscall *,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_SyscallBindings,const SMVM_Context_Syscall *,,inline)
+SM_VECTOR_DEFINE(SMVM_SyscallBindings,const SMVM_Context_Syscall *,malloc,free,realloc,inline)
+
+
+/*******************************************************************************
+ *  SMVM_PdBindings
+********************************************************************************/
+
+SM_VECTOR_DECLARE(SMVM_PdBindings,void *,,inline)
+SM_VECTOR_DEFINE(SMVM_PdBindings,void *,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -255,6 +259,11 @@ SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,)
 SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
 #endif
 
+typedef struct {
+    const SMVM_Context_Syscall * syscall;
+    const SMVM_Program * program;
+} SMVM_SyscallContextInternal;
+
 struct _SMVM_Program {
     SMVM_State state;
     SMVM_Error error;
@@ -265,6 +274,7 @@ struct _SMVM_Program {
     SMVM_DataSectionsVector bssSections;
 
     SMVM_SyscallBindings bindings;
+    SMVM_PdBindings pdBindings;
 
     SMVM_FrameStack frames;
     SMVM_StackFrame * globalFrame;
@@ -282,6 +292,8 @@ struct _SMVM_Program {
     int64_t exceptionValue;
 
     SMVM * smvm;
+    SMVM_MODAPI_0x1_Syscall_Context syscallContext;
+    SMVM_SyscallContextInternal syscallContextInternal;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;
@@ -305,6 +317,19 @@ void SMVM_RegisterVector_printStateBencoded(SMVM_RegisterVector * const v, FILE 
 void SMVM_StackFrame_printStateBencoded(SMVM_StackFrame * const s, FILE * const f) __attribute__ ((nonnull(1)));
 void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) __attribute__ ((nonnull(1)));
 #endif /* SMVM_DEBUG */
+
+
+/*******************************************************************************
+ *  Functions provided to system calls
+********************************************************************************/
+
+uint64_t _SMVM_publicAlloc(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c);
+int _SMVM_publicFree(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
+size_t _SMVM_publicMemPtrSize(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
+void * _SMVM_publicMemPtrData(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
+void * _SMVM_allocPrivate(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c);
+int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
+void * _SMVM_get_pd_process_handle(uint64_t pd_index, SMVM_MODAPI_0x1_Syscall_Context * p);
 
 
 #ifdef __cplusplus

@@ -14,6 +14,7 @@
 #define _SHAREMIND_INTERNAL
 #endif
 
+
 #include <stdint.h>
 #include "vm_internal_helpers.h"
 

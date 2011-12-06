@@ -7,13 +7,13 @@
  * code is subject to the appropriate license agreement.
  */
 
-#include <stdio.h>
+#define _SHAREMIND_INTERNAL
 
-#include "vm.h"
 #include "vm_internal_helpers.h"
 
 #include <assert.h>
 #include <limits.h>
+#include <stdio.h>
 #include <string.h>
 #include "../libsme/libsme.h"
 #include "../libsme/libsme_0x0.h"
@@ -36,12 +36,16 @@ struct _SMVM {
 };
 
 SMVM * SMVM_new(SMVM_Context * context) {
+    assert(context);
     SMVM * smvm = (SMVM *) malloc(sizeof(SMVM));
+    if (!smvm)
+        return NULL;
     smvm->context = context;
     return smvm;
 }
 
 void SMVM_free(SMVM * smvm) {
+    assert(smvm);
     if (smvm->context) {
         if (smvm->context->destructor) {
             (*(smvm->context->destructor))(smvm->context);
@@ -50,11 +54,18 @@ void SMVM_free(SMVM * smvm) {
     free(smvm);
 }
 
-const SMVM_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature) {
+const SMVM_Context_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature) {
     if (!smvm->context || !smvm->context->find_syscall)
         return NULL;
 
     return (*(smvm->context->find_syscall))(smvm->context, signature);
+}
+
+void * SMVM_get_pd_process_instance(SMVM * smvm, const char * pdName) {
+    if (!smvm->context || !smvm->context->get_pd_process_instance_handle)
+        return NULL;
+
+    return (*(smvm->context->get_pd_process_instance_handle))(smvm->context, pdName);
 }
 
 
@@ -198,6 +209,15 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
         p->smvm = smvm;
+        p->syscallContext.publicAlloc = NULL; /** \todo */
+        p->syscallContext.publicFree = NULL; /** \todo */
+        p->syscallContext.publicMemPtrSize = NULL; /** \todo */
+        p->syscallContext.publicMemPtrData = NULL; /** \todo */
+        p->syscallContext.allocPrivate = NULL; /** \todo */
+        p->syscallContext.freePrivate = NULL; /** \todo */
+        p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
+        p->syscallContext.internal = &p->syscallContextInternal;
+        p->syscallContextInternal.program = p;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -291,8 +311,20 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
 #define COPYSECTION \
     memcpy(s->pData, pos, sh->length); \
     pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8];
-#define ZEROSECTION \
-    memset(s->pData, 0, sh->length);
+#define LOAD_BINDSECTION_CASE(utype,code) \
+    case SME_SECTION_TYPE_ ## utype: { \
+        if (sh->length <= 0) \
+            break; \
+        const char * endPos = ((const char *) pos) + sh->length; \
+        /* Check for 0-termination: */ \
+        if (unlikely(*(endPos - 1))) \
+            return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; \
+        do { \
+            code \
+            pos = ((const char *) pos) + strlen((const char *) pos) + 1; \
+        } while (pos != endPos); \
+        pos = ((const char *) pos) + extraPadding[sh->length % 8]; \
+    } break;
 
             switch (type) {
                 case SME_SECTION_TYPE_TEXT: {
@@ -304,32 +336,27 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                 } break;
                 LOAD_DATASECTION_CASE(RODATA,rodata,COPYSECTION,&roDataSpecials)
                 LOAD_DATASECTION_CASE(DATA,data,COPYSECTION,&rwDataSpecials)
-                LOAD_DATASECTION_CASE(BSS,bss,ZEROSECTION,&rwDataSpecials)
-                case SME_SECTION_TYPE_BIND: {
-                    if (sh->length <= 0)
-                        break;
-
-                    const char * endPos = ((const char *) pos) + sh->length;
-
-                    // Check for 0-termination:
-                    if (unlikely(*(endPos - 1)))
-                        return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
-
-                    do {
-                        const SMVM_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
-                        if (!binding)
-                            return SMVM_OUT_OF_MEMORY;
-
-                        (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos);
-                        if (!*binding) {
-                            fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
-                            return SMVM_PREPARE_UNDEFINED_BIND;
-                        }
-
-                        pos = ((const char *) pos) + strlen((const char *) pos) + 1;
-                    } while (pos != endPos);
-                    pos = ((const char *) pos) + extraPadding[sh->length % 8];
-                } break;
+                LOAD_DATASECTION_CASE(BSS,bss,memset(s->pData, 0, sh->length);,&rwDataSpecials)
+                LOAD_BINDSECTION_CASE(BIND,
+                    const SMVM_Context_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings); \
+                    if (!binding) \
+                        return SMVM_OUT_OF_MEMORY; \
+                    (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos); \
+                    if (!*binding) { \
+                        SMVM_SyscallBindings_pop(&p->bindings); \
+                        fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos); \
+                        return SMVM_PREPARE_UNDEFINED_BIND; \
+                    })
+                LOAD_BINDSECTION_CASE(PDBIND,
+                    void ** pdBinding = SMVM_PdBindings_push(&p->pdBindings); \
+                    if (!pdBinding) \
+                        return SMVM_OUT_OF_MEMORY; \
+                    (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos); \
+                    if (!*pdBinding) { \
+                        SMVM_PdBindings_pop(&p->pdBindings); \
+                        fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos); \
+                        return SMVM_PREPARE_UNDEFINED_PDBIND; \
+                    })
                 default:
                     /** \todo also add other sections (currently ignoring). */
                     break;
@@ -561,6 +588,54 @@ size_t SMVM_Program_get_current_codesection(SMVM_Program *p) {
 uintptr_t SMVM_Program_get_current_ip(SMVM_Program *p) {
     return p->currentIp;
 }
+
+/*******************************************************************************
+ *  Functions provided to system calls
+********************************************************************************/
+
+uint64_t _SMVM_publicAlloc(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    /** \todo */
+    return 0u;
+}
+
+int _SMVM_publicFree(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    /** \todo */
+    return 1;
+}
+
+size_t _SMVM_publicMemPtrSize(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    /** \todo */
+    return 0u;
+}
+
+void * _SMVM_publicMemPtrData(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    /** \todo */
+    return NULL;
+}
+
+void * _SMVM_allocPrivate(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    (void) c;
+    /** \todo add allocated pointer to valid list */
+    return malloc(nBytes);
+}
+
+int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
+    (void) c;
+    /** \todo check if ptr is valid */
+    free(ptr);
+    return 1;
+}
+
+void * _SMVM_get_pd_process_handle(uint64_t pd_index, SMVM_MODAPI_0x1_Syscall_Context * p) {
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) p->internal;
+    if (pd_index > SIZE_MAX)
+        return NULL;
+    void * const * const ppd = SMVM_PdBindings_get_const_pointer(&i->program->pdBindings, pd_index);
+    if (ppd)
+        return *ppd;
+    return NULL;
+}
+
 
 /*******************************************************************************
  *  Debugging

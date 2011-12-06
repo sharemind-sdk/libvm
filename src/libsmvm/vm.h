@@ -13,7 +13,6 @@
 #include "../codeblock.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
-#include "syscall.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +25,13 @@ SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
 SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 
+struct _SMVM_Context_Syscall;
+typedef struct _SMVM_Context_Syscall SMVM_Context_Syscall;
+struct _SMVM_Context_Syscall {
+    void * impl_or_wrapper;
+    void * null_or_impl;
+    void * moduleHandle;
+};
 
 struct _SMVM_Context;
 typedef struct _SMVM_Context SMVM_Context;
@@ -43,7 +49,15 @@ struct _SMVM_Context {
       \returns a system call with the given signature.
       \retval NULL if no such system call is provided.
     */
-    const SMVM_Syscall * (*find_syscall)(SMVM_Context * context, const char * signature);
+    const SMVM_Context_Syscall * (*find_syscall)(SMVM_Context * context, const char * signature);
+
+    /**
+      \param[in] context a pointer to this struct.
+      \param[in] pdname the name of the protection domain.
+      \returns an instance of the process interface for this protection domain.
+      \retval NULL on error.
+    */
+    void * (*get_pd_process_instance_handle)(SMVM_Context * context, const char * pdname);
 
     /** Pointer to any SMVM_Context data. Not used by libsmvm. */
     void * internal;
@@ -78,6 +92,7 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_State);
     ((SMVM_PREPARE_ERROR_INVALID_INSTRUCTION,)) \
     ((SMVM_PREPARE_ERROR_INVALID_ARGUMENTS,)) \
     ((SMVM_PREPARE_UNDEFINED_BIND,)) \
+    ((SMVM_PREPARE_UNDEFINED_PDBIND,)) \
     ((SMVM_RUNTIME_EXCEPTION,)) \
     ((SMVM_RUNTIME_TRAP,))
 SM_ENUM_CUSTOM_DEFINE(SMVM_Error, SMVM_ENUM_Error);
