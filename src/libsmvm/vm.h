@@ -41,7 +41,7 @@ struct _SMVM_Context {
       A destructor (e.g. free) for this SMVM_context.
       \param[in] context a pointer to this struct.
     */
-    void (*destructor)(void * context);
+    void (*destructor)(SMVM_Context * context);
 
     /**
       \param[in] context a pointer to this struct.

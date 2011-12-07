@@ -223,6 +223,7 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         SMVM_DataSectionsVector_init(&p->rodataSections);
         SMVM_DataSectionsVector_init(&p->bssSections);
         SMVM_SyscallBindings_init(&p->bindings);
+        SMVM_PdBindings_init(&p->pdBindings);
         SMVM_FrameStack_init(&p->frames);
         SMVM_MemoryMap_init(&p->memoryMap);
         p->memorySlotsUsed = 0u;
@@ -243,6 +244,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     SMVM_DataSectionsVector_destroy_with(&p->rodataSections, &SMVM_DataSection_destroy);
     SMVM_DataSectionsVector_destroy_with(&p->bssSections, &SMVM_DataSection_destroy);
     SMVM_SyscallBindings_destroy(&p->bindings);
+    SMVM_PdBindings_destroy(&p->pdBindings);
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
     SMVM_MemoryMap_destroy_with(&p->memoryMap, &SMVM_MemoryMap_destroyer);
@@ -338,24 +340,24 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                 LOAD_DATASECTION_CASE(DATA,data,COPYSECTION,&rwDataSpecials)
                 LOAD_DATASECTION_CASE(BSS,bss,memset(s->pData, 0, sh->length);,&rwDataSpecials)
                 LOAD_BINDSECTION_CASE(BIND,
-                    const SMVM_Context_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings); \
-                    if (!binding) \
-                        return SMVM_OUT_OF_MEMORY; \
-                    (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos); \
-                    if (!*binding) { \
-                        SMVM_SyscallBindings_pop(&p->bindings); \
-                        fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos); \
-                        return SMVM_PREPARE_UNDEFINED_BIND; \
+                    const SMVM_Context_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
+                    if (!binding)
+                        return SMVM_OUT_OF_MEMORY;
+                    (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos);
+                    if (!*binding) {
+                        SMVM_SyscallBindings_pop(&p->bindings);
+                        fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
+                        return SMVM_PREPARE_UNDEFINED_BIND;
                     })
                 LOAD_BINDSECTION_CASE(PDBIND,
-                    void ** pdBinding = SMVM_PdBindings_push(&p->pdBindings); \
-                    if (!pdBinding) \
-                        return SMVM_OUT_OF_MEMORY; \
-                    (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos); \
-                    if (!*pdBinding) { \
-                        SMVM_PdBindings_pop(&p->pdBindings); \
-                        fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos); \
-                        return SMVM_PREPARE_UNDEFINED_PDBIND; \
+                    void ** pdBinding = SMVM_PdBindings_push(&p->pdBindings);
+                    if (!pdBinding)
+                        return SMVM_OUT_OF_MEMORY;
+                    (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos);
+                    if (!*pdBinding) {
+                        SMVM_PdBindings_pop(&p->pdBindings);
+                        fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);
+                        return SMVM_PREPARE_UNDEFINED_PDBIND;
                     })
                 default:
                     /** \todo also add other sections (currently ignoring). */
