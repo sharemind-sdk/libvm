@@ -431,6 +431,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             case SMVM_MODAPI_0x1_SC_INVALID_CALL: \
                 SMVM_MI_DO_EXCEPT(SMVM_E_INVALID_SYSCALL_INVOCATION); \
                 break; \
+            case SMVM_MODAPI_0x1_SC_GENERAL_FAILURE: /* Fall through: */ \
             default: \
                 SMVM_MI_DO_EXCEPT(SMVM_E_SYSCALL_FAILURE); \
                 break; \
