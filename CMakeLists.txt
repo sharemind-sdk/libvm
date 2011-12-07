@@ -325,12 +325,25 @@ TARGET_LINK_LIBRARIES("vm" "dl" "libsmmod" "libsmvmi" "libsmvm")
 # libmod_putchar
 ################################################################################
 
-PREPARE_OTHER_FILES()
 ADD_LIBRARY("libmod_putchar" SHARED
-            "src/mod_putchar/mod_putchar.c"
-               ${PREPARED_OTHER_FILES}) # <-- hack for Qt Creator to include other files
+            "src/mod_putchar/mod_putchar.c")
 SET_TARGET_PROPERTIES("libmod_putchar" PROPERTIES
                       OUTPUT_NAME "smvm_mod_putchar"
+                      LIBRARY_OUTPUT_DIRECTORY "lib/"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1")
+
+
+################################################################################
+# libmod_pd_getconfig
+################################################################################
+
+PREPARE_OTHER_FILES()
+ADD_LIBRARY("libmod_pd_getconfig" SHARED
+            "src/mod_pd_getconfig/mod_pd_getconfig.c"
+               ${PREPARED_OTHER_FILES}) # <-- hack for Qt Creator to include other files
+SET_TARGET_PROPERTIES("libmod_pd_getconfig" PROPERTIES
+                      OUTPUT_NAME "smvm_mod_pd_getconfig"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
@@ -424,4 +437,5 @@ add_test_assemble_execute("" "" "section_data" "")
 add_test_assemble_execute("" "" "section_rodata" "")
 add_test_assemble_execute("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_1")
 add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_2" "Tere, Maailm!")
+add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_pd_getconfig> -p first:GetConfigPD=FIRST -p second:GetConfigPD=SECOND -p third:GetConfigPD=THIRD" "pd_getconfig" "" "SECOND")
 add_test_assemble_execute("" "" "tmod" "")
