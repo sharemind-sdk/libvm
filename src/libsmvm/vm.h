@@ -33,6 +33,14 @@ struct _SMVM_Context_Syscall {
     void * moduleHandle;
 };
 
+struct _SMVM_Context_PDPI;
+typedef struct _SMVM_Context_PDPI SMVM_Context_PDPI;
+struct _SMVM_Context_PDPI {
+    void * pdProcessHandle;
+    size_t pdkIndex;
+    void * moduleHandle;
+};
+
 struct _SMVM_Context;
 typedef struct _SMVM_Context SMVM_Context;
 struct _SMVM_Context {
@@ -54,10 +62,9 @@ struct _SMVM_Context {
     /**
       \param[in] context a pointer to this struct.
       \param[in] pdname the name of the protection domain.
-      \returns an instance of the process interface for this protection domain.
-      \retval NULL on error.
+      \retval NULL if no such protection domain is found.
     */
-    void * (*get_pd_process_instance_handle)(SMVM_Context * context, const char * pdname);
+    const SMVM_Context_PDPI * (*get_pd_process_instance_handle)(SMVM_Context * context, const char * pdName);
 
     /** Pointer to any SMVM_Context data. Not used by libsmvm. */
     void * internal;

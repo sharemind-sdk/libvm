@@ -61,9 +61,9 @@ const SMVM_Context_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signatu
     return (*(smvm->context->find_syscall))(smvm->context, signature);
 }
 
-void * SMVM_get_pd_process_instance(SMVM * smvm, const char * pdName) {
+const SMVM_Context_PDPI * SMVM_get_pd_process_instance(SMVM * smvm, const char * pdName) {
     if (!smvm->context || !smvm->context->get_pd_process_instance_handle)
-        return NULL;
+        return 0;
 
     return (*(smvm->context->get_pd_process_instance_handle))(smvm->context, pdName);
 }
@@ -350,9 +350,10 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                         return SMVM_PREPARE_UNDEFINED_BIND;
                     })
                 LOAD_BINDSECTION_CASE(PDBIND,
-                    void ** pdBinding = SMVM_PdBindings_push(&p->pdBindings);
+                    const SMVM_Context_PDPI ** pdBinding = SMVM_PdBindings_push(&p->pdBindings);
                     if (!pdBinding)
                         return SMVM_OUT_OF_MEMORY;
+
                     (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos);
                     if (!*pdBinding) {
                         SMVM_PdBindings_pop(&p->pdBindings);
@@ -628,16 +629,28 @@ int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
     return 1;
 }
 
-void * _SMVM_get_pd_process_handle(uint64_t pd_index, SMVM_MODAPI_0x1_Syscall_Context * p) {
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) p->internal;
+int _SMVM_get_pd_process_handle(uint64_t pd_index,
+                                SMVM_MODAPI_0x1_Syscall_Context * c,
+                                void ** pdProcessHandle,
+                                size_t * pdkIndex,
+                                void ** moduleHandle)
+{
     if (pd_index > SIZE_MAX)
-        return NULL;
-    void * const * const ppd = SMVM_PdBindings_get_const_pointer(&i->program->pdBindings, pd_index);
-    if (ppd)
-        return *ppd;
-    return NULL;
-}
+        return 0;
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
+    assert(i);
+    const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&i->program->pdBindings, pd_index);
+    if (!ppd && !*ppd)
+        return 0;
 
+    if (pdProcessHandle)
+        *pdProcessHandle = (*ppd)->pdProcessHandle;
+    if (pdkIndex)
+        *pdkIndex = (*ppd)->pdkIndex;
+    if (moduleHandle)
+        *moduleHandle = (*ppd)->moduleHandle;
+    return 1;
+}
 
 /*******************************************************************************
  *  Debugging

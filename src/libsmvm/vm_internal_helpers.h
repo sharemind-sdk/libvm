@@ -68,8 +68,8 @@ SM_VECTOR_DEFINE(SMVM_SyscallBindings,const SMVM_Context_Syscall *,malloc,free,r
  *  SMVM_PdBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_PdBindings,void *,,inline)
-SM_VECTOR_DEFINE(SMVM_PdBindings,void *,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_PdBindings,const SMVM_Context_PDPI *,,inline)
+SM_VECTOR_DEFINE(SMVM_PdBindings,const SMVM_Context_PDPI *,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -329,7 +329,11 @@ size_t _SMVM_publicMemPtrSize(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c)
 void * _SMVM_publicMemPtrData(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
 void * _SMVM_allocPrivate(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c);
 int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
-void * _SMVM_get_pd_process_handle(uint64_t pd_index, SMVM_MODAPI_0x1_Syscall_Context * p);
+int _SMVM_get_pd_process_handle(uint64_t pd_index,
+                                SMVM_MODAPI_0x1_Syscall_Context * c,
+                                void ** pdProcessHandle,
+                                size_t * pdkIndex,
+                                void ** moduleHandle);
 
 
 #ifdef __cplusplus
