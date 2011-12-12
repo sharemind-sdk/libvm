@@ -86,6 +86,7 @@ SET(OTHER_FILES "config.local.example"
                 "tests/global_return.sa"
                 "tests/mem.sa"
                 "tests/proc.sa"
+                "tests/ref1.sa"
                 "tests/run_test_assemble_execute.sh"
                 "tests/syscall_putchar.sa"
                 "tests/section_bss.sa"
@@ -433,6 +434,7 @@ add_test_assemble_execute("" "" "factorial" "")
 add_test_assemble_execute("" "" "global_return" "")
 add_test_assemble_execute("" "" "mem" "")
 add_test_assemble_execute("" "" "proc" "")
+add_test_assemble_execute("" "" "ref1" "")
 add_test_assemble_execute("" "" "section_bss" "")
 add_test_assemble_execute("" "" "section_data" "")
 add_test_assemble_execute("" "" "section_rodata" "")
