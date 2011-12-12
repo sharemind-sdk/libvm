@@ -87,6 +87,7 @@ typedef struct _SMVM_MemorySlot {
 } SMVM_MemorySlot;
 
 struct _SMVM_MemorySlotSpecials {
+    uint64_t ptr;
     int readable;
     int writeable;
     void (*free)(SMVM_MemorySlot *);
@@ -131,6 +132,37 @@ SMVM_MemorySlot_destroy_DECLARE;
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
 #endif
 
+#define SMVM_MemorySlot_find_unused_ptr_DECLARE \
+    uint64_t SMVM_MemorySlot_find_unused_ptr(const SMVM_MemoryMap * m, uint64_t startFrom)
+
+#define SMVM_MemorySlot_find_unused_ptr_DEFINE \
+    SMVM_MemorySlot_find_unused_ptr_DECLARE { \
+        assert(m); \
+        assert(startFrom != 0u); \
+        assert(m->size < UINT64_MAX); \
+        assert(m->size < SIZE_MAX); \
+        uint64_t index = startFrom; \
+        for (;;) { \
+            /* Check if slot is free: */ \
+            if (likely(!SMVM_MemoryMap_get_const(m, index))) \
+                break; \
+            /* Increment index, skip "NULL" */ \
+            if (unlikely(!++index)) \
+                index++; \
+            assert(index != 0u); \
+            /* This shouldn't trigger because (m->size < UINT64_MAX) */ \
+            assert(index != startFrom); \
+        } \
+        assert(index != 0u); \
+        return index; \
+    }
+
+#ifndef SMVM_FAST_BUILD
+inline SMVM_MemorySlot_find_unused_ptr_DECLARE;
+inline SMVM_MemorySlot_find_unused_ptr_DEFINE
+#else
+SMVM_MemorySlot_find_unused_ptr_DECLARE;
+#endif
 
 /*******************************************************************************
  *  SMVM_Reference and SMVM_CReference
@@ -261,7 +293,7 @@ SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
 
 typedef struct {
     const SMVM_Context_Syscall * syscall;
-    const SMVM_Program * program;
+    SMVM_Program * program;
 } SMVM_SyscallContextInternal;
 
 struct _SMVM_Program {
@@ -282,7 +314,6 @@ struct _SMVM_Program {
     SMVM_StackFrame * thisFrame;
 
     SMVM_MemoryMap memoryMap;
-    uint64_t memorySlotsUsed;
     uint64_t memorySlotNext;
 
     size_t currentCodeSectionIndex;
@@ -318,22 +349,28 @@ void SMVM_StackFrame_printStateBencoded(SMVM_StackFrame * const s, FILE * const 
 void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) __attribute__ ((nonnull(1)));
 #endif /* SMVM_DEBUG */
 
+uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
 
-/*******************************************************************************
- *  Functions provided to system calls
-********************************************************************************/
+uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_MemorySlot ** memorySlot) __attribute__ ((nonnull(1)));
+uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
 
-uint64_t _SMVM_publicAlloc(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c);
-int _SMVM_publicFree(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
-size_t _SMVM_publicMemPtrSize(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
-void * _SMVM_publicMemPtrData(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
-void * _SMVM_allocPrivate(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c);
-int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c);
-int _SMVM_get_pd_process_handle(uint64_t pd_index,
-                                SMVM_MODAPI_0x1_Syscall_Context * c,
+SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) __attribute__ ((nonnull(1)));
+int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+
+size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+
+size_t _SMVM_publicMemPtrSize(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+void * _SMVM_publicMemPtrData(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+
+void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
+int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) __attribute__ ((nonnull(1)));
+
+int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
+                                uint64_t pd_index,
                                 void ** pdProcessHandle,
                                 size_t * pdkIndex,
-                                void ** moduleHandle);
+                                void ** moduleHandle) __attribute__ ((nonnull(1)));
 
 
 #ifdef __cplusplus

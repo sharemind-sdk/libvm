@@ -87,6 +87,8 @@ SMVM_MemorySlot_init_DEFINE
 SMVM_MemorySlot_destroy_DEFINE
 
 SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
+
+SMVM_MemorySlot_find_unused_ptr_DEFINE
 #endif
 
 static inline void SMVM_MemoryMap_destroyer(const uint64_t * key, SMVM_MemorySlot * value) {
@@ -209,12 +211,12 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
         p->smvm = smvm;
-        p->syscallContext.publicAlloc = NULL; /** \todo */
-        p->syscallContext.publicFree = NULL; /** \todo */
-        p->syscallContext.publicMemPtrSize = NULL; /** \todo */
-        p->syscallContext.publicMemPtrData = NULL; /** \todo */
-        p->syscallContext.allocPrivate = NULL; /** \todo */
-        p->syscallContext.freePrivate = NULL; /** \todo */
+        p->syscallContext.publicAlloc = &SMVM_public_alloc;
+        p->syscallContext.publicFree = &SMVM_public_free;
+        p->syscallContext.publicMemPtrSize = &SMVM_public_get_size;
+        p->syscallContext.publicMemPtrData = &SMVM_public_get_ptr;
+        p->syscallContext.allocPrivate = &SMVM_private_alloc;
+        p->syscallContext.freePrivate = &SMVM_private_free;
         p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.internal = &p->syscallContextInternal;
         p->syscallContextInternal.program = p;
@@ -226,7 +228,6 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         SMVM_PdBindings_init(&p->pdBindings);
         SMVM_FrameStack_init(&p->frames);
         SMVM_MemoryMap_init(&p->memoryMap);
-        p->memorySlotsUsed = 0u;
         p->memorySlotNext = 1u;
         p->currentCodeSectionIndex = 0u;
         p->currentIp = 0u;
@@ -253,8 +254,8 @@ void SMVM_Program_free(SMVM_Program * const p) {
 
 static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
-static SMVM_MemorySlotSpecials rwDataSpecials = { .writeable = 1, .readable = 1, .free = NULL };
-static SMVM_MemorySlotSpecials roDataSpecials = { .writeable = 0, .readable = 1, .free = NULL };
+static SMVM_MemorySlotSpecials rwDataSpecials = { .ptr = 0u, .writeable = 1, .readable = 1, .free = NULL };
+static SMVM_MemorySlotSpecials roDataSpecials = { .ptr = 0u, .writeable = 0, .readable = 1, .free = NULL };
 
 SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_t dataSize) {
     assert(p);
@@ -361,7 +362,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                         return SMVM_PREPARE_UNDEFINED_PDBIND;
                     })
                 default:
-                    /** \todo also add other sections (currently ignoring). */
+                    /* Ignore other sections */
                     break;
             }
         }
@@ -592,45 +593,125 @@ uintptr_t SMVM_Program_get_current_ip(SMVM_Program *p) {
     return p->currentIp;
 }
 
-/*******************************************************************************
- *  Functions provided to system calls
-********************************************************************************/
+uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) {
+    assert(p);
+    assert(memorySlot);
 
-uint64_t _SMVM_publicAlloc(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c) {
-    /** \todo */
-    return 0u;
+    /* Find a free memory slot: */
+    const uint64_t index = SMVM_MemorySlot_find_unused_ptr(&p->memoryMap, p->memorySlotNext);
+    assert(index != 0u);
+
+    /* Fill the slot: */
+    SMVM_MemorySlot * const slot = SMVM_MemoryMap_insert(&p->memoryMap, index);
+    if (unlikely(!slot)) {
+        return 0u;
+    }
+
+    /* Optimize next alloc: */
+    p->memorySlotNext = index + 1u;
+    if (unlikely(!p->memorySlotNext)) /* skip "NULL" */
+        p->memorySlotNext++;
+
+    (*memorySlot) = slot;
+
+    return index;
 }
 
-int _SMVM_publicFree(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
-    /** \todo */
-    return 1;
+uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_MemorySlot ** memorySlot) {
+    assert(p);
+    assert(p->memorySlotNext != 0u);
+
+    /* Fail when all slots are used or allocating 0 bytes. */
+    if (unlikely(p->memoryMap.size >= (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX)
+                 || nBytes <= 0u
+                 || nBytes > SIZE_MAX))
+        return 0u;
+
+    /* Allocate the memory: */
+    void * const pData = malloc((size_t) nBytes);
+    if (unlikely(!pData))
+        return 0u;
+
+    SMVM_MemorySlot * slot;
+    const uint64_t index = SMVM_Program_public_alloc_slot(p, &slot);
+    if (index == 0u) {
+        free(pData);
+        return index;
+    }
+
+    /* Initialize the slot: */
+    SMVM_MemorySlot_init(slot, pData, (size_t) nBytes, NULL);
+
+    if (memorySlot)
+        (*memorySlot) = slot;
+
+    return index;
 }
 
-size_t _SMVM_publicMemPtrSize(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
-    /** \todo */
-    return 0u;
+uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+    assert(c);
+    assert(c->internal);
+    if (nBytes > UINT64_MAX)
+        return 0u;
+
+    return SMVM_Program_public_alloc(((const SMVM_SyscallContextInternal *) c->internal)->program, nBytes, NULL);
 }
 
-void * _SMVM_publicMemPtrData(uint64_t ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
-    /** \todo */
-    return NULL;
+SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
+    assert(p);
+    assert(ptr != 0u);
+    SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, ptr);
+    if (!slot)
+        return SMVM_E_INVALID_REFERENCE;
+
+    if (slot->nrefs != 0u)
+        return SMVM_E_MEMORY_IN_USE;
+
+    SMVM_MemorySlot_destroy(slot);
+    SMVM_MemoryMap_remove(&p->memoryMap, ptr);
+
+    return SMVM_E_NONE;
 }
 
-void * _SMVM_allocPrivate(size_t nBytes, SMVM_MODAPI_0x1_Syscall_Context * c) {
+int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+    assert(c);
+    assert(c->internal);
+    return SMVM_Program_public_free(((const SMVM_SyscallContextInternal *) c->internal)->program, ptr) == SMVM_E_NONE;
+}
+
+size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+    const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
+    if (!slot)
+        return 0u;
+
+    return slot->size;
+}
+
+void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+    const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
+    if (!slot)
+        return NULL;
+
+    return slot->pData;
+}
+
+void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     (void) c;
     /** \todo add allocated pointer to valid list */
     return malloc(nBytes);
 }
 
-int _SMVM_freePrivate(void * ptr, SMVM_MODAPI_0x1_Syscall_Context * c) {
+int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     (void) c;
     /** \todo check if ptr is valid */
     free(ptr);
     return 1;
 }
 
-int _SMVM_get_pd_process_handle(uint64_t pd_index,
-                                SMVM_MODAPI_0x1_Syscall_Context * c,
+int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
+                                uint64_t pd_index,
                                 void ** pdProcessHandle,
                                 size_t * pdkIndex,
                                 void ** moduleHandle)

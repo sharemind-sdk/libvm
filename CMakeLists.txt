@@ -70,6 +70,9 @@ SET(OTHER_FILES "config.local.example"
                 "tests/except_divoverflow_int64.sa"
                 "tests/except_invalid_float32.sa"
                 "tests/except_overflow_float32.sa"
+                "tests/except_section_bss.sa"
+                "tests/except_section_data.sa"
+                "tests/except_section_rodata.sa"
                 "tests/except_tmodbyzero_int8.sa"
                 "tests/except_tmodbyzero_int16.sa"
                 "tests/except_tmodbyzero_int32.sa"
@@ -89,9 +92,6 @@ SET(OTHER_FILES "config.local.example"
                 "tests/ref1.sa"
                 "tests/run_test_assemble_execute.sh"
                 "tests/syscall_putchar.sa"
-                "tests/section_bss.sa"
-                "tests/section_data.sa"
-                "tests/section_rodata.sa"
                 "tests/tmod.sa")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
@@ -435,9 +435,9 @@ add_test_assemble_execute("" "" "global_return" "")
 add_test_assemble_execute("" "" "mem" "")
 add_test_assemble_execute("" "" "proc" "")
 add_test_assemble_execute("" "" "ref1" "")
-add_test_assemble_execute("" "" "section_bss" "")
-add_test_assemble_execute("" "" "section_data" "")
-add_test_assemble_execute("" "" "section_rodata" "")
+add_test_assemble_execute_exception("" "" "except_section_bss" "" "SMVM_E_MEMORY_IN_USE")
+add_test_assemble_execute_exception("" "" "except_section_data" "" "SMVM_E_MEMORY_IN_USE")
+add_test_assemble_execute_exception("" "" "except_section_rodata" "" "SMVM_E_MEMORY_IN_USE")
 add_test_assemble_execute("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_1")
 add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_putchar>" "syscall_putchar" "_2" "Tere, Maailm!")
 add_test_assemble_execute_regex("" "-l $<TARGET_FILE:libmod_pd_getconfig> -p first:GetConfigPD=FIRST -p second:GetConfigPD=SECOND -p third:GetConfigPD=THIRD" "pd_getconfig" "" "SECOND")

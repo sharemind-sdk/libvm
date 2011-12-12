@@ -552,59 +552,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_MEM_CAN_READ(slot) ((slot)->specials == NULL || (slot)->specials->readable)
 #define SMVM_MI_MEM_CAN_WRITE(slot) ((slot)->specials == NULL || (slot)->specials->writeable)
 
-#define SMVM_MEM_ALLOC_REF(dref,slot) \
-    if (1) { \
-        const uint64_t startFrom = p->memorySlotNext; \
-        for (;;) { \
-            (slot) = SMVM_MemoryMap_get(&p->memoryMap, p->memorySlotNext); \
-            if (!(slot)) { \
-                (dref) = p->memorySlotNext; \
-                p->memorySlotNext++; \
-                if (p->memorySlotNext == 0) \
-                    p->memorySlotNext++; \
-                break; /* LOOP EXIT 1 */ \
-            } else { \
-                p->memorySlotNext++; \
-                if (p->memorySlotNext == 0) \
-                    p->memorySlotNext++; \
-                if (p->memorySlotNext == startFrom) { \
-                    (dref) = 0; /* NULL */ \
-                    break; /* LOOP EXIT 2 */ \
-                } \
-            } \
-        } \
-    } (void) 0
-
 #define SMVM_MI_MEM_ALLOC(dptr,sizereg) \
     if (1) { \
-        if (p->memorySlotsUsed >= UINT64_MAX \
-            || (sizereg)->uint64[0] == 0u \
-            || (sizereg)->uint64[0] > SIZE_MAX) \
-        { \
-            (dptr)->uint64[0] = 0u; /* NULL */ \
-        } else { \
-            size_t dataSize = (size_t) (sizereg)->uint64[0]; /* SIZE_MAX == UINT64_MAX */ \
-            void * pData = malloc(dataSize); \
-            if (!pData) { \
-                (dptr)->uint64[0] = 0u; /* NULL */ \
-            } else { \
-                SMVM_MemorySlot * slot; \
-                SMVM_MEM_ALLOC_REF((dptr)->uint64[0],slot); \
-                if (slot) { /* LOOP EXIT 2 */ \
-                    free(pData); \
-                } else { /* LOOP EXIT 1 */ \
-                    slot = SMVM_MemoryMap_insert(&p->memoryMap, (dptr)->uint64[0]); \
-                    if (!slot) { \
-                        free(pData); \
-                        (dptr)->uint64[0] = 0u; /* NULL */ \
-                    } else { \
-                        assert(p->memorySlotsUsed < UINT64_MAX); \
-                        p->memorySlotsUsed++; \
-                        SMVM_MemorySlot_init(slot, pData, dataSize, NULL); \
-                    } \
-                } \
-            } \
-        } \
+        (dptr)->uint64[0] = SMVM_Program_public_alloc(p, (sizereg)->uint64[0], NULL); \
     } else (void) 0
 
 #define SMVM_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
@@ -613,16 +563,12 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SMVM_MI_TRY_EXCEPT((dest),SMVM_E_INVALID_REFERENCE); \
     } else (void) 0
 
-/* The following can be optimized: */
 #define SMVM_MI_MEM_FREE(ptr) \
     if (1) { \
-        SMVM_MemorySlot * slot; \
-        SMVM_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
-        SMVM_MI_TRY_EXCEPT(slot->nrefs == 0u, SMVM_E_MEMORY_IN_USE); \
-        SMVM_MemorySlot_destroy(slot); \
-        SMVM_MemoryMap_remove(&p->memoryMap, (ptr)->uint64[0]); \
-        assert(p->memorySlotsUsed > 0); \
-        p->memorySlotsUsed--; \
+        SMVM_Exception e = SMVM_Program_public_free(p, (ptr)->uint64[0]); \
+        if (unlikely(e != SMVM_E_NONE)) { \
+            SMVM_MI_DO_EXCEPT(e); \
+        } \
     } else (void) 0
 
 #define SMVM_MI_MEM_GET_SIZE(ptr,sizedest) \
@@ -634,22 +580,23 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define _SMVM_MI_MEM_GETSEGMENT(ptrDest,sectionContainer) \
     if (1) { \
-        SMVM_MemorySlot * slot; \
-        SMVM_MEM_ALLOC_REF((ptrDest)->uint64[0],slot); \
-        if (!slot) { /* LOOP EXIT 1 */ \
-            slot = SMVM_MemoryMap_insert(&p->memoryMap, (ptrDest)->uint64[0]); \
-            if (!slot) { \
-                (ptrDest)->uint64[0] = 0u; /* NULL */ \
-            } else { \
-                assert(p->memorySlotsUsed < UINT64_MAX); \
-                p->memorySlotsUsed++; \
-                const SMVM_DataSection * const restrict staticSlot = SMVM_DataSectionsVector_get_const_pointer((sectionContainer),p->currentCodeSectionIndex); \
+        SMVM_DataSection * const restrict staticSlot = SMVM_DataSectionsVector_get_pointer((sectionContainer),p->currentCodeSectionIndex); \
+        assert(staticSlot); \
+        assert(staticSlot->specials); \
+        if (staticSlot->specials->ptr == 0u \
+            && likely(p->memoryMap.size < (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX))) \
+        { \
+            SMVM_MemorySlot * slot; \
+            staticSlot->specials->ptr = SMVM_Program_public_alloc_slot(p, &slot); \
+            if (staticSlot->specials->ptr != 0u) { \
+                assert(slot); \
                 slot->pData = staticSlot->pData; \
                 slot->size = staticSlot->size; \
-                slot->nrefs = 0u; /* We CAN special-free this */ \
+                slot->nrefs = staticSlot->nrefs; \
                 slot->specials = staticSlot->specials; \
             } \
         } \
+        (ptrDest)->uint64[0] = staticSlot->specials->ptr; \
     } else (void) 0
 #define SMVM_MI_MEM_GETSEGMENT_bss(ptrDest) _SMVM_MI_MEM_GETSEGMENT((ptrDest), &p->bssSections)
 #define SMVM_MI_MEM_GETSEGMENT_rodata(ptrDest) _SMVM_MI_MEM_GETSEGMENT((ptrDest), &p->rodataSections)
