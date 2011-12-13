@@ -132,11 +132,11 @@ SMVM_MemorySlot_destroy_DECLARE;
 SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
 #endif
 
-#define SMVM_MemorySlot_find_unused_ptr_DECLARE \
-    uint64_t SMVM_MemorySlot_find_unused_ptr(const SMVM_MemoryMap * m, uint64_t startFrom)
+#define SMVM_MemoryMap_find_unused_ptr_DECLARE \
+    uint64_t SMVM_MemoryMap_find_unused_ptr(const SMVM_MemoryMap * m, uint64_t startFrom)
 
-#define SMVM_MemorySlot_find_unused_ptr_DEFINE \
-    SMVM_MemorySlot_find_unused_ptr_DECLARE { \
+#define SMVM_MemoryMap_find_unused_ptr_DEFINE \
+    SMVM_MemoryMap_find_unused_ptr_DECLARE { \
         assert(m); \
         assert(startFrom != 0u); \
         assert(m->size < UINT64_MAX); \
@@ -146,9 +146,9 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
             /* Check if slot is free: */ \
             if (likely(!SMVM_MemoryMap_get_const(m, index))) \
                 break; \
-            /* Increment index, skip "NULL" */ \
+            /* Increment index, skip "NULL" and static memory pointers: */ \
             if (unlikely(!++index)) \
-                index++; \
+                index += 4u; \
             assert(index != 0u); \
             /* This shouldn't trigger because (m->size < UINT64_MAX) */ \
             assert(index != startFrom); \
@@ -158,10 +158,10 @@ SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
     }
 
 #ifndef SMVM_FAST_BUILD
-inline SMVM_MemorySlot_find_unused_ptr_DECLARE;
-inline SMVM_MemorySlot_find_unused_ptr_DEFINE
+inline SMVM_MemoryMap_find_unused_ptr_DECLARE;
+inline SMVM_MemoryMap_find_unused_ptr_DEFINE
 #else
-SMVM_MemorySlot_find_unused_ptr_DECLARE;
+SMVM_MemoryMap_find_unused_ptr_DECLARE;
 #endif
 
 /*******************************************************************************
@@ -349,29 +349,8 @@ void SMVM_StackFrame_printStateBencoded(SMVM_StackFrame * const s, FILE * const 
 void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) __attribute__ ((nonnull(1)));
 #endif /* SMVM_DEBUG */
 
-uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
-
 uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_MemorySlot ** memorySlot) __attribute__ ((nonnull(1)));
-uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
-
 SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) __attribute__ ((nonnull(1)));
-int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-
-size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-
-size_t _SMVM_publicMemPtrSize(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-void * _SMVM_publicMemPtrData(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-
-void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
-int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) __attribute__ ((nonnull(1)));
-
-int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
-                                uint64_t pd_index,
-                                void ** pdProcessHandle,
-                                size_t * pdkIndex,
-                                void ** moduleHandle) __attribute__ ((nonnull(1)));
-
 
 #ifdef __cplusplus
 } /* extern "C" { */

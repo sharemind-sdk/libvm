@@ -578,31 +578,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         (sizedest)->uint64[0] = slot->size; \
     } else (void) 0
 
-#define _SMVM_MI_MEM_GETSEGMENT(ptrDest,sectionContainer) \
-    if (1) { \
-        SMVM_DataSection * const restrict staticSlot = SMVM_DataSectionsVector_get_pointer((sectionContainer),p->currentCodeSectionIndex); \
-        assert(staticSlot); \
-        assert(staticSlot->specials); \
-        if (staticSlot->specials->ptr == 0u \
-            && likely(p->memoryMap.size < (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX))) \
-        { \
-            SMVM_MemorySlot * slot; \
-            staticSlot->specials->ptr = SMVM_Program_public_alloc_slot(p, &slot); \
-            if (staticSlot->specials->ptr != 0u) { \
-                assert(slot); \
-                slot->pData = staticSlot->pData; \
-                slot->size = staticSlot->size; \
-                slot->nrefs = staticSlot->nrefs; \
-                slot->specials = staticSlot->specials; \
-            } \
-        } \
-        (ptrDest)->uint64[0] = staticSlot->specials->ptr; \
-    } else (void) 0
-#define SMVM_MI_MEM_GETSEGMENT_bss(ptrDest) _SMVM_MI_MEM_GETSEGMENT((ptrDest), &p->bssSections)
-#define SMVM_MI_MEM_GETSEGMENT_rodata(ptrDest) _SMVM_MI_MEM_GETSEGMENT((ptrDest), &p->rodataSections)
-#define SMVM_MI_MEM_GETSEGMENT_data(ptrDest) _SMVM_MI_MEM_GETSEGMENT((ptrDest), &p->dataSections)
-
-
 #define SMVM_MI_MEMCPY memcpy
 #define SMVM_MI_MEMMOVE memmove
 

@@ -28,6 +28,31 @@
 
 
 /*******************************************************************************
+ *  Forward declarations:
+********************************************************************************/
+
+static inline SMVM_Exception SMVM_Program_reinitialize_static_mem_slots(SMVM_Program * p);
+
+static inline uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
+
+static uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
+
+static int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+
+static size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+static void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+
+static void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
+static int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) __attribute__ ((nonnull(1)));
+
+static int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
+                                       uint64_t pd_index,
+                                       void ** pdProcessHandle,
+                                       size_t * pdkIndex,
+                                       void ** moduleHandle) __attribute__ ((nonnull(1)));
+
+
+/*******************************************************************************
  *  SMVM
 ********************************************************************************/
 
@@ -88,7 +113,7 @@ SMVM_MemorySlot_destroy_DEFINE
 
 SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
 
-SMVM_MemorySlot_find_unused_ptr_DEFINE
+SMVM_MemoryMap_find_unused_ptr_DEFINE
 #endif
 
 static inline void SMVM_MemoryMap_destroyer(const uint64_t * key, SMVM_MemorySlot * value) {
@@ -557,9 +582,21 @@ SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
     SMVM_StackFrame_init(p->globalFrame, NULL);
     p->globalFrame->returnAddr = NULL; /* Triggers halt on return. */
     /* p->globalFrame->returnValueAddr = &(p->returnValue); is not needed. */
-
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;
+
+    /* Initialize section pointers: */
+
+    assert(!SMVM_MemoryMap_get_const(&p->memoryMap, 0u));
+    assert(!SMVM_MemoryMap_get_const(&p->memoryMap, 1u));
+    assert(!SMVM_MemoryMap_get_const(&p->memoryMap, 2u));
+    assert(p->memorySlotNext == 1u);
+
+    const SMVM_Exception e = SMVM_Program_reinitialize_static_mem_slots(p);
+    if (e != SMVM_OK)
+        return e;
+
+    p->memorySlotNext += 3;
 
     p->state = SMVM_PREPARED;
 
@@ -593,24 +630,44 @@ uintptr_t SMVM_Program_get_current_ip(SMVM_Program *p) {
     return p->currentIp;
 }
 
-uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) {
+static inline SMVM_Exception SMVM_Program_reinitialize_static_mem_slots(SMVM_Program * p) {
+
+#define INIT_STATIC_MEMSLOT(index,dataSection) \
+    if (1) { \
+        SMVM_DataSection * const restrict staticSlot = SMVM_DataSectionsVector_get_pointer(&p->dataSection ## Sections, p->currentCodeSectionIndex); \
+        assert(staticSlot); \
+        SMVM_MemorySlot * const restrict slot = SMVM_MemoryMap_insert(&p->memoryMap, (index)); \
+        if (unlikely(!slot)) \
+            return SMVM_OUT_OF_MEMORY; \
+        (*slot) = *staticSlot; \
+    } else (void) 0
+
+    INIT_STATIC_MEMSLOT(1u,rodata);
+    INIT_STATIC_MEMSLOT(2u,data);
+    INIT_STATIC_MEMSLOT(3u,bss);
+
+    return SMVM_OK;
+}
+
+static inline uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_MemorySlot ** memorySlot) {
     assert(p);
     assert(memorySlot);
+    assert(p->memoryMap.size < (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX));
 
     /* Find a free memory slot: */
-    const uint64_t index = SMVM_MemorySlot_find_unused_ptr(&p->memoryMap, p->memorySlotNext);
+    const uint64_t index = SMVM_MemoryMap_find_unused_ptr(&p->memoryMap, p->memorySlotNext);
     assert(index != 0u);
 
     /* Fill the slot: */
     SMVM_MemorySlot * const slot = SMVM_MemoryMap_insert(&p->memoryMap, index);
-    if (unlikely(!slot)) {
+    if (unlikely(!slot))
         return 0u;
-    }
 
     /* Optimize next alloc: */
     p->memorySlotNext = index + 1u;
-    if (unlikely(!p->memorySlotNext)) /* skip "NULL" */
-        p->memorySlotNext++;
+    /* skip "NULL" and static memory pointers: */
+    if (unlikely(!p->memorySlotNext))
+        p->memorySlotNext += 4u;
 
     (*memorySlot) = slot;
 
@@ -648,7 +705,7 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     return index;
 }
 
-uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+static uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
     if (nBytes > UINT64_MAX)
@@ -673,7 +730,7 @@ SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
     return SMVM_E_NONE;
 }
 
-int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+static int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
     return SMVM_Program_public_free(((const SMVM_SyscallContextInternal *) c->internal)->program, ptr) == SMVM_E_NONE;
