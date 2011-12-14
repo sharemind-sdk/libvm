@@ -92,7 +92,9 @@ SET(OTHER_FILES "config.local.example"
                 "tests/section_data.sa"
                 "tests/section_rodata.sa"
                 "tests/syscall_putchar.sa"
-                "tests/tmod.sa")
+                "tests/tmod.sa"
+                "tests/valgrind.supp"
+                "tests/valgrind_run_test_assemble_execute.sh")
 FUNCTION(PREPARE_OTHER_FILES)
     FOREACH(OTHER_FILE ${OTHER_FILES})
         SET(P ${P} "${CMAKE_CURRENT_SOURCE_DIR}/${OTHER_FILE}")
@@ -373,7 +375,13 @@ FUNCTION(add_test_assemble_execute smas_args vm_args testfile suffix)
     ADD_TEST(NAME "${testfile}${suffix}"
              COMMAND "${TESTS_DIR_S}/run_test_assemble_execute.sh"
                  $<TARGET_FILE:smas> "${smas_args}" $<TARGET_FILE:vm> "${vm_args}" "${TESTS_DIR_S}/${testfile}.sa" "${TESTS_DIR_B}/${testfile}.sb" ${ARGN})
-    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES COST "1.0")
+    SET_TESTS_PROPERTIES("${testfile}${suffix}" PROPERTIES COST "20.0")
+    ADD_TEST(NAME "valgrind_${testfile}${suffix}"
+             COMMAND "${TESTS_DIR_S}/valgrind_run_test_assemble_execute.sh"
+                 $<TARGET_FILE:smas> "${smas_args}" $<TARGET_FILE:vm> "${vm_args}" "${TESTS_DIR_S}/${testfile}.sa" "--suppressions=${TESTS_DIR_S}/valgrind.supp" ${ARGN})
+    SET_TESTS_PROPERTIES("valgrind_${testfile}${suffix}" PROPERTIES
+                         COST "10.0"
+                         PASS_REGULAR_EXPRESSION "VALGIND TEST SUCCESS")
 ENDFUNCTION()
 
 FUNCTION(add_test_assemble_execute_regex smas_args vm_args testfile suffix regex)
@@ -387,7 +395,8 @@ ENDFUNCTION()
 
 
 add_test_assemble_execute("" "" "benchmark" "")
-SET_TESTS_PROPERTIES("benchmark" PROPERTIES COST "0.0")
+SET_TESTS_PROPERTIES("benchmark" PROPERTIES COST "5.0")
+SET_TESTS_PROPERTIES("valgrind_benchmark" PROPERTIES COST "0.0")
 
 add_test_assemble_execute_exception("" "" "except_bmodbyzero_int8" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
 add_test_assemble_execute_exception("" "" "except_bmodbyzero_int16" "" "SMVM_E_INTEGER_DIVIDE_BY_ZERO")
