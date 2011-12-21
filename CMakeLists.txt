@@ -12,9 +12,16 @@ CMAKE_POLICY(SET CMP0015 NEW)
 PROJECT("SHAREMIND_VM" "C" "CXX")
 
 FIND_PACKAGE(Boost)
-IF (NOT Boost_FOUND)
+IF(NOT Boost_FOUND)
     MESSAGE(FATAL_ERROR "Required Boost library headers not found!")
-ENDIF (NOT Boost_FOUND)
+ENDIF(NOT Boost_FOUND)
+
+FIND_PROGRAM(M4 m4)
+IF(M4)
+    MESSAGE(STATUS "Found m4 at ${M4}")
+ELSE(M4)
+    MESSAGE(FATAL_ERROR "Required m4 command not found!")
+ENDIF(M4)
 
 LINK_DIRECTORIES("lib")
 SET(SM_INSTALL_INCLUDE_DIR "include/sharemind/libs")
@@ -135,17 +142,17 @@ SET(OTHER_FILES ${OTHER_FILES}
                 "${M4_DIR}/stats.m4")
 
 ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/instr.m4f"
-                   COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "${M4_DIR_S}/instr.m4" "--freeze-state=${M4_DIR_B}/instr.m4f"
+                   COMMAND ${M4} ARGS -E -P "--include=${M4_DIR_S}" "${M4_DIR_S}/instr.m4" "--freeze-state=${M4_DIR_B}/instr.m4f"
                    DEPENDS "${M4_DIR_S}/instr.m4"
                    COMMENT "Generating ${M4_DIR_B}/instr.m4f")
 ADD_CUSTOM_COMMAND(TARGET "${M4_DIR_B}/instr.m4f" POST_BUILD
-                   COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/stats.m4")
+                   COMMAND ${M4} ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/stats.m4")
 FOREACH(_H_SOURCE ${M4_2_H_SOURCES})
   SET(OTHER_FILES ${OTHER_FILES} "${M4_DIR}/${_H_SOURCE}")
   SET(M4_2_H_SOURCES_S ${M4_2_H_SOURCES_S} "${M4_DIR_S}/${_H_SOURCE}")
   STRING(REGEX REPLACE "\\.m4$" ".h" _H_TARGET ${_H_SOURCE})
   ADD_CUSTOM_COMMAND(OUTPUT "${M4_DIR_B}/${_H_TARGET}"
-                     COMMAND m4 ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/${_H_SOURCE}" > "${M4_DIR_B}/${_H_TARGET}"
+                     COMMAND ${M4} ARGS -E -P "--include=${M4_DIR_S}" "--reload-state=${M4_DIR_B}/instr.m4f" "${M4_DIR_S}/${_H_SOURCE}" > "${M4_DIR_B}/${_H_TARGET}"
                      DEPENDS "${M4_DIR_S}/${_H_SOURCE}" "${M4_DIR_B}/instr.m4f")
 ENDFOREACH(_H_SOURCE ${M4_2_H_SOURCES})
 
