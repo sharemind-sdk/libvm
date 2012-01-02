@@ -10,7 +10,7 @@
 #ifndef SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H
 #define SHAREMIND_LIBSMVM_VM_INTERNAL_HELPERS_H
 
-#ifndef _SHAREMIND_INTERNAL
+#ifndef SHAREMIND_INTERNAL__
 #error including an internal header!
 #endif
 

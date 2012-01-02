@@ -7,7 +7,7 @@
  * code is subject to the appropriate license agreement.
  */
 
-#define _SHAREMIND_INTERNAL
+#define SHAREMIND_INTERNAL__
 
 #include "vm_internal_helpers.h"
 
