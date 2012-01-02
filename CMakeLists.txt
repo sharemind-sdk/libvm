@@ -345,7 +345,7 @@ IF(VM_OUT_OF_MEMORY_DEBUG)
     SET_TARGET_PROPERTIES("vm" PROPERTIES COMPILE_DEFINITIONS "VM_OUT_OF_MEMORY_DEBUG")
   ENDIF(VM_OUT_OF_MEMORY_DEBUG_FAIL_BACKTRACE)
 ENDIF(VM_OUT_OF_MEMORY_DEBUG)
-TARGET_LINK_LIBRARIES("vm" "dl" "libsmmod" "libsmvmi" "libsmvm")
+TARGET_LINK_LIBRARIES("vm" "dl" "libsmmod" "libsmvm")
 
 
 ################################################################################
