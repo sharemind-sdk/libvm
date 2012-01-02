@@ -31,9 +31,6 @@
 #include <stdlib.h>
 #include "../instrset.h"
 #include "../libsmmod/modapi_0x1.h"
-#include "../libsmmod/pd.h"
-#include "../libsmmod/pdpi.h"
-#include "../libsmmod/syscall.h"
 #include "../map.h"
 #include "../stack.h"
 #include "../vector.h"
