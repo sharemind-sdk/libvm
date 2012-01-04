@@ -1040,8 +1040,8 @@ static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t 
         if (!skip) {
             const SMVMI_Instruction * instr = SMVMI_Instruction_from_code(code[i].uint64[0]);
             if (instr) {
-                fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullname));
-                skip = instr->numargs;
+                fprintf(stream, "  %s", SMVMI_Instruction_fullname_to_name(instr->fullName));
+                skip = instr->numArgs;
             } else {
                 fprintf(stream, "  %s", "!!! UNKNOWN INSTRUCTION OR DATA !!!");
             }
