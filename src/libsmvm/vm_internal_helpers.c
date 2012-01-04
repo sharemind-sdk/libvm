@@ -693,10 +693,19 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     assert(p);
     assert(p->memorySlotNext != 0u);
 
-    /* Fail when all slots are used or allocating 0 bytes. */
-    if (unlikely(p->memoryMap.size >= (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX)
-                 || nBytes <= 0u
-                 || nBytes > SIZE_MAX))
+    /* Fail if allocating too little or too much: */
+    if (unlikely(nBytes <= 0u || nBytes > SIZE_MAX))
+        return 0u;
+
+    /* Check memory limits: */
+    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memPublicHeap < nBytes)))
+        return 0u;
+
+    /** \todo Check other memory limits. */
+
+    /* Fail if all memory slots are used. */
+    SM_STATIC_ASSERT(sizeof(uint64_t) >= sizeof(size_t));
+    if (unlikely(p->memoryMap.size >= SIZE_MAX))
         return 0u;
 
     /* Allocate the memory: */
@@ -706,13 +715,19 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
 
     SMVM_MemorySlot * slot;
     const uint64_t index = SMVM_Program_public_alloc_slot(p, &slot);
-    if (index == 0u) {
+    if (unlikely(index == 0u)) {
         free(pData);
         return index;
     }
 
     /* Initialize the slot: */
     SMVM_MemorySlot_init(slot, pData, (size_t) nBytes, NULL);
+
+    /* Update memory statistics: */
+    p->memPublicHeap += nBytes;
+    p->memTotal += nBytes;
+
+    /** \todo Update other memory statistics. */
 
     if (memorySlot)
         (*memorySlot) = slot;
@@ -724,7 +739,7 @@ static uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nB
     assert(c);
     assert(c->internal);
 
-    if (nBytes > UINT64_MAX)
+    if (unlikely(nBytes > UINT64_MAX))
         return 0u;
 
     SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
@@ -737,12 +752,22 @@ SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
     assert(p);
     assert(ptr != 0u);
     SMVM_MemorySlot * slot = SMVM_MemoryMap_get(&p->memoryMap, ptr);
-    if (!slot)
+    if (unlikely(!slot))
         return SMVM_E_INVALID_REFERENCE;
 
-    if (slot->nrefs != 0u)
+    if (unlikely(slot->nrefs != 0u))
         return SMVM_E_MEMORY_IN_USE;
 
+
+    /* Update memory statistics: */
+    assert(p->memPublicHeap >= slot->size);
+    assert(p->memTotal >= slot->size);
+    p->memPublicHeap -= slot->size;
+    p->memTotal -= slot->size;
+
+    /** \todo Update other memory statistics. */
+
+    /* Deallocate the memory and release the slot: */
     SMVM_MemorySlot_destroy(slot);
     SMVM_MemoryMap_remove(&p->memoryMap, ptr);
 
@@ -791,23 +816,26 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
+    if (unlikely(nBytes <= 0))
+        return NULL;
+
     SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
-    /* Check for overflow: */
-    if (SIZE_MAX - p->memPrivate < nBytes)
-        return false;
+    /* Check memory limits: */
+    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memPrivate < nBytes)))
+        return NULL;
 
     /** \todo Check other memory limits */
 
     /* Allocate the memory: */
     void * ptr = malloc(nBytes);
-    if (!ptr)
+    if (unlikely(!ptr))
         return NULL;
 
     /* Add pointer to private memory map: */
     size_t * s = SMVM_PrivateMemoryMap_insert(&p->privateMemoryMap, ptr);
-    if (!s) {
+    if (unlikely(!s)) {
         free(ptr);
         return NULL;
     }
@@ -815,6 +843,7 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
 
     /* Update memory statistics: */
     p->memPrivate += nBytes;
+    p->memTotal += nBytes;
 
     /** \todo Update other memory statistics */
 
@@ -825,7 +854,7 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     assert(c);
     assert(c->internal);
 
-    if (!ptr)
+    if (unlikely(!ptr))
         return false;
 
     SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
@@ -833,7 +862,7 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
 
     /* Check if pointer is in private memory map: */
     const size_t * s = SMVM_PrivateMemoryMap_get_const(&p->privateMemoryMap, ptr);
-    if (!s)
+    if (unlikely(!s))
         return false;
 
     /* Get allocated size: */
@@ -847,7 +876,10 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     assert(r);
 
     /* Update memory statistics: */
+    assert(p->memPrivate >= nBytes);
+    assert(p->memTotal >= nBytes);
     p->memPrivate -= nBytes;
+    p->memTotal -= nBytes;
 
     /** \todo Update other memory statistics */
 
@@ -858,19 +890,20 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(c);
     assert(c->internal);
 
-    if (nBytes <= 0u)
+    if (unlikely(nBytes <= 0u))
         return true;
 
     SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
-    /* Check for overflow: */
-    if (SIZE_MAX - p->memReserved < nBytes)
+    /* Check memory limits: */
+    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memReserved < nBytes)))
         return false;
 
     /** \todo Check other memory limits */
 
     p->memReserved += nBytes;
+    p->memTotal += nBytes;
 
     /** \todo Update memory statistics */
 
@@ -888,7 +921,9 @@ static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     if (p->memReserved < nBytes)
         return false;
 
+    assert(p->memTotal >= nBytes);
     p->memReserved -= nBytes;
+    p->memTotal -= nBytes;
     return true;
 }
 
