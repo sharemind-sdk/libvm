@@ -256,8 +256,14 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.internal = &p->syscallContextInternal;
         p->syscallContextInternal.program = p;
+        p->memPublicHeap = 0u;
+        p->memPublicHeapMax = SIZE_MAX;
         p->memPrivate = 0u;
+        p->memPrivateMax = SIZE_MAX;
         p->memReserved = 0u;
+        p->memReservedMax = SIZE_MAX;
+        p->memTotal = 0u;
+        p->memTotalMax = SIZE_MAX;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -693,12 +699,12 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     assert(p);
     assert(p->memorySlotNext != 0u);
 
-    /* Fail if allocating too little or too much: */
-    if (unlikely(nBytes <= 0u || nBytes > SIZE_MAX))
+    /* Fail if allocating too little: */
+    if (unlikely(nBytes <= 0u))
         return 0u;
 
     /* Check memory limits: */
-    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memPublicHeap < nBytes)))
+    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memPublicHeapMax - p->memPublicHeap < nBytes)))
         return 0u;
 
     /** \todo Check other memory limits. */
@@ -823,7 +829,7 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memPrivate < nBytes)))
+    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memPrivateMax - p->memPrivate < nBytes)))
         return NULL;
 
     /** \todo Check other memory limits */
@@ -897,7 +903,7 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((SIZE_MAX - p->memTotal < nBytes) || (SIZE_MAX - p->memReserved < nBytes)))
+    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memReservedMax - p->memReserved < nBytes)))
         return false;
 
     /** \todo Check other memory limits */

@@ -335,9 +335,13 @@ struct _SMVM_Program {
     SMVM_SyscallContextInternal syscallContextInternal;
 
     size_t memPublicHeap;
+    size_t memPublicHeapMax;
     size_t memPrivate;
+    size_t memPrivateMax;
     size_t memReserved;
+    size_t memReservedMax;
     size_t memTotal;
+    size_t memTotalMax;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;
