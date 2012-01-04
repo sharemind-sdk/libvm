@@ -336,12 +336,16 @@ struct _SMVM_Program {
 
     size_t memPublicHeap;
     size_t memPublicHeapMax;
+    size_t memPublicHeapUpperLimit;
     size_t memPrivate;
     size_t memPrivateMax;
+    size_t memPrivateUpperLimit;
     size_t memReserved;
     size_t memReservedMax;
+    size_t memReservedUpperLimit;
     size_t memTotal;
     size_t memTotalMax;
+    size_t memTotalUpperLimit;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;

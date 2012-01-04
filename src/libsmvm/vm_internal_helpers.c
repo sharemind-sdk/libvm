@@ -257,13 +257,17 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.internal = &p->syscallContextInternal;
         p->syscallContextInternal.program = p;
         p->memPublicHeap = 0u;
-        p->memPublicHeapMax = SIZE_MAX;
+        p->memPublicHeapMax = 0u;
+        p->memPublicHeapUpperLimit = SIZE_MAX;
         p->memPrivate = 0u;
-        p->memPrivateMax = SIZE_MAX;
+        p->memPrivateMax = 0u;
+        p->memPrivateUpperLimit = SIZE_MAX;
         p->memReserved = 0u;
-        p->memReservedMax = SIZE_MAX;
+        p->memReservedMax = 0u;
+        p->memReservedUpperLimit = SIZE_MAX;
         p->memTotal = 0u;
-        p->memTotalMax = SIZE_MAX;
+        p->memTotalMax = 0u;
+        p->memTotalUpperLimit = SIZE_MAX;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -704,10 +708,11 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
         return 0u;
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memPublicHeapMax - p->memPublicHeap < nBytes)))
+    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
+                 || (p->memPublicHeapUpperLimit - p->memPublicHeap < nBytes)))
         return 0u;
 
-    /** \todo Check other memory limits. */
+    /** \todo Check any other memory limits? */
 
     /* Fail if all memory slots are used. */
     SM_STATIC_ASSERT(sizeof(uint64_t) >= sizeof(size_t));
@@ -733,7 +738,13 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     p->memPublicHeap += nBytes;
     p->memTotal += nBytes;
 
-    /** \todo Update other memory statistics. */
+    if (p->memPublicHeap > p->memPublicHeapMax)
+        p->memPublicHeapMax = p->memPublicHeap;
+
+    if (p->memTotal > p->memTotalMax)
+        p->memTotalMax = p->memTotal;
+
+    /** \todo Update any other memory statistics? */
 
     if (memorySlot)
         (*memorySlot) = slot;
@@ -771,7 +782,7 @@ SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
     p->memPublicHeap -= slot->size;
     p->memTotal -= slot->size;
 
-    /** \todo Update other memory statistics. */
+    /** \todo Update any other memory statistics? */
 
     /* Deallocate the memory and release the slot: */
     SMVM_MemorySlot_destroy(slot);
@@ -829,10 +840,11 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memPrivateMax - p->memPrivate < nBytes)))
+    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
+                 || (p->memPrivateUpperLimit - p->memPrivate < nBytes)))
         return NULL;
 
-    /** \todo Check other memory limits */
+    /** \todo Check any other memory limits? */
 
     /* Allocate the memory: */
     void * ptr = malloc(nBytes);
@@ -851,7 +863,13 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     p->memPrivate += nBytes;
     p->memTotal += nBytes;
 
-    /** \todo Update other memory statistics */
+    if (p->memPrivate > p->memPrivateMax)
+        p->memPrivateMax = p->memPrivate;
+
+    if (p->memTotal > p->memTotalMax)
+        p->memTotalMax = p->memTotal;
+
+    /** \todo Update any other memory statistics? */
 
     return ptr;
 }
@@ -887,7 +905,7 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     p->memPrivate -= nBytes;
     p->memTotal -= nBytes;
 
-    /** \todo Update other memory statistics */
+    /** \todo Update any other memory statistics? */
 
     return true;
 }
@@ -903,15 +921,23 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalMax - p->memTotal < nBytes) || (p->memReservedMax - p->memReserved < nBytes)))
+    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
+                 || (p->memReservedUpperLimit - p->memReserved < nBytes)))
         return false;
 
-    /** \todo Check other memory limits */
+    /** \todo Check any other memory limits? */
 
+    /* Update memory statistics */
     p->memReserved += nBytes;
     p->memTotal += nBytes;
 
-    /** \todo Update memory statistics */
+    if (p->memReserved > p->memReservedMax)
+        p->memReservedMax = p->memReserved;
+
+    if (p->memTotal > p->memTotalMax)
+        p->memTotalMax = p->memTotal;
+
+    /** \todo Update any other memory statistics? */
 
     return true;
 }
