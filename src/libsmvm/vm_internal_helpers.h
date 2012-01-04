@@ -29,6 +29,7 @@
 #endif
 
 #include <stdlib.h>
+#include "../fnv.h"
 #include "../instrset.h"
 #include "../libsmmod/modapi_0x1.h"
 #include "../map.h"
@@ -257,6 +258,7 @@ typedef SMVM_MemorySlot SMVM_DataSection;
 int SMVM_DataSection_init(SMVM_DataSection * ds, size_t size, SMVM_MemorySlotSpecials * specials);
 void SMVM_DataSection_destroy(SMVM_DataSection * ds);
 
+
 /*******************************************************************************
  *  SMVM_Program
 ********************************************************************************/
@@ -293,6 +295,14 @@ typedef struct {
     SMVM_Program * program;
 } SMVM_SyscallContextInternal;
 
+
+#ifndef SMVM_FAST_BUILD
+SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,inline)
+SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SM_MAP_KEY_EQUALS_voidptr,SM_MAP_KEY_LESS_THAN_voidptr,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
+#else
+SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,)
+#endif
+
 struct _SMVM_Program {
     SMVM_State state;
     SMVM_Error error;
@@ -312,6 +322,7 @@ struct _SMVM_Program {
 
     SMVM_MemoryMap memoryMap;
     uint64_t memorySlotNext;
+    SMVM_PrivateMemoryMap privateMemoryMap;
 
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;
@@ -322,6 +333,9 @@ struct _SMVM_Program {
     SMVM * smvm;
     SMVM_MODAPI_0x1_Syscall_Context syscallContext;
     SMVM_SyscallContextInternal syscallContextInternal;
+
+    size_t memPrivate;
+    size_t memReserved;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;

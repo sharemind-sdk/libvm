@@ -44,6 +44,8 @@ static void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t 
 
 static void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
 static int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) __attribute__ ((nonnull(1)));
+static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
+static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
 
 static int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
                                        uint64_t pd_index,
@@ -228,7 +230,14 @@ void SMVM_DataSection_destroy(SMVM_DataSection * ds) {
 SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,)
 SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,)
 SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
+SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SM_MAP_KEY_EQUALS_voidptr,SM_MAP_KEY_LESS_THAN_voidptr,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
 #endif
+
+
+static inline void SMVM_PrivateMemoryMap_destroyer(void * const * key, size_t * value) {
+    (void) value;
+    free(*key);
+}
 
 SMVM_Program * SMVM_Program_new(SMVM * smvm) {
     SMVM_Program * const p = (SMVM_Program *) malloc(sizeof(SMVM_Program));
@@ -242,9 +251,13 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.publicMemPtrData = &SMVM_public_get_ptr;
         p->syscallContext.allocPrivate = &SMVM_private_alloc;
         p->syscallContext.freePrivate = &SMVM_private_free;
+        p->syscallContext.reservePrivate = &SMVM_private_reserve;
+        p->syscallContext.releasePrivate = &SMVM_private_release;
         p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.internal = &p->syscallContextInternal;
         p->syscallContextInternal.program = p;
+        p->memPrivate = 0u;
+        p->memReserved = 0u;
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -253,6 +266,7 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         SMVM_PdBindings_init(&p->pdBindings);
         SMVM_FrameStack_init(&p->frames);
         SMVM_MemoryMap_init(&p->memoryMap);
+        SMVM_PrivateMemoryMap_init(&p->privateMemoryMap);
         p->memorySlotNext = 1u;
         p->currentCodeSectionIndex = 0u;
         p->currentIp = 0u;
@@ -274,6 +288,7 @@ void SMVM_Program_free(SMVM_Program * const p) {
     SMVM_FrameStack_destroy_with(&p->frames, &SMVM_StackFrame_destroy);
 
     SMVM_MemoryMap_destroy_with(&p->memoryMap, &SMVM_MemoryMap_destroyer);
+    SMVM_PrivateMemoryMap_destroy_with(&p->privateMemoryMap, &SMVM_PrivateMemoryMap_destroyer);
     free(p);
 }
 
@@ -755,16 +770,112 @@ void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
 }
 
 void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
-    (void) c;
-    /** \todo add allocated pointer to valid list */
-    return malloc(nBytes);
+    assert(c);
+    assert(c->internal);
+
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
+    SMVM_Program * const p = i->program;
+    assert(p);
+
+    /* Check for overflow: */
+    if (SIZE_MAX - p->memPrivate < nBytes)
+        return false;
+
+    /** \todo Check other memory limits */
+
+    /* Allocate the memory: */
+    void * ptr = malloc(nBytes);
+    if (!ptr)
+        return NULL;
+
+    /* Add pointer to private memory map: */
+    size_t * s = SMVM_PrivateMemoryMap_insert(&p->privateMemoryMap, ptr);
+    if (!s) {
+        free(ptr);
+        return NULL;
+    }
+    (*s) = nBytes;
+
+    /* Update memory statistics: */
+    p->memPrivate += nBytes;
+
+    /** \todo Update other memory statistics */
+
+    return ptr;
 }
 
 int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
-    (void) c;
-    /** \todo check if ptr is valid */
+    assert(c);
+    assert(c->internal);
+
+    if (!ptr)
+        return false;
+
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
+    SMVM_Program * const p = i->program;
+    assert(p);
+
+    /* Check if pointer is in private memory map: */
+    const size_t * s = SMVM_PrivateMemoryMap_get_const(&p->privateMemoryMap, ptr);
+    if (!s)
+        return false;
+
+    /* Get allocated size: */
+    const size_t nBytes = (*s);
+
+    /* Free the memory: */
     free(ptr);
-    return 1;
+
+    /* Remove pointer from valid list: */
+    int r = SMVM_PrivateMemoryMap_remove(&p->privateMemoryMap, ptr);
+    assert(r);
+
+    /* Update memory statistics: */
+    p->memPrivate -= nBytes;
+
+    /** \todo Update other memory statistics */
+
+    return true;
+}
+
+static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+    assert(c);
+    assert(c->internal);
+
+    if (nBytes <= 0u)
+        return true;
+
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
+    SMVM_Program * const p = i->program;
+    assert(p);
+
+    /* Check for overflow: */
+    if (SIZE_MAX - p->memReserved < nBytes)
+        return false;
+
+    /** \todo Check other memory limits */
+
+    p->memReserved += nBytes;
+
+    /** \todo Update memory statistics */
+
+    return true;
+}
+
+static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+    assert(c);
+    assert(c->internal);
+
+    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
+    SMVM_Program * const p = i->program;
+    assert(p);
+
+    /* Check for underflow: */
+    if (p->memReserved < nBytes)
+        return false;
+
+    p->memReserved -= nBytes;
+    return true;
 }
 
 int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
@@ -773,11 +884,17 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
                                 size_t * pdkIndex,
                                 void ** moduleHandle)
 {
+    assert(c);
+    assert(c->internal);
+
     if (pd_index > SIZE_MAX)
         return 0;
+
     const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    assert(i);
-    const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&i->program->pdBindings, pd_index);
+    SMVM_Program * const p = i->program;
+    assert(p);
+
+    const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&p->pdBindings, pd_index);
     if (!ppd && !*ppd)
         return 0;
 
