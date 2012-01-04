@@ -723,10 +723,14 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
 static uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
+
     if (nBytes > UINT64_MAX)
         return 0u;
 
-    return SMVM_Program_public_alloc(((const SMVM_SyscallContextInternal *) c->internal)->program, nBytes, NULL);
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    assert(p);
+
+    return SMVM_Program_public_alloc(p, nBytes, NULL);
 }
 
 SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
@@ -748,11 +752,20 @@ SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
 static int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
-    return SMVM_Program_public_free(((const SMVM_SyscallContextInternal *) c->internal)->program, ptr) == SMVM_E_NONE;
+
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    assert(p);
+
+    return SMVM_Program_public_free(p, ptr) == SMVM_E_NONE;
 }
 
 size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+    assert(c);
+    assert(c->internal);
+
     const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    assert(p);
+
     const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
     if (!slot)
         return 0u;
@@ -761,7 +774,12 @@ size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
 }
 
 void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+    assert(c);
+    assert(c->internal);
+
     const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    assert(p);
+
     const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
     if (!slot)
         return NULL;
@@ -773,8 +791,7 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    SMVM_Program * const p = i->program;
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
     /* Check for overflow: */
@@ -811,8 +828,7 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     if (!ptr)
         return false;
 
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    SMVM_Program * const p = i->program;
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
     /* Check if pointer is in private memory map: */
@@ -845,8 +861,7 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     if (nBytes <= 0u)
         return true;
 
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    SMVM_Program * const p = i->program;
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
     /* Check for overflow: */
@@ -866,8 +881,7 @@ static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(c);
     assert(c->internal);
 
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    SMVM_Program * const p = i->program;
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
     /* Check for underflow: */
@@ -890,8 +904,7 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
     if (pd_index > SIZE_MAX)
         return 0;
 
-    const SMVM_SyscallContextInternal * i = (const SMVM_SyscallContextInternal *) c->internal;
-    SMVM_Program * const p = i->program;
+    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
     assert(p);
 
     const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&p->pdBindings, pd_index);
@@ -906,6 +919,7 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
         *moduleHandle = (*ppd)->moduleHandle;
     return 1;
 }
+
 
 /*******************************************************************************
  *  Debugging
