@@ -303,6 +303,16 @@ SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,si
 SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,)
 #endif
 
+typedef struct {
+    size_t max;
+} SMVM_MemoryInfoStatistics;
+
+typedef struct {
+    size_t usage;
+    size_t upperLimit;
+    SMVM_MemoryInfoStatistics stats;
+} SMVM_MemoryInfo;
+
 struct _SMVM_Program {
     SMVM_State state;
     SMVM_Error error;
@@ -334,18 +344,10 @@ struct _SMVM_Program {
     SMVM_MODAPI_0x1_Syscall_Context syscallContext;
     SMVM_SyscallContextInternal syscallContextInternal;
 
-    size_t memPublicHeap;
-    size_t memPublicHeapMax;
-    size_t memPublicHeapUpperLimit;
-    size_t memPrivate;
-    size_t memPrivateMax;
-    size_t memPrivateUpperLimit;
-    size_t memReserved;
-    size_t memReservedMax;
-    size_t memReservedUpperLimit;
-    size_t memTotal;
-    size_t memTotalMax;
-    size_t memTotalUpperLimit;
+    SMVM_MemoryInfo memPublicHeap;
+    SMVM_MemoryInfo memPrivate;
+    SMVM_MemoryInfo memReserved;
+    SMVM_MemoryInfo memTotal;
 
 #ifndef SMVM_SOFT_FLOAT
     int hasSavedFpeEnv;

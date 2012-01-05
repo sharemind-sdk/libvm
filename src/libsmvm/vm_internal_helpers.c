@@ -239,6 +239,16 @@ static inline void SMVM_PrivateMemoryMap_destroyer(void * const * key, size_t * 
     free(*key);
 }
 
+static inline void SMVM_MemoryInfoStatistics_init(SMVM_MemoryInfoStatistics * mis) {
+    mis->max = 0u;
+}
+
+static inline void SMVM_MemoryInfo_init(SMVM_MemoryInfo * mi) {
+    mi->usage = 0u;
+    mi->upperLimit = SIZE_MAX;
+    SMVM_MemoryInfoStatistics_init(&mi->stats);
+}
+
 SMVM_Program * SMVM_Program_new(SMVM * smvm) {
     SMVM_Program * const p = (SMVM_Program *) malloc(sizeof(SMVM_Program));
     if (likely(p)) {
@@ -256,18 +266,10 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.internal = &p->syscallContextInternal;
         p->syscallContextInternal.program = p;
-        p->memPublicHeap = 0u;
-        p->memPublicHeapMax = 0u;
-        p->memPublicHeapUpperLimit = SIZE_MAX;
-        p->memPrivate = 0u;
-        p->memPrivateMax = 0u;
-        p->memPrivateUpperLimit = SIZE_MAX;
-        p->memReserved = 0u;
-        p->memReservedMax = 0u;
-        p->memReservedUpperLimit = SIZE_MAX;
-        p->memTotal = 0u;
-        p->memTotalMax = 0u;
-        p->memTotalUpperLimit = SIZE_MAX;
+        SMVM_MemoryInfo_init(&p->memPublicHeap);
+        SMVM_MemoryInfo_init(&p->memPrivate);
+        SMVM_MemoryInfo_init(&p->memReserved);
+        SMVM_MemoryInfo_init(&p->memTotal);
         SMVM_CodeSectionsVector_init(&p->codeSections);
         SMVM_DataSectionsVector_init(&p->dataSections);
         SMVM_DataSectionsVector_init(&p->rodataSections);
@@ -708,8 +710,8 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
         return 0u;
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
-                 || (p->memPublicHeapUpperLimit - p->memPublicHeap < nBytes)))
+    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
+                 || (p->memPublicHeap.upperLimit - p->memPublicHeap.usage < nBytes)))
         return 0u;
 
     /** \todo Check any other memory limits? */
@@ -735,14 +737,14 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     SMVM_MemorySlot_init(slot, pData, (size_t) nBytes, NULL);
 
     /* Update memory statistics: */
-    p->memPublicHeap += nBytes;
-    p->memTotal += nBytes;
+    p->memPublicHeap.usage += nBytes;
+    p->memTotal.usage += nBytes;
 
-    if (p->memPublicHeap > p->memPublicHeapMax)
-        p->memPublicHeapMax = p->memPublicHeap;
+    if (p->memPublicHeap.usage > p->memPublicHeap.stats.max)
+        p->memPublicHeap.stats.max = p->memPublicHeap.usage;
 
-    if (p->memTotal > p->memTotalMax)
-        p->memTotalMax = p->memTotal;
+    if (p->memTotal.usage > p->memTotal.stats.max)
+        p->memTotal.stats.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
@@ -777,10 +779,10 @@ SMVM_Exception SMVM_Program_public_free(SMVM_Program * p, uint64_t ptr) {
 
 
     /* Update memory statistics: */
-    assert(p->memPublicHeap >= slot->size);
-    assert(p->memTotal >= slot->size);
-    p->memPublicHeap -= slot->size;
-    p->memTotal -= slot->size;
+    assert(p->memPublicHeap.usage >= slot->size);
+    assert(p->memTotal.usage >= slot->size);
+    p->memPublicHeap.usage -= slot->size;
+    p->memTotal.usage -= slot->size;
 
     /** \todo Update any other memory statistics? */
 
@@ -840,8 +842,8 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
-                 || (p->memPrivateUpperLimit - p->memPrivate < nBytes)))
+    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
+                 || (p->memPrivate.upperLimit - p->memPrivate.usage < nBytes)))
         return NULL;
 
     /** \todo Check any other memory limits? */
@@ -860,14 +862,14 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     (*s) = nBytes;
 
     /* Update memory statistics: */
-    p->memPrivate += nBytes;
-    p->memTotal += nBytes;
+    p->memPrivate.usage += nBytes;
+    p->memTotal.usage += nBytes;
 
-    if (p->memPrivate > p->memPrivateMax)
-        p->memPrivateMax = p->memPrivate;
+    if (p->memPrivate.usage > p->memPrivate.stats.max)
+        p->memPrivate.stats.max = p->memPrivate.usage;
 
-    if (p->memTotal > p->memTotalMax)
-        p->memTotalMax = p->memTotal;
+    if (p->memTotal.usage > p->memTotal.stats.max)
+        p->memTotal.stats.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
@@ -900,10 +902,10 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     assert(r);
 
     /* Update memory statistics: */
-    assert(p->memPrivate >= nBytes);
-    assert(p->memTotal >= nBytes);
-    p->memPrivate -= nBytes;
-    p->memTotal -= nBytes;
+    assert(p->memPrivate.usage >= nBytes);
+    assert(p->memTotal.usage >= nBytes);
+    p->memPrivate.usage -= nBytes;
+    p->memTotal.usage -= nBytes;
 
     /** \todo Update any other memory statistics? */
 
@@ -921,21 +923,21 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(p);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotalUpperLimit - p->memTotal < nBytes)
-                 || (p->memReservedUpperLimit - p->memReserved < nBytes)))
+    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
+                 || (p->memReserved.upperLimit - p->memReserved.usage < nBytes)))
         return false;
 
     /** \todo Check any other memory limits? */
 
     /* Update memory statistics */
-    p->memReserved += nBytes;
-    p->memTotal += nBytes;
+    p->memReserved.usage += nBytes;
+    p->memTotal.usage += nBytes;
 
-    if (p->memReserved > p->memReservedMax)
-        p->memReservedMax = p->memReserved;
+    if (p->memReserved.usage > p->memReserved.stats.max)
+        p->memReserved.stats.max = p->memReserved.usage;
 
-    if (p->memTotal > p->memTotalMax)
-        p->memTotalMax = p->memTotal;
+    if (p->memTotal.usage > p->memTotal.stats.max)
+        p->memTotal.stats.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
@@ -950,12 +952,12 @@ static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(p);
 
     /* Check for underflow: */
-    if (p->memReserved < nBytes)
+    if (p->memReserved.usage < nBytes)
         return false;
 
-    assert(p->memTotal >= nBytes);
-    p->memReserved -= nBytes;
-    p->memTotal -= nBytes;
+    assert(p->memTotal.usage >= nBytes);
+    p->memReserved.usage -= nBytes;
+    p->memTotal.usage -= nBytes;
     return true;
 }
 
