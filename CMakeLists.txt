@@ -240,10 +240,8 @@ ADD_LIBRARY("libsmmod" SHARED
             "src/libsmmod/modapi_0x1.c"
             "src/libsmmod/pd.c"
             "src/libsmmod/pdk.c"
-            "src/libsmmod/pdkmap.c"
             "src/libsmmod/pdpi.c"
-            "src/libsmmod/syscall.c"
-            "src/libsmmod/syscallmap.c")
+            "src/libsmmod/syscall.c")
 SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmmod/modapi.h"
     "src/libsmmod/modapi_internal.h"
@@ -251,10 +249,8 @@ SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmmod/modapi_0x1_internal.h"
     "src/libsmmod/pd.h"
     "src/libsmmod/pdk.h"
-    "src/libsmmod/pdkmap.h"
     "src/libsmmod/pdpi.h"
-    "src/libsmmod/syscall.h"
-    "src/libsmmod/syscallmap.h")
+    "src/libsmmod/syscall.h")
 SET_TARGET_PROPERTIES("libsmmod" PROPERTIES
                       OUTPUT_NAME "smmod"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
