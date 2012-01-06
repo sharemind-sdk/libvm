@@ -88,11 +88,11 @@ const SMVM_Context_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signatu
     return (*(smvm->context->find_syscall))(smvm->context, signature);
 }
 
-const SMVM_Context_PDPI * SMVM_get_pd_process_instance(SMVM * smvm, const char * pdName) {
+const SMVM_Context_PDPI * SMVM_get_pd_process_instance(SMVM * smvm, const char * pdName, SMVM_Program * process) {
     if (!smvm->context || !smvm->context->get_pd_process_instance_handle)
         return 0;
 
-    return (*(smvm->context->get_pd_process_instance_handle))(smvm->context, pdName);
+    return (*(smvm->context->get_pd_process_instance_handle))(smvm->context, pdName, process);
 }
 
 
@@ -407,7 +407,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                     if (!pdBinding)
                         return SMVM_OUT_OF_MEMORY;
 
-                    (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos);
+                    (*pdBinding) = SMVM_get_pd_process_instance(p->smvm, (const char *) pos, p);
                     if (!*pdBinding) {
                         SMVM_PdBindings_pop(&p->pdBindings);
                         fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);

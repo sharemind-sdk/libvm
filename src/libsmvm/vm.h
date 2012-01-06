@@ -25,6 +25,9 @@ SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
 SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 
+struct _SMVM_Program;
+typedef struct _SMVM_Program SMVM_Program;
+
 struct _SMVM_Context_Syscall;
 typedef struct _SMVM_Context_Syscall SMVM_Context_Syscall;
 struct _SMVM_Context_Syscall {
@@ -62,9 +65,10 @@ struct _SMVM_Context {
     /**
       \param[in] context a pointer to this struct.
       \param[in] pdname the name of the protection domain.
+      \param[in] process the process requesting the pd process instance.
       \retval NULL if no such protection domain is found.
     */
-    const SMVM_Context_PDPI * (*get_pd_process_instance_handle)(SMVM_Context * context, const char * pdName);
+    const SMVM_Context_PDPI * (*get_pd_process_instance_handle)(SMVM_Context * context, const char * pdName, SMVM_Program * process);
 
     /** Pointer to any SMVM_Context data. Not used by libsmvm. */
     void * internal;
@@ -137,8 +141,6 @@ SM_ENUM_DECLARE_TOSTRING(SMVM_Error);
 SM_ENUM_CUSTOM_DEFINE(SMVM_Exception, SMVM_ENUM_Exception);
 SM_ENUM_DECLARE_TOSTRING(SMVM_Exception);
 
-struct _SMVM_Program;
-typedef struct _SMVM_Program SMVM_Program;
 
 /**
  * \brief Allocates and initializes a new SMVM_Program instance.
