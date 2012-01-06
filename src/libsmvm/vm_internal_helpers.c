@@ -663,7 +663,7 @@ static inline SMVM_Exception SMVM_Program_reinitialize_static_mem_slots(SMVM_Pro
     if (1) { \
         SMVM_DataSection * const restrict staticSlot = SMVM_DataSectionsVector_get_pointer(&p->dataSection ## Sections, p->currentCodeSectionIndex); \
         assert(staticSlot); \
-        SMVM_MemorySlot * const restrict slot = SMVM_MemoryMap_insert(&p->memoryMap, (index)); \
+        SMVM_MemorySlot * const restrict slot = SMVM_MemoryMap_get_or_insert(&p->memoryMap, (index)); \
         if (unlikely(!slot)) \
             return SMVM_OUT_OF_MEMORY; \
         (*slot) = *staticSlot; \
@@ -686,9 +686,13 @@ static inline uint64_t SMVM_Program_public_alloc_slot(SMVM_Program * p, SMVM_Mem
     assert(index != 0u);
 
     /* Fill the slot: */
-    SMVM_MemorySlot * const slot = SMVM_MemoryMap_insert(&p->memoryMap, index);
+#ifndef NDEBUG
+    size_t oldSize = p->memoryMap.size;
+#endif
+    SMVM_MemorySlot * const slot = SMVM_MemoryMap_get_or_insert(&p->memoryMap, index);
     if (unlikely(!slot))
         return 0u;
+    assert(oldSize < p->memoryMap.size);
 
     /* Optimize next alloc: */
     p->memorySlotNext = index + 1u;
@@ -854,11 +858,15 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
         return NULL;
 
     /* Add pointer to private memory map: */
-    size_t * s = SMVM_PrivateMemoryMap_insert(&p->privateMemoryMap, ptr);
+#ifndef NDEBUG
+    size_t oldSize = p->privateMemoryMap.size;
+#endif
+    size_t * s = SMVM_PrivateMemoryMap_get_or_insert(&p->privateMemoryMap, ptr);
     if (unlikely(!s)) {
         free(ptr);
         return NULL;
     }
+    assert(oldSize < p->privateMemoryMap.size);
     (*s) = nBytes;
 
     /* Update memory statistics: */
