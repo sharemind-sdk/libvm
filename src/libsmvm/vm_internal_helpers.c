@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "../libsme/libsme.h"
@@ -81,7 +82,7 @@ void SMVM_free(SMVM * smvm) {
     free(smvm);
 }
 
-const SMVM_Context_Syscall * SMVM_find_syscall(SMVM * smvm, const char * signature) {
+const SMVM_SyscallBinding * SMVM_find_syscall(SMVM * smvm, const char * signature) {
     if (!smvm->context || !smvm->context->find_syscall)
         return NULL;
 
@@ -264,8 +265,7 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.reservePrivate = &SMVM_private_reserve;
         p->syscallContext.releasePrivate = &SMVM_private_release;
         p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
-        p->syscallContext.internal = &p->syscallContextInternal;
-        p->syscallContextInternal.program = p;
+        p->syscallContext.internal = p;
         SMVM_MemoryInfo_init(&p->memPublicHeap);
         SMVM_MemoryInfo_init(&p->memPrivate);
         SMVM_MemoryInfo_init(&p->memReserved);
@@ -393,15 +393,16 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
                 LOAD_DATASECTION_CASE(DATA,data,COPYSECTION,&rwDataSpecials)
                 LOAD_DATASECTION_CASE(BSS,bss,memset(s->pData, 0, sh->length);,&rwDataSpecials)
                 LOAD_BINDSECTION_CASE(BIND,
-                    const SMVM_Context_Syscall ** binding = SMVM_SyscallBindings_push(&p->bindings);
+                    SMVM_SyscallBinding * binding = SMVM_SyscallBindings_push(&p->bindings);
                     if (!binding)
                         return SMVM_OUT_OF_MEMORY;
-                    (*binding) = SMVM_find_syscall(p->smvm, (const char *) pos);
-                    if (!*binding) {
+                    const SMVM_SyscallBinding * b = SMVM_find_syscall(p->smvm, (const char *) pos);
+                    if (!b) {
                         SMVM_SyscallBindings_pop(&p->bindings);
                         fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
                         return SMVM_PREPARE_UNDEFINED_BIND;
-                    })
+                    }
+                    (*binding) = *b;)
                 LOAD_BINDSECTION_CASE(PDBIND,
                     const SMVM_Context_PDPI ** pdBinding = SMVM_PdBindings_push(&p->pdBindings);
                     if (!pdBinding)
@@ -512,7 +513,7 @@ SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
     if (1) { \
         SMVM_PREPARE_CHECK_OR_ERROR(c[(*i)+(argNum)].uint64[0] < p->bindings.size, \
                                     SMVM_PREPARE_ERROR_INVALID_ARGUMENTS); \
-        c[(*i)+(argNum)].cp[0] = p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
+        c[(*i)+(argNum)].cp[0] = &p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
     } else (void) 0
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
@@ -765,7 +766,7 @@ static uint64_t SMVM_public_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nB
     if (unlikely(nBytes > UINT64_MAX))
         return 0u;
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     return SMVM_Program_public_alloc(p, nBytes, NULL);
@@ -801,7 +802,7 @@ static int SMVM_public_free(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     return SMVM_Program_public_free(p, ptr) == SMVM_E_NONE;
@@ -811,7 +812,7 @@ size_t SMVM_public_get_size(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
-    const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    const SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
@@ -825,7 +826,7 @@ void * SMVM_public_get_ptr(SMVM_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
-    const SMVM_Program * p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    const SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     const SMVM_MemorySlot * slot = SMVM_MemoryMap_get_const(&p->memoryMap, ptr);
@@ -842,7 +843,7 @@ void * SMVM_private_alloc(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
     if (unlikely(nBytes <= 0))
         return NULL;
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     /* Check memory limits: */
@@ -891,7 +892,7 @@ int SMVM_private_free(SMVM_MODAPI_0x1_Syscall_Context * c, void * ptr) {
     if (unlikely(!ptr))
         return false;
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     /* Check if pointer is in private memory map: */
@@ -927,7 +928,7 @@ static int SMVM_private_reserve(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     if (unlikely(nBytes <= 0u))
         return true;
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     /* Check memory limits: */
@@ -956,7 +957,7 @@ static int SMVM_private_release(SMVM_MODAPI_0x1_Syscall_Context * c, size_t nByt
     assert(c);
     assert(c->internal);
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     /* Check for underflow: */
@@ -981,7 +982,7 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
     if (pd_index > SIZE_MAX)
         return 0;
 
-    SMVM_Program * const p = ((const SMVM_SyscallContextInternal *) c->internal)->program;
+    SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&p->pdBindings, pd_index);

@@ -411,9 +411,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         p->nextFrame->returnValueAddr = (r); \
-        SMVM_MODAPI_0x1_Syscall rc = (SMVM_MODAPI_0x1_Syscall) ((const SMVM_Context_Syscall *) sc)->impl_or_wrapper; \
-        p->syscallContext.moduleHandle = ((const SMVM_Context_Syscall *) sc)->moduleHandle; \
-        p->syscallContextInternal.syscall = (const SMVM_Context_Syscall *) sc; \
+        const SMVM_Syscall_Callable rc = ((const SMVM_SyscallBinding *) sc)->wrapper.callable; \
+        p->syscallContext.libsmmod_internal = ((const SMVM_SyscallBinding *) sc)->wrapper.internal; \
+        p->syscallContext.moduleHandle = ((const SMVM_SyscallBinding *) sc)->moduleHandle; \
         SMVM_MODAPI_0x1_Syscall_Code st; \
         st = (*rc)(p->nextFrame->stack.data, p->nextFrame->stack.size, \
                    p->nextFrame->refstack.data, p->nextFrame->refstack.size, \
@@ -442,7 +442,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     if (1) { \
         SMVM_MI_TRY_EXCEPT((a)->uint64[0] < p->bindings.size, \
                            SMVM_E_INVALID_INDEX_SYSCALL); \
-        SMVM_MI_SYSCALL(p->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
+        SMVM_MI_SYSCALL(&p->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
     } else (void) 0
 
 #define SMVM_MI_RETURN(r) \

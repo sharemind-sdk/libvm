@@ -11,8 +11,10 @@
 #define SHAREMIND_LIBSMVM_VM_H
 
 #include "../codeblock.h"
+#include "../libsmmod/modapi.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,13 +30,10 @@ SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 struct _SMVM_Program;
 typedef struct _SMVM_Program SMVM_Program;
 
-struct _SMVM_Context_Syscall;
-typedef struct _SMVM_Context_Syscall SMVM_Context_Syscall;
-struct _SMVM_Context_Syscall {
-    void * impl_or_wrapper;
-    void * null_or_impl;
+typedef struct _SMVM_SyscallBinding {
+    SMVM_SyscallWrapper wrapper;
     void * moduleHandle;
-};
+} SMVM_SyscallBinding;
 
 struct _SMVM_Context_PDPI;
 typedef struct _SMVM_Context_PDPI SMVM_Context_PDPI;
@@ -60,7 +59,7 @@ struct _SMVM_Context {
       \returns a system call with the given signature.
       \retval NULL if no such system call is provided.
     */
-    const SMVM_Context_Syscall * (*find_syscall)(SMVM_Context * context, const char * signature);
+    const SMVM_SyscallBinding * (*find_syscall)(SMVM_Context * context, const char * signature);
 
     /**
       \param[in] context a pointer to this struct.

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include "../fnv.h"
 #include "../instrset.h"
+#include "../libsmmod/modapi.h"
 #include "../libsmmod/modapi_0x1.h"
 #include "../map.h"
 #include "../stack.h"
@@ -58,8 +59,8 @@ typedef enum {
  *  SMVM_SyscallBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_SyscallBindings,const SMVM_Context_Syscall *,,inline)
-SM_VECTOR_DEFINE(SMVM_SyscallBindings,const SMVM_Context_Syscall *,malloc,free,realloc,inline)
+SM_VECTOR_DECLARE(SMVM_SyscallBindings,SMVM_SyscallBinding,,inline)
+SM_VECTOR_DEFINE(SMVM_SyscallBindings,SMVM_SyscallBinding,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -290,12 +291,6 @@ SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,)
 SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
 #endif
 
-typedef struct {
-    const SMVM_Context_Syscall * syscall;
-    SMVM_Program * program;
-} SMVM_SyscallContextInternal;
-
-
 #ifndef SMVM_FAST_BUILD
 SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,inline)
 SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SM_MAP_KEY_EQUALS_voidptr,SM_MAP_KEY_LESS_THAN_voidptr,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
@@ -342,7 +337,6 @@ struct _SMVM_Program {
 
     SMVM * smvm;
     SMVM_MODAPI_0x1_Syscall_Context syscallContext;
-    SMVM_SyscallContextInternal syscallContextInternal;
 
     SMVM_MemoryInfo memPublicHeap;
     SMVM_MemoryInfo memPrivate;
