@@ -411,7 +411,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
         p->nextFrame->returnValueAddr = (r); \
-        const SMVM_Syscall_Callable rc = ((const SMVM_SyscallBinding *) sc)->wrapper.callable; \
+        const SMVM_SyscallCallable rc = ((const SMVM_SyscallBinding *) sc)->wrapper.callable; \
         p->syscallContext.libsmmod_internal = ((const SMVM_SyscallBinding *) sc)->wrapper.internal; \
         p->syscallContext.moduleHandle = ((const SMVM_SyscallBinding *) sc)->moduleHandle; \
         SMVM_MODAPI_0x1_Syscall_Code st; \
