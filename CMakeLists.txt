@@ -245,7 +245,7 @@ ADD_LIBRARY("libsmmod" SHARED
             "src/libsmmod/syscall.c")
 SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmmod/facilitymap.h"
-    "src/libsmmod/modapi.h"
+    "src/libsmmod/libsmmod.h"
     "src/libsmmod/modapi_internal.h"
     "src/libsmmod/modapi_0x1.h"
     "src/libsmmod/modapi_0x1_internal.h"
@@ -258,7 +258,7 @@ SET_TARGET_PROPERTIES("libsmmod" PROPERTIES
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
-INSTALL(FILES "src/libsmmod/modapi.h"
+INSTALL(FILES "src/libsmmod/libsmmod.h"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmmod")
 
 

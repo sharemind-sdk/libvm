@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include "../fnv.h"
 #include "../instrset.h"
-#include "../libsmmod/modapi.h"
+#include "../libsmmod/libsmmod.h"
 #include "../libsmmod/modapi_0x1.h"
 #include "../map.h"
 #include "../stack.h"

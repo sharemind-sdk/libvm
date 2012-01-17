@@ -11,7 +11,7 @@
 #define SHAREMIND_LIBSMVM_VM_H
 
 #include "../codeblock.h"
-#include "../libsmmod/modapi.h"
+#include "../libsmmod/libsmmod.h"
 #include "../preprocessor.h"
 #include "../static_assert.h"
 
