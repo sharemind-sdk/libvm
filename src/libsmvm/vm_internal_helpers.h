@@ -32,7 +32,7 @@
 #include "../fnv.h"
 #include "../instrset.h"
 #include "../libsmmod/libsmmod.h"
-#include "../libsmmod/modapi_0x1.h"
+#include "../libsmmod/api_0x1.h"
 #include "../map.h"
 #include "../stack.h"
 #include "../vector.h"

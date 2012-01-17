@@ -244,10 +244,10 @@ ADD_LIBRARY("libsmmod" SHARED
             "src/libsmmod/pdpi.c"
             "src/libsmmod/syscall.c")
 SET(OTHER_FILES ${OTHER_FILES}
+    "src/libsmmod/api_0x1.h"
     "src/libsmmod/facilitymap.h"
     "src/libsmmod/libsmmod.h"
     "src/libsmmod/modapi.h"
-    "src/libsmmod/modapi_0x1.h"
     "src/libsmmod/modapi_0x1_internal.h"
     "src/libsmmod/pd.h"
     "src/libsmmod/pdk.h"
