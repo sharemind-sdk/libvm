@@ -248,7 +248,7 @@ SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmmod/facilitymap.h"
     "src/libsmmod/libsmmod.h"
     "src/libsmmod/modapi.h"
-    "src/libsmmod/modapi_0x1_internal.h"
+    "src/libsmmod/modapi_0x1.h"
     "src/libsmmod/pd.h"
     "src/libsmmod/pdk.h"
     "src/libsmmod/pdpi.h"
