@@ -237,28 +237,36 @@ INSTALL(DIRECTORY "src/libsmas/"
 ################################################################################
 
 ADD_LIBRARY("libsmmod" SHARED
+            "src/libsmmod/apis.c"
             "src/libsmmod/modapi.c"
-            "src/libsmmod/modapi_0x1.c"
+            "src/libsmmod/module.c"
+            "src/libsmmod/module_0x1.c"
             "src/libsmmod/pd.c"
+            "src/libsmmod/pd_0x1.c"
             "src/libsmmod/pdk.c"
             "src/libsmmod/pdpi.c"
+            "src/libsmmod/pdpi_0x1.c"
             "src/libsmmod/syscall.c")
 SET(OTHER_FILES ${OTHER_FILES}
     "src/libsmmod/api_0x1.h"
+    "src/libsmmod/apis.h"
     "src/libsmmod/facilitymap.h"
     "src/libsmmod/libsmmod.h"
     "src/libsmmod/modapi.h"
-    "src/libsmmod/modapi_0x1.h"
+    "src/libsmmod/module.h"
+    "src/libsmmod/module_0x1.h"
     "src/libsmmod/pd.h"
+    "src/libsmmod/pd_0x1.h"
     "src/libsmmod/pdk.h"
     "src/libsmmod/pdpi.h"
+    "src/libsmmod/pdpi_0x1.h"
     "src/libsmmod/syscall.h")
 SET_TARGET_PROPERTIES("libsmmod" PROPERTIES
                       OUTPUT_NAME "smmod"
                       LIBRARY_OUTPUT_DIRECTORY "lib/"
                       VERSION "0.1.0.0"
                       SOVERSION "0.1")
-INSTALL(FILES "src/libsmmod/libsmmod.h"
+INSTALL(FILES "src/libsmmod/libsmmod.h" "src/libsmmod/api_0x1.h"
         DESTINATION "${SM_INSTALL_INCLUDE_DIR}/libsmmod")
 
 
@@ -315,6 +323,7 @@ TARGET_LINK_LIBRARIES("smas" "libsmas")
 
 SET(VM_FILES "src/vm/lasterror.cpp"
              "src/vm/main.cpp"
+             "src/vm/vm/modapiexception.cpp"
              "src/vm/vm/modules.cpp"
              "src/vm/vm/pd.cpp"
              "src/vm/vm/pdi.cpp"
@@ -330,6 +339,7 @@ SET(OTHER_FILES ${OTHER_FILES}
     "src/vm/lasterror.h"
     "src/vm/oomd.h"
     "src/vm/scopedobjectmap.h"
+    "src/vm/vm/modapiexception.h"
     "src/vm/vm/modules.h"
     "src/vm/vm/pd.h"
     "src/vm/vm/pdi.h"
