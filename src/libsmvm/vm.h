@@ -164,26 +164,6 @@ void SMVM_Program_free(SMVM_Program * program) __attribute__ ((nonnull(1)));
 SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * program, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
- * \brief Adds a code section to the program and prepares it for direct execution.
- * \pre codeSize > 0
- * \pre This function has been called less than program->numCodeSections on the program object.
- * \pre program->state == SMVM_INITIALIZED
- * \post program->state == SMVM_INITIALIZED
- * \param program The program to prepare.
- * \param[in] code The program code, of which a copy is made and processed.
- * \param[in] codeSize The length of the code.
- * \returns an SMVM_Error.
- */
-SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * program, const SMVM_CodeBlock * code, const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
-
-/**
- * \brief Prepares the program fully for execution.
- * \param program The program to prepare.
- * \returns an SMVM_Error.
- */
-SMVM_Error SMVM_Program_endPrepare(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
-
-/**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SMVM_PREPARED
  * \param program The program to run.

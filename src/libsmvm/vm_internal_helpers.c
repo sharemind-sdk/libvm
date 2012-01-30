@@ -54,6 +54,27 @@ static int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
                                        size_t * pdkIndex,
                                        void ** moduleHandle) __attribute__ ((nonnull(1)));
 
+/**
+ * \brief Adds a code section to the program and prepares it for direct execution.
+ * \pre codeSize > 0
+ * \pre This function has been called less than program->numCodeSections on the program object.
+ * \pre program->state == SMVM_INITIALIZED
+ * \post program->state == SMVM_INITIALIZED
+ * \param program The program to prepare.
+ * \param[in] code The program code, of which a copy is made and processed.
+ * \param[in] codeSize The length of the code.
+ * \returns an SMVM_Error.
+ */
+static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * program,
+                                              const SMVM_CodeBlock * code,
+                                              const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+
+/**
+ * \brief Prepares the program fully for execution.
+ * \param program The program to prepare.
+ * \returns an SMVM_Error.
+ */
+static SMVM_Error SMVM_Program_endPrepare(SMVM_Program * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /*******************************************************************************
  *  SMVM
@@ -444,9 +465,9 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
 static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix);
 #endif /* SMVM_DEBUG */
 
-SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
-                                       const SMVM_CodeBlock * const code,
-                                       const size_t codeSize)
+static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
+                                              const SMVM_CodeBlock * const code,
+                                              const size_t codeSize)
 {
     assert(p);
     assert(code);
@@ -537,7 +558,7 @@ struct preprocess_pass2_function preprocess_pass2_functions[] = {
     { .code = 0u, .f = NULL }
 };
 
-SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
+static SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
     assert(p);
 
     SMVM_Prepare_IBlock pb;
