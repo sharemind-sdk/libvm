@@ -414,10 +414,27 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         const SMVM_SyscallCallable rc = ((const SMVM_SyscallBinding *) sc)->wrapper.callable; \
         p->syscallContext.libsmmod_internal = ((const SMVM_SyscallBinding *) sc)->wrapper.internal; \
         p->syscallContext.moduleHandle = ((const SMVM_SyscallBinding *) sc)->moduleHandle; \
+        SMVM_Reference * ref; \
+        if (p->nextFrame->refstack.size == 0u) { \
+            ref = NULL; \
+        } else { \
+            ref = SMVM_ReferenceVector_push(&p->nextFrame->refstack); \
+            SMVM_MI_TRY_OOM(ref); \
+            ref->pData = NULL; \
+            ref = p->nextFrame->refstack.data; \
+        } \
+        SMVM_CReference * cref; \
+        if (p->nextFrame->crefstack.size == 0u) { \
+            cref = NULL; \
+        } else { \
+            cref = SMVM_CReferenceVector_push(&p->nextFrame->crefstack); \
+            SMVM_MI_TRY_OOM(cref); \
+            cref->pData = NULL; \
+            cref = p->nextFrame->crefstack.data; \
+        } \
         SMVM_MODAPI_0x1_Syscall_Code st; \
         st = (*rc)(p->nextFrame->stack.data, p->nextFrame->stack.size, \
-                   p->nextFrame->refstack.data, p->nextFrame->refstack.size, \
-                   p->nextFrame->crefstack.data, p->nextFrame->crefstack.size, \
+                   ref, cref, \
                    (r), &p->syscallContext); \
         SMVM_StackFrame_destroy(SMVM_FrameStack_top(&p->frames)); \
         SMVM_FrameStack_pop(&p->frames); \
