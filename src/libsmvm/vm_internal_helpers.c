@@ -277,6 +277,7 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->state = SMVM_INITIALIZED;
         p->error = SMVM_OK;
         p->smvm = smvm;
+        p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.publicAlloc = &SMVM_public_alloc;
         p->syscallContext.publicFree = &SMVM_public_free;
         p->syscallContext.publicMemPtrSize = &SMVM_public_get_size;
@@ -285,7 +286,6 @@ SMVM_Program * SMVM_Program_new(SMVM * smvm) {
         p->syscallContext.freePrivate = &SMVM_private_free;
         p->syscallContext.reservePrivate = &SMVM_private_reserve;
         p->syscallContext.releasePrivate = &SMVM_private_release;
-        p->syscallContext.get_pd_process_instance_handle = &_SMVM_get_pd_process_handle;
         p->syscallContext.internal = p;
         SMVM_MemoryInfo_init(&p->memPublicHeap);
         SMVM_MemoryInfo_init(&p->memPrivate);
@@ -1001,14 +1001,14 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
     assert(c->internal);
 
     if (pd_index > SIZE_MAX)
-        return 0;
+        return 1;
 
     SMVM_Program * const p = (SMVM_Program *) c->internal;
     assert(p);
 
     const SMVM_Context_PDPI * const * const ppd = SMVM_PdBindings_get_const_pointer(&p->pdBindings, pd_index);
     if (!ppd && !*ppd)
-        return 0;
+        return 1;
 
     if (pdProcessHandle)
         *pdProcessHandle = (*ppd)->pdProcessHandle;
@@ -1016,7 +1016,8 @@ int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
         *pdkIndex = (*ppd)->pdkIndex;
     if (moduleHandle)
         *moduleHandle = (*ppd)->moduleHandle;
-    return 1;
+
+    return 0;
 }
 
 
