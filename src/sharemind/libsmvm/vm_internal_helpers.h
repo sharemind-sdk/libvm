@@ -28,14 +28,14 @@
 #include <signal.h>
 #endif
 
+#include <sharemind/fnv.h>
+#include <sharemind/instrset.h>
+#include <sharemind/map.h>
+#include <sharemind/stack.h>
+#include <sharemind/vector.h>
 #include <stdlib.h>
-#include "../fnv.h"
-#include "../instrset.h"
 #include "../libsmmod/libsmmod.h"
 #include "../libsmmod/api_0x1.h"
-#include "../map.h"
-#include "../stack.h"
-#include "../vector.h"
 
 
 #ifdef __cplusplus

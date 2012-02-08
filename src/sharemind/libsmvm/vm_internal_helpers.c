@@ -13,13 +13,13 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <sharemind/likely.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "../libsme/libsme.h"
 #include "../libsme/libsme_0x0.h"
 #include "../libsmvmi/instr.h"
-#include "../likely.h"
 #include "vm_internal_core.h"
 
 #ifdef SMVM_DEBUG

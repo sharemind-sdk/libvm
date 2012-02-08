@@ -14,6 +14,7 @@
 #ifdef SMVM_SOFT_FLOAT
 #include "../3rdparty/softfloat/softfloat.h"
 #endif
+typedef sf_float32 smvm_float32;
 #ifdef SMVM_DEBUG
 #include <stdio.h>
 #endif

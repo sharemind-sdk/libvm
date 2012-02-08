@@ -10,22 +10,17 @@
 #ifndef SHAREMIND_LIBSMVM_VM_H
 #define SHAREMIND_LIBSMVM_VM_H
 
-#include "../codeblock.h"
+#include <sharemind/codeblock.h>
+#include <sharemind/preprocessor.h>
+#include <sharemind/static_assert.h>
 #include "../libsmmod/libsmmod.h"
-#include "../preprocessor.h"
-#include "../static_assert.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-SM_STATIC_ASSERT(sizeof(SMVM_CodeBlock) == sizeof(uint64_t));
-SM_STATIC_ASSERT(sizeof(size_t) <= sizeof(uint64_t));
 SM_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
-SM_STATIC_ASSERT(sizeof(ptrdiff_t) <= sizeof(uint64_t));
-SM_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
-SM_STATIC_ASSERT(sizeof(char) == sizeof(uint8_t));
 
 struct _SMVM_Program;
 typedef struct _SMVM_Program SMVM_Program;
