@@ -1,3 +1,6 @@
 [submodule "ext/vm_globals"]
 	path = ext/vm_globals
 	url = ssh://sharemind.cyber.ee/projects/sharemind/git/vm_globals.git
+[submodule "ext/libmodapi"]
+	path = ext/libmodapi
+	url = ssh://sharemind.cyber.ee/projects/sharemind/git/libmodapi.git

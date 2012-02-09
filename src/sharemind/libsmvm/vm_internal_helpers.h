@@ -30,12 +30,12 @@
 
 #include <sharemind/fnv.h>
 #include <sharemind/instrset.h>
+#include <sharemind/libmodapi/api_0x1.h>
+#include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/map.h>
 #include <sharemind/stack.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
-#include "../libsmmod/libsmmod.h"
-#include "../libsmmod/api_0x1.h"
 
 
 #ifdef __cplusplus

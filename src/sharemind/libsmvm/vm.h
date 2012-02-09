@@ -11,9 +11,9 @@
 #define SHAREMIND_LIBSMVM_VM_H
 
 #include <sharemind/codeblock.h>
+#include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/preprocessor.h>
 #include <sharemind/static_assert.h>
-#include "../libsmmod/libsmmod.h"
 
 
 #ifdef __cplusplus
