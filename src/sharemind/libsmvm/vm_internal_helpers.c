@@ -334,39 +334,39 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
     assert(p);
     assert(data);
 
-    if (dataSize < sizeof(SME_Common_Header))
+    if (dataSize < sizeof(Sharemind_Executable_Common_Header))
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-    const SME_Common_Header * ch;
-    if (SME_Common_Header_read(data, &ch) != SME_READ_OK)
+    const Sharemind_Executable_Common_Header * ch;
+    if (sharemind_executable_common_header_read(data, &ch) != SHAREMIND_EXECUTABLE_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
     if (ch->fileFormatVersion > 0u)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
 
 
-    const void * pos = ((const uint8_t *) data) + sizeof(SME_Common_Header);
+    const void * pos = ((const uint8_t *) data) + sizeof(Sharemind_Executable_Common_Header);
 
-    const SME_Header_0x0 * h;
-    if (SME_Header_0x0_read(pos, &h) != SME_READ_OK)
+    const Sharemind_Executable_Header_0x0 * h;
+    if (sharemind_executable_header_0x0_read(pos, &h) != SHAREMIND_EXECUTABLE_READ_OK)
         return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
-    pos = ((const uint8_t *) pos) + sizeof(SME_Header_0x0);
+    pos = ((const uint8_t *) pos) + sizeof(Sharemind_Executable_Header_0x0);
 
     for (unsigned ui = 0; ui <= h->numberOfUnitsMinusOne; ui++) {
-        const SME_Unit_Header_0x0 * uh;
-        if (SME_Unit_Header_0x0_read(pos, &uh) != SME_READ_OK)
+        const Sharemind_Executable_Unit_Header_0x0 * uh;
+        if (sharemind_executable_unit_header_0x0_read(pos, &uh) != SHAREMIND_EXECUTABLE_READ_OK)
             return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-        pos = ((const uint8_t *) pos) + sizeof(SME_Unit_Header_0x0);
+        pos = ((const uint8_t *) pos) + sizeof(Sharemind_Executable_Unit_Header_0x0);
         for (unsigned si = 0; si <= uh->sectionsMinusOne; si++) {
-            const SME_Section_Header_0x0 * sh;
-            if (SME_Section_Header_0x0_read(pos, &sh) != SME_READ_OK)
+            const Sharemind_Executable_Section_Header_0x0 * sh;
+            if (sharemind_executable_section_header_0x0_read(pos, &sh) != SHAREMIND_EXECUTABLE_READ_OK)
                 return SMVM_PREPARE_ERROR_INVALID_INPUT_FILE;
 
-            pos = ((const uint8_t *) pos) + sizeof(SME_Section_Header_0x0);
+            pos = ((const uint8_t *) pos) + sizeof(Sharemind_Executable_Section_Header_0x0);
 
-            SME_Section_Type type = SME_Section_Header_0x0_type(sh);
-            assert(type != (SME_Section_Type) -1);
+            SHAREMIND_EXECUTABLE_SECTION_TYPE type = sharemind_executable_section_header_0x0_type(sh);
+            assert(type != (SHAREMIND_EXECUTABLE_SECTION_TYPE) -1);
 
 #if SIZE_MAX < UIN32_MAX
             if (unlikely(sh->length > SIZE_MAX))
@@ -374,7 +374,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
 #endif
 
 #define LOAD_DATASECTION_CASE(utype,ltype,copyCode,spec) \
-    case SME_SECTION_TYPE_ ## utype: { \
+    case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         SMVM_DataSection * s = SMVM_DataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
             return SMVM_OUT_OF_MEMORY; \
@@ -388,7 +388,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
     memcpy(s->pData, pos, sh->length); \
     pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8];
 #define LOAD_BINDSECTION_CASE(utype,code) \
-    case SME_SECTION_TYPE_ ## utype: { \
+    case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         if (sh->length <= 0) \
             break; \
         const char * endPos = ((const char *) pos) + sh->length; \
@@ -403,7 +403,7 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
     } break;
 
             switch (type) {
-                case SME_SECTION_TYPE_TEXT: {
+                case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
                     SMVM_Error r = SMVM_Program_addCodeSection(p, (const SMVM_CodeBlock *) pos, sh->length);
                     if (r != SMVM_OK)
                         return r;
