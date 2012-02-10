@@ -30,7 +30,7 @@ typedef sf_float32 smvm_float32;
     } else (void) 0
 #define SMVM_DEBUG_PRINTINSTRUCTION(t) \
     if (1) { \
-        fprintf(p->debugFileHandle, "%s\n", SM_2S(SMVM_INSTR_NAME(t))); \
+        fprintf(p->debugFileHandle, "%s\n", SHAREMIND_2S(SMVM_INSTR_NAME(t))); \
     } else (void) 0
 #else
 #define SMVM_DEBUG_PRINTSTATE (void) 0
@@ -247,8 +247,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #else
 #define SMVM_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCRefStack) \
     ((*((HaltCode (*)(SMVM_Program * const, \
-                           const SMVM_CodeBlock *, \
-                           const SMVM_CodeBlock *, \
+                           const SHAREMIND_CodeBlock *, \
+                           const SHAREMIND_CodeBlock *, \
                            SMVM_RegisterVector * const, \
                            SMVM_RegisterVector *, \
                            const SMVM_ReferenceVector *, \
@@ -275,7 +275,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             SMVM_MI_TRY_EXCEPT(((uint64_t) (reladdr)) < p->codeSections.data[p->currentCodeSectionIndex].size - unsignedIp - 1u, \
                                SMVM_E_JUMP_TO_INVALID_ADDRESS); \
         } \
-        const SMVM_CodeBlock * tip = ip + (reladdr); \
+        const SHAREMIND_CodeBlock * tip = ip + (reladdr); \
         SMVM_MI_TRY_EXCEPT(SMVM_MI_IS_INSTR((uintptr_t) (tip - codeStart)), SMVM_E_JUMP_TO_INVALID_ADDRESS); \
         SMVM_MI_DISPATCH(ip = tip); \
     } else (void) 0
@@ -309,7 +309,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_MI_PUSH(v) \
     if (1) { \
         SMVM_MI_CHECK_CREATE_NEXT_FRAME; \
-        SMVM_CodeBlock * reg = SMVM_RegisterVector_push(&p->nextFrame->stack); \
+        SHAREMIND_CodeBlock * reg = SMVM_RegisterVector_push(&p->nextFrame->stack); \
         SMVM_MI_TRY_OOM(reg); \
         *reg = (v); \
     } else (void) 0
@@ -324,8 +324,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         ref->internal = NULL; \
     } else (void) 0
 
-#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), 0u, sizeof(SMVM_CodeBlock))
-#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack, (b), 0u, sizeof(SMVM_CodeBlock))
+#define SMVM_MI_PUSHREF_BLOCK_ref(b)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), 0u, sizeof(SHAREMIND_CodeBlock))
+#define SMVM_MI_PUSHREF_BLOCK_cref(b) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack, (b), 0u, sizeof(SHAREMIND_CodeBlock))
 #define SMVM_MI_PUSHREFPART_BLOCK_ref(b,o,s)  _SMVM_MI_PUSHREF_BLOCK(Ref, refstack,  (b), (o), (s))
 #define SMVM_MI_PUSHREFPART_BLOCK_cref(b,o,s) _SMVM_MI_PUSHREF_BLOCK(CRef,crefstack, (b), (o), (s))
 
@@ -484,14 +484,14 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SMVM_MI_GET_T_reg(d,t,i) \
     if (1) { \
-        const SMVM_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(globalStack, (i)); \
+        const SHAREMIND_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(globalStack, (i)); \
         SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_REGISTER); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
 
 #define SMVM_MI_GET_T_stack(d,t,i) \
     if (1) { \
-        const SMVM_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(thisStack, (i)); \
+        const SHAREMIND_CodeBlock * r = SMVM_RegisterVector_get_const_pointer(thisStack, (i)); \
         SMVM_MI_TRY_EXCEPT(r,SMVM_E_INVALID_INDEX_STACK); \
         (d) = & SMVM_MI_BLOCK_AS(r, t); \
     } else (void) 0
@@ -606,8 +606,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SMVM_IMPL_INNER(name,code) \
     static inline HaltCode name ( \
         SMVM_Program * const p, \
-        const SMVM_CodeBlock * const codeStart, \
-        const SMVM_CodeBlock * ip, \
+        const SHAREMIND_CodeBlock * const codeStart, \
+        const SHAREMIND_CodeBlock * ip, \
         SMVM_RegisterVector * const globalStack, \
         SMVM_RegisterVector * thisStack, \
         const SMVM_ReferenceVector * thisRefStack, \
@@ -666,8 +666,8 @@ SMVM_Error _SMVM(SMVM_Program * const p,
 
 #pragma STDC FENV_ACCESS ON
 
-        const SMVM_CodeBlock * const codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
-        const SMVM_CodeBlock * ip = &codeStart[p->currentIp];
+        const SHAREMIND_CodeBlock * const codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
+        const SHAREMIND_CodeBlock * ip = &codeStart[p->currentIp];
         SMVM_RegisterVector * const globalStack = &p->globalFrame->stack;
         SMVM_RegisterVector * thisStack = &p->thisFrame->stack;
         SMVM_ReferenceVector * thisRefStack = &p->thisFrame->refstack;

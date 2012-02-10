@@ -66,7 +66,7 @@ static int _SMVM_get_pd_process_handle(SMVM_MODAPI_0x1_Syscall_Context * c,
  * \returns an SMVM_Error.
  */
 static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * program,
-                                              const SMVM_CodeBlock * code,
+                                              const SHAREMIND_CodeBlock * code,
                                               const size_t codeSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
@@ -122,9 +122,9 @@ const SMVM_Context_PDPI * SMVM_get_pd_process_instance(SMVM * smvm, const char *
  *  Public enum methods
 ********************************************************************************/
 
-SM_ENUM_DEFINE_TOSTRING(SMVM_State, SMVM_ENUM_State);
-SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Error, SMVM_ENUM_Error);
-SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
+SHAREMIND_ENUM_DEFINE_TOSTRING(SMVM_State, SMVM_ENUM_State);
+SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Error, SMVM_ENUM_Error);
+SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 
 
 /*******************************************************************************
@@ -135,7 +135,7 @@ SM_ENUM_CUSTOM_DEFINE_TOSTRING(SMVM_Exception, SMVM_ENUM_Exception);
 SMVM_MemorySlot_init_DEFINE
 SMVM_MemorySlot_destroy_DEFINE
 
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t)(key),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,)
+SHAREMIND_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t)(key),SHAREMIND_MAP_KEY_EQUALS_uint64_t,SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,)
 
 SMVM_MemoryMap_find_unused_ptr_DEFINE
 #endif
@@ -151,7 +151,7 @@ static inline void SMVM_MemoryMap_destroyer(const uint64_t * key, SMVM_MemorySlo
 ********************************************************************************/
 
 #ifdef SMVM_FAST_BUILD
-SM_VECTOR_DEFINE(SMVM_RegisterVector,SMVM_CodeBlock,malloc,free,realloc,)
+SHAREMIND_VECTOR_DEFINE(SMVM_RegisterVector,SHAREMIND_CodeBlock,malloc,free,realloc,)
 #endif
 
 void SMVM_StackFrame_init(SMVM_StackFrame * f, SMVM_StackFrame * prev) {
@@ -179,12 +179,12 @@ void SMVM_StackFrame_destroy(SMVM_StackFrame * f) {
 ********************************************************************************/
 
 #ifdef SMVM_FAST_BUILD
-SM_VECTOR_DEFINE(SMVM_BreakpointVector,SMVM_Breakpoint,malloc,free,realloc,)
-SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,)
+SHAREMIND_VECTOR_DEFINE(SMVM_BreakpointVector,SMVM_Breakpoint,malloc,free,realloc,)
+SHAREMIND_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,)
 #endif
 
 int SMVM_CodeSection_init(SMVM_CodeSection * s,
-                          const SMVM_CodeBlock * const code,
+                          const SHAREMIND_CodeBlock * const code,
                           const size_t codeSize)
 {
     assert(s);
@@ -194,12 +194,12 @@ int SMVM_CodeSection_init(SMVM_CodeSection * s,
     if (unlikely(realCodeSize < codeSize))
         return 0;
 
-    size_t memSize = realCodeSize * sizeof(SMVM_CodeBlock);
-    if (unlikely(memSize / sizeof(SMVM_CodeBlock) != realCodeSize))
+    size_t memSize = realCodeSize * sizeof(SHAREMIND_CodeBlock);
+    if (unlikely(memSize / sizeof(SHAREMIND_CodeBlock) != realCodeSize))
         return 0;
 
 
-    s->data = (SMVM_CodeBlock *) malloc(memSize);
+    s->data = (SHAREMIND_CodeBlock *) malloc(memSize);
     if (unlikely(!s->data))
         return 0;
 
@@ -249,10 +249,10 @@ void SMVM_DataSection_destroy(SMVM_DataSection * ds) {
 ********************************************************************************/
 
 #ifdef SMVM_FAST_BUILD
-SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,)
-SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,)
-SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
-SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SM_MAP_KEY_EQUALS_voidptr,SM_MAP_KEY_LESS_THAN_voidptr,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,)
+SHAREMIND_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,)
+SHAREMIND_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,)
+SHAREMIND_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SHAREMIND_MAP_KEY_EQUALS_voidptr,SHAREMIND_MAP_KEY_LESS_THAN_voidptr,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,inline)
 #endif
 
 
@@ -404,11 +404,11 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
 
             switch (type) {
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
-                    SMVM_Error r = SMVM_Program_addCodeSection(p, (const SMVM_CodeBlock *) pos, sh->length);
+                    SMVM_Error r = SMVM_Program_addCodeSection(p, (const SHAREMIND_CodeBlock *) pos, sh->length);
                     if (r != SMVM_OK)
                         return r;
 
-                    pos = ((const uint8_t *) pos) + sh->length * sizeof(SMVM_CodeBlock);
+                    pos = ((const uint8_t *) pos) + sh->length * sizeof(SHAREMIND_CodeBlock);
                 } break;
                 LOAD_DATASECTION_CASE(RODATA,rodata,COPYSECTION,&roDataSpecials)
                 LOAD_DATASECTION_CASE(DATA,data,COPYSECTION,&rwDataSpecials)
@@ -462,11 +462,11 @@ SMVM_Error SMVM_Program_load_from_sme(SMVM_Program * p, const void * data, size_
 }
 
 #ifdef SMVM_DEBUG
-static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix);
+static void printCodeSection(FILE * stream, const SHAREMIND_CodeBlock * code, size_t size, const char * linePrefix);
 #endif /* SMVM_DEBUG */
 
 static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
-                                              const SMVM_CodeBlock * const code,
+                                              const SHAREMIND_CodeBlock * const code,
                                               const size_t codeSize)
 {
     assert(p);
@@ -538,7 +538,7 @@ static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
     } else (void) 0
 
 #define SMVM_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
-    static SMVM_Error prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i) { \
+    static SMVM_Error prepare_pass2_ ## name (SMVM_Program * const p, SMVM_CodeSection * s, SHAREMIND_CodeBlock * c, size_t * i) { \
         (void) p; (void) s; (void) c; (void) i; \
         SMVM_Error returnCode = SMVM_OK; \
         code \
@@ -551,7 +551,7 @@ static SMVM_Error SMVM_Program_addCodeSection(SMVM_Program * const p,
     { .code = bytecode, .f = prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     uint64_t code;
-    SMVM_Error (*f)(SMVM_Program * const p, SMVM_CodeSection * s, SMVM_CodeBlock * c, size_t * i);
+    SMVM_Error (*f)(SMVM_Program * const p, SMVM_CodeSection * s, SHAREMIND_CodeBlock * c, size_t * i);
 };
 struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include "../m4/preprocess_pass2_functions.h"
@@ -572,7 +572,7 @@ static SMVM_Error SMVM_Program_endPrepare(SMVM_Program * const p) {
         SMVM_Error returnCode = SMVM_OK;
         SMVM_CodeSection * s = &p->codeSections.data[j];
 
-        SMVM_CodeBlock * c = s->data;
+        SHAREMIND_CodeBlock * c = s->data;
         assert(c);
 
         /* Initialize instructions hashmap: */
@@ -743,7 +743,7 @@ uint64_t SMVM_Program_public_alloc(SMVM_Program * p, uint64_t nBytes, SMVM_Memor
     /** \todo Check any other memory limits? */
 
     /* Fail if all memory slots are used. */
-    SM_STATIC_ASSERT(sizeof(uint64_t) >= sizeof(size_t));
+    SHAREMIND_STATIC_ASSERT(sizeof(uint64_t) >= sizeof(size_t));
     if (unlikely(p->memoryMap.size >= SIZE_MAX))
         return 0u;
 
@@ -1062,7 +1062,7 @@ void SMVM_Program_printStateBencoded(SMVM_Program * const p, FILE * const f) {
     fprintf(f, "e");
 }
 
-static void printCodeSection(FILE * stream, const SMVM_CodeBlock * code, size_t size, const char * linePrefix) {
+static void printCodeSection(FILE * stream, const SHAREMIND_CodeBlock * code, size_t size, const char * linePrefix) {
     size_t skip = 0u;
     for (size_t i = 0u; i < size; i++) {
         fprintf(stream, "%s %08zx ", linePrefix, i);

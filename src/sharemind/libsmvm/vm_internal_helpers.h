@@ -44,7 +44,7 @@ extern "C" {
 
 
 typedef struct {
-    SMVM_CodeBlock * block;
+    SHAREMIND_CodeBlock * block;
     unsigned type;
 } SMVM_Prepare_IBlock;
 
@@ -59,16 +59,16 @@ typedef enum {
  *  SMVM_SyscallBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_SyscallBindings,SMVM_SyscallBinding,,inline)
-SM_VECTOR_DEFINE(SMVM_SyscallBindings,SMVM_SyscallBinding,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_SyscallBindings,SMVM_SyscallBinding,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_SyscallBindings,SMVM_SyscallBinding,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
  *  SMVM_PdBindings
 ********************************************************************************/
 
-SM_VECTOR_DECLARE(SMVM_PdBindings,const SMVM_Context_PDPI *,,inline)
-SM_VECTOR_DEFINE(SMVM_PdBindings,const SMVM_Context_PDPI *,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_PdBindings,const SMVM_Context_PDPI *,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_PdBindings,const SMVM_Context_PDPI *,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -123,12 +123,12 @@ struct _SMVM_MemorySlotSpecials {
 inline SMVM_MemorySlot_init_DEFINE
 inline SMVM_MemorySlot_destroy_DEFINE
 
-SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,inline)
-SM_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t)(key),SM_MAP_KEY_EQUALS_uint64_t,SM_MAP_KEY_LESS_THAN_uint64_t,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
+SHAREMIND_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,inline)
+SHAREMIND_MAP_DEFINE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,(uint16_t)(key),SHAREMIND_MAP_KEY_EQUALS_uint64_t,SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,inline)
 #else
 SMVM_MemorySlot_init_DECLARE;
 SMVM_MemorySlot_destroy_DECLARE;
-SM_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
+SHAREMIND_MAP_DECLARE(SMVM_MemoryMap,uint64_t,const uint64_t,SMVM_MemorySlot,)
 #endif
 
 #define SMVM_MemoryMap_find_unused_ptr_DECLARE \
@@ -180,10 +180,10 @@ inline void SMVM_CReference_destroy(SMVM_CReference * r) {
         ((SMVM_MemorySlot *) r->internal)->nrefs--;
 }
 
-SM_VECTOR_DECLARE(SMVM_ReferenceVector,SMVM_Reference,,inline)
-SM_VECTOR_DEFINE(SMVM_ReferenceVector,SMVM_Reference,malloc,free,realloc,inline)
-SM_VECTOR_DECLARE(SMVM_CReferenceVector,SMVM_CReference,,inline)
-SM_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_ReferenceVector,SMVM_Reference,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_ReferenceVector,SMVM_Reference,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_CReferenceVector,SMVM_CReference,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
@@ -191,10 +191,10 @@ SM_VECTOR_DEFINE(SMVM_CReferenceVector,SMVM_CReference,malloc,free,realloc,inlin
 ********************************************************************************/
 
 #ifndef SMVM_FAST_BUILD
-SM_VECTOR_DECLARE(SMVM_RegisterVector,SMVM_CodeBlock,,inline)
-SM_VECTOR_DEFINE(SMVM_RegisterVector,SMVM_CodeBlock,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_RegisterVector,SHAREMIND_CodeBlock,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_RegisterVector,SHAREMIND_CodeBlock,malloc,free,realloc,inline)
 #else
-SM_VECTOR_DECLARE(SMVM_RegisterVector,SMVM_CodeBlock,,)
+SHAREMIND_VECTOR_DECLARE(SMVM_RegisterVector,SHAREMIND_CodeBlock,,)
 #endif
 
 struct _SMVM_StackFrame {
@@ -203,8 +203,8 @@ struct _SMVM_StackFrame {
     SMVM_CReferenceVector crefstack;
     struct _SMVM_StackFrame * prev;
 
-    const SMVM_CodeBlock * returnAddr;
-    SMVM_CodeBlock * returnValueAddr;
+    const SHAREMIND_CodeBlock * returnAddr;
+    SHAREMIND_CodeBlock * returnValueAddr;
 
 #ifdef SMVM_DEBUG
     size_t lastCallIp;
@@ -223,28 +223,28 @@ void SMVM_StackFrame_destroy(SMVM_StackFrame * f) __attribute__ ((nonnull(1)));
 
 typedef struct {
     size_t offset;
-    SMVM_CodeBlock originalInstruction;
+    SHAREMIND_CodeBlock originalInstruction;
 } SMVM_Breakpoint;
 
 #ifndef SMVM_FAST_BUILD
-SM_VECTOR_DECLARE(SMVM_BreakpointVector,SMVM_Breakpoint,,inline)
-SM_VECTOR_DEFINE(SMVM_BreakpointVector,SMVM_Breakpoint,malloc,free,realloc,inline)
-SM_INSTRSET_DECLARE(SMVM_InstrSet,inline)
-SM_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_BreakpointVector,SMVM_Breakpoint,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_BreakpointVector,SMVM_Breakpoint,malloc,free,realloc,inline)
+SHAREMIND_INSTRSET_DECLARE(SMVM_InstrSet,inline)
+SHAREMIND_INSTRSET_DEFINE(SMVM_InstrSet,malloc,free,inline)
 #else
-SM_VECTOR_DECLARE(SMVM_BreakpointVector,SMVM_Breakpoint,,)
-SM_INSTRSET_DECLARE(SMVM_InstrSet,)
+SHAREMIND_VECTOR_DECLARE(SMVM_BreakpointVector,SMVM_Breakpoint,,)
+SHAREMIND_INSTRSET_DECLARE(SMVM_InstrSet,)
 #endif
 
 typedef struct {
-    SMVM_CodeBlock * data;
+    SHAREMIND_CodeBlock * data;
     size_t size;
     SMVM_BreakpointVector breakPoints;
     SMVM_InstrSet instrset;
 } SMVM_CodeSection;
 
 int SMVM_CodeSection_init(SMVM_CodeSection * s,
-                          const SMVM_CodeBlock * const code,
+                          const SHAREMIND_CodeBlock * const code,
                           const size_t codeSize) __attribute__ ((nonnull(1)));
 
 void SMVM_CodeSection_destroy(SMVM_CodeSection * const s) __attribute__ ((nonnull(1)));
@@ -279,23 +279,23 @@ typedef enum {
 #endif
 
 #ifndef SMVM_FAST_BUILD
-SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,inline)
-SM_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,inline)
-SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,inline)
-SM_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,inline)
-SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,inline)
-SM_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_CodeSectionsVector,SMVM_CodeSection,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,inline)
+SHAREMIND_VECTOR_DEFINE(SMVM_DataSectionsVector,SMVM_DataSection,malloc,free,realloc,inline)
+SHAREMIND_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,inline)
+SHAREMIND_STACK_DEFINE(SMVM_FrameStack,SMVM_StackFrame,malloc,free,inline)
 #else
-SM_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,)
-SM_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,)
-SM_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
+SHAREMIND_VECTOR_DECLARE(SMVM_CodeSectionsVector,SMVM_CodeSection,,)
+SHAREMIND_VECTOR_DECLARE(SMVM_DataSectionsVector,SMVM_DataSection,,)
+SHAREMIND_STACK_DECLARE(SMVM_FrameStack,SMVM_StackFrame,,)
 #endif
 
 #ifndef SMVM_FAST_BUILD
-SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,inline)
-SM_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SM_MAP_KEY_EQUALS_voidptr,SM_MAP_KEY_LESS_THAN_voidptr,SM_MAP_KEYCOPY_REGULAR,SM_MAP_KEYFREE_REGULAR,malloc,free,inline)
+SHAREMIND_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,inline)
+SHAREMIND_MAP_DEFINE(SMVM_PrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SHAREMIND_MAP_KEY_EQUALS_voidptr,SHAREMIND_MAP_KEY_LESS_THAN_voidptr,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,inline)
 #else
-SM_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,)
+SHAREMIND_MAP_DECLARE(SMVM_PrivateMemoryMap,void*,void * const,size_t,)
 #endif
 
 typedef struct {
@@ -332,7 +332,7 @@ struct _SMVM_Program {
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;
 
-    SMVM_CodeBlock returnValue;
+    SHAREMIND_CodeBlock returnValue;
     int64_t exceptionValue;
 
     SMVM * smvm;
