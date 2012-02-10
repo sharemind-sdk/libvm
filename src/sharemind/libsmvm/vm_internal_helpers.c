@@ -13,12 +13,12 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <sharemind/libexecutable/libexecutable.h>
+#include <sharemind/libexecutable/libexecutable_0x0.h>
 #include <sharemind/likely.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "../libsme/libsme.h"
-#include "../libsme/libsme_0x0.h"
 #include "../libsmvmi/instr.h"
 #include "vm_internal_core.h"
 
