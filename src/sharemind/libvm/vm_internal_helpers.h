@@ -120,15 +120,17 @@ struct SharemindMemorySlotSpecials_ {
         } \
     }
 
-SHAREMIND_MEMORY_SLOT_INIT_DECLARE __attribute__ ((nonnull(1)));
-SHAREMIND_MEMORY_SLOT_DESTROY_DECLARE __attribute__ ((nonnull(1)));
 #ifndef SHAREMIND_FAST_BUILD
+inline SHAREMIND_MEMORY_SLOT_INIT_DECLARE __attribute__ ((nonnull(1)));
+inline SHAREMIND_MEMORY_SLOT_DESTROY_DECLARE __attribute__ ((nonnull(1)));
 inline SHAREMIND_MEMORY_SLOT_INIT_DEFINE
 inline SHAREMIND_MEMORY_SLOT_DESTROY_DEFINE
 
 SHAREMIND_MAP_DECLARE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,inline)
 SHAREMIND_MAP_DEFINE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,(uint16_t)(key),SHAREMIND_MAP_KEY_EQUALS_uint64_t,SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,inline)
 #else
+SHAREMIND_MEMORY_SLOT_INIT_DECLARE __attribute__ ((nonnull(1)));
+SHAREMIND_MEMORY_SLOT_DESTROY_DECLARE __attribute__ ((nonnull(1)));
 SHAREMIND_MAP_DECLARE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,)
 #endif
 
