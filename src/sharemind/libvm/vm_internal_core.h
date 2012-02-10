@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
-#define SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H
+#ifndef SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H
+#define SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H
 
 #ifndef SHAREMIND_INTERNAL__
 #define SHAREMIND_INTERNAL__
@@ -25,17 +25,18 @@ extern "C" {
 
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
-#define _SMVM_NOCLONE noclone,
+#define _SHAREMIND_NOCLONE noclone,
 #else
-#define _SMVM_NOCLONE
+#define _SHAREMIND_NOCLONE
 #endif
 
-SMVM_Error _SMVM(SMVM_Program * p,
-                 const SMVM_InnerCommand c,
-                 void * d)
+SharemindVmError sharemind_vm_run(
+        SharemindProgram * p,
+        const SharemindInnerCommand c,
+        void * d)
     __attribute__
     ((
-         _SMVM_NOCLONE
+         _SHAREMIND_NOCLONE
          noinline
          warn_unused_result,
          optimize("O2",
@@ -50,4 +51,4 @@ SMVM_Error _SMVM(SMVM_Program * p,
 } /* extern "C" { */
 #endif
 
-#endif /* SHAREMIND_LIBSMVM_VM_INTERNAL_CORE_H */
+#endif /* SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H */
