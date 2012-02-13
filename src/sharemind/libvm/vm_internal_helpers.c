@@ -36,19 +36,19 @@ static inline SharemindVmProcessException SharemindProgram_reinitialize_static_m
 
 static inline uint64_t SharemindProgram_public_alloc_slot(SharemindProgram * p, SharemindMemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
 
-static uint64_t sharemind_public_alloc(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
+static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
 
-static int sharemind_public_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) __attribute__ ((nonnull(1)));
 
-static size_t sharemind_public_get_size(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
-static void * sharemind_public_get_ptr(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) __attribute__ ((nonnull(1)));
+static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) __attribute__ ((nonnull(1)));
 
-static void * sharemind_private_alloc(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
-static int sharemind_private_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, void * ptr) __attribute__ ((nonnull(1)));
-static int sharemind_private_reserve(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
-static int sharemind_private_release(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) __attribute__ ((nonnull(1)));
+static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) __attribute__ ((nonnull(1)));
+static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c, void * ptr) __attribute__ ((nonnull(1)));
+static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) __attribute__ ((nonnull(1)));
+static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) __attribute__ ((nonnull(1)));
 
-static int _sharemind_get_pd_process_handle(SHAREMIND_MODAPI_0x1_Syscall_Context * c,
+static int _sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext * c,
                                        uint64_t pd_index,
                                        void ** pdProcessHandle,
                                        size_t * pdkIndex,
@@ -783,7 +783,7 @@ uint64_t SharemindProgram_public_alloc(SharemindProgram * p, uint64_t nBytes, Sh
     return index;
 }
 
-static uint64_t sharemind_public_alloc(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
@@ -822,7 +822,7 @@ SharemindVmProcessException SharemindProgram_public_free(SharemindProgram * p, u
     return SHAREMIND_VM_PROCESS_OK;
 }
 
-static int sharemind_public_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
@@ -832,7 +832,7 @@ static int sharemind_public_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint6
     return SharemindProgram_public_free(p, ptr) == SHAREMIND_VM_PROCESS_OK;
 }
 
-size_t sharemind_public_get_size(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
@@ -846,7 +846,7 @@ size_t sharemind_public_get_size(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint6
     return slot->size;
 }
 
-void * sharemind_public_get_ptr(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64_t ptr) {
+void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
     assert(c);
     assert(c->internal);
 
@@ -860,7 +860,7 @@ void * sharemind_public_get_ptr(SHAREMIND_MODAPI_0x1_Syscall_Context * c, uint64
     return slot->pData;
 }
 
-void * sharemind_private_alloc(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
@@ -909,7 +909,7 @@ void * sharemind_private_alloc(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t 
     return ptr;
 }
 
-int sharemind_private_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, void * ptr) {
+int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c, void * ptr) {
     assert(c);
     assert(c->internal);
 
@@ -945,7 +945,7 @@ int sharemind_private_free(SHAREMIND_MODAPI_0x1_Syscall_Context * c, void * ptr)
     return true;
 }
 
-static int sharemind_private_reserve(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
@@ -977,7 +977,7 @@ static int sharemind_private_reserve(SHAREMIND_MODAPI_0x1_Syscall_Context * c, s
     return true;
 }
 
-static int sharemind_private_release(SHAREMIND_MODAPI_0x1_Syscall_Context * c, size_t nBytes) {
+static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
     assert(c);
     assert(c->internal);
 
@@ -994,7 +994,7 @@ static int sharemind_private_release(SHAREMIND_MODAPI_0x1_Syscall_Context * c, s
     return true;
 }
 
-int _sharemind_get_pd_process_handle(SHAREMIND_MODAPI_0x1_Syscall_Context * c,
+int _sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext * c,
                                 uint64_t pd_index,
                                 void ** pdProcessHandle,
                                 size_t * pdkIndex,

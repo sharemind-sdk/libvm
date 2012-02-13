@@ -170,8 +170,8 @@ SHAREMIND_MEMORY_MAP_FIND_UNUSED_PTR_DECLARE __attribute__ ((nonnull(1)));
  *  SharemindReference and SharemindCReference
 ********************************************************************************/
 
-typedef SHAREMIND_MODAPI_0x1_Reference SharemindReference;
-typedef SHAREMIND_MODAPI_0x1_CReference SharemindCReference;
+typedef SharemindModuleApi0x1Reference SharemindReference;
+typedef SharemindModuleApi0x1CReference SharemindCReference;
 
 inline void SharemindReference_destroy(SharemindReference * r) {
     if (r->internal)
@@ -340,7 +340,7 @@ struct SharemindProgram_ {
     int64_t exceptionValue;
 
     SharemindVm * vm;
-    SHAREMIND_MODAPI_0x1_Syscall_Context syscallContext;
+    SharemindModuleApi0x1SyscallContext syscallContext;
 
     SharemindMemoryInfo memPublicHeap;
     SharemindMemoryInfo memPrivate;

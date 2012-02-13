@@ -433,7 +433,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             cref->pData = NULL; \
             cref = p->nextFrame->crefstack.data; \
         } \
-        SHAREMIND_MODAPI_0x1_Syscall_Code st; \
+        SharemindModuleApi0x1SyscallCode st; \
         st = (*rc)(p->nextFrame->stack.data, p->nextFrame->stack.size, \
                    ref, cref, \
                    (r), &p->syscallContext); \
@@ -441,15 +441,15 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SharemindFrameStack_pop(&p->frames); \
         p->nextFrame = NULL; \
         switch (st) { \
-            case SHAREMIND_MODAPI_0x1_SC_OK: \
+            case SHAREMIND_MODULE_API_0x1_SC_OK: \
                 break; \
-            case SHAREMIND_MODAPI_0x1_SC_OUT_OF_MEMORY: \
+            case SHAREMIND_MODULE_API_0x1_SC_OUT_OF_MEMORY: \
                 SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
                 break; \
-            case SHAREMIND_MODAPI_0x1_SC_INVALID_CALL: \
+            case SHAREMIND_MODULE_API_0x1_SC_INVALID_CALL: \
                 SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_INVALID_SYSCALL_INVOCATION); \
                 break; \
-            case SHAREMIND_MODAPI_0x1_SC_GENERAL_FAILURE: /* Fall through: */ \
+            case SHAREMIND_MODULE_API_0x1_SC_GENERAL_FAILURE: /* Fall through: */ \
             default: \
                 SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SYSCALL_FAILURE); \
                 break; \
