@@ -138,7 +138,7 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessException);
  * \returns a pointer to the new SHAREMIND_Program instance.
  * \retval NULL if allocation failed.
  */
-SharemindProgram * SharemindProgram_new(SharemindVm * smvm) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindProgram * SharemindProgram_new(SharemindVm * vm) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Deallocates a SHAREMIND_Program instance.

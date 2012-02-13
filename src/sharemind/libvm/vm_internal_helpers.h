@@ -339,7 +339,7 @@ struct SharemindProgram_ {
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;
 
-    SharemindVm * smvm;
+    SharemindVm * vm;
     SHAREMIND_MODAPI_0x1_Syscall_Context syscallContext;
 
     SharemindMemoryInfo memPublicHeap;

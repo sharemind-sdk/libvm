@@ -89,35 +89,35 @@ struct SharemindVm_ {
 
 SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context) {
     assert(context);
-    SharemindVm * smvm = (SharemindVm *) malloc(sizeof(SharemindVm));
-    if (!smvm)
+    SharemindVm * vm = (SharemindVm *) malloc(sizeof(SharemindVm));
+    if (!vm)
         return NULL;
-    smvm->context = context;
-    return smvm;
+    vm->context = context;
+    return vm;
 }
 
-void SharemindVm_free(SharemindVm * smvm) {
-    assert(smvm);
-    if (smvm->context) {
-        if (smvm->context->destructor) {
-            (*(smvm->context->destructor))(smvm->context);
+void SharemindVm_free(SharemindVm * vm) {
+    assert(vm);
+    if (vm->context) {
+        if (vm->context->destructor) {
+            (*(vm->context->destructor))(vm->context);
         }
     }
-    free(smvm);
+    free(vm);
 }
 
-const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * smvm, const char * signature) {
-    if (!smvm->context || !smvm->context->find_syscall)
+const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) {
+    if (!vm->context || !vm->context->find_syscall)
         return NULL;
 
-    return (*(smvm->context->find_syscall))(smvm->context, signature);
+    return (*(vm->context->find_syscall))(vm->context, signature);
 }
 
-const SharemindPdpiContext * ShremindVm_get_pd_process_instance(SharemindVm * smvm, const char * pdName, SharemindProgram * process) {
-    if (!smvm->context || !smvm->context->get_pd_process_instance_handle)
+const SharemindPdpiContext * ShremindVm_get_pd_process_instance(SharemindVm * vm, const char * pdName, SharemindProgram * process) {
+    if (!vm->context || !vm->context->get_pd_process_instance_handle)
         return 0;
 
-    return (*(smvm->context->get_pd_process_instance_handle))(smvm->context, pdName, process);
+    return (*(vm->context->get_pd_process_instance_handle))(vm->context, pdName, process);
 }
 
 
@@ -274,12 +274,12 @@ static inline void SharemindMemoryInfo_init(SharemindMemoryInfo * mi) {
     SharemindMemoryInfoStatistics_init(&mi->stats);
 }
 
-SharemindProgram * SharemindProgram_new(SharemindVm * smvm) {
+SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
     SharemindProgram * const p = (SharemindProgram *) malloc(sizeof(SharemindProgram));
     if (likely(p)) {
         p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
         p->error = SHAREMIND_VM_OK;
-        p->smvm = smvm;
+        p->vm = vm;
         p->syscallContext.get_pd_process_instance_handle = &_sharemind_get_pd_process_handle;
         p->syscallContext.publicAlloc = &sharemind_public_alloc;
         p->syscallContext.publicFree = &sharemind_public_free;
@@ -420,7 +420,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void
                     SharemindSyscallBinding * binding = SharemindSyscallBindings_push(&p->bindings);
                     if (!binding)
                         return SHAREMIND_VM_OUT_OF_MEMORY;
-                    const SharemindSyscallBinding * b = SharemindVm_find_syscall(p->smvm, (const char *) pos);
+                    const SharemindSyscallBinding * b = SharemindVm_find_syscall(p->vm, (const char *) pos);
                     if (!b) {
                         SharemindSyscallBindings_pop(&p->bindings);
                         fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
@@ -432,7 +432,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void
                     if (!pdBinding)
                         return SHAREMIND_VM_OUT_OF_MEMORY;
 
-                    (*pdBinding) = ShremindVm_get_pd_process_instance(p->smvm, (const char *) pos, p);
+                    (*pdBinding) = ShremindVm_get_pd_process_instance(p->vm, (const char *) pos, p);
                     if (!*pdBinding) {
                         SharemindPdBindings_pop(&p->pdBindings);
                         fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);
@@ -502,7 +502,7 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     if (1) { \
         returnCode = (e); \
         p->currentIp = i; \
-        goto smvm_prepare_codesection_return_error; \
+        goto prepare_codesection_return_error; \
     } else (void) 0
 #define SHAREMIND_PREPARE_ERROR(e) \
     if (1) { \
@@ -605,7 +605,7 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
                 if (ppf->code == c[i].uint64[0]) {
                     returnCode = (*(ppf->f))(p, s, c, &i);
                     if (returnCode != SHAREMIND_VM_OK)
-                        goto smvm_prepare_codesection_return_error;
+                        goto prepare_codesection_return_error;
                     break;
                 }
                 ++ppf;
@@ -621,7 +621,7 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
 
         continue;
 
-    smvm_prepare_codesection_return_error:
+    prepare_codesection_return_error:
         p->currentCodeSectionIndex = j;
         return returnCode;
     }

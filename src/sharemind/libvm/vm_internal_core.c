@@ -14,7 +14,7 @@
 #ifdef SHAREMIND_SOFT_FLOAT
 #include <sharemind/3rdparty/softfloat/softfloat.h>
 #endif
-typedef sf_float32 smvm_float32;
+typedef sf_float32 SharemindFloat32;
 #ifdef SHAREMIND_DEBUG
 #include <stdio.h>
 #endif
