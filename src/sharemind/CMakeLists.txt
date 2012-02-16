@@ -114,5 +114,12 @@ SET_SOURCE_FILES_PROPERTIES("libvm/vm_internal_helpers.c" PROPERTIES OBJECT_DEPE
 SET_SOURCE_FILES_PROPERTIES("libvm/vm_internal_core.c" PROPERTIES OBJECT_DEPENDS
                             "${M4_DIR_B}/static_label_structs.h;${M4_DIR_B}/dispatches.h")
 TARGET_LINK_LIBRARIES("libvm" "libvmi" "libexecutable" "m")
+
+
 INSTALL(FILES "libvm/vm.h"
         DESTINATION "${SHAREMIND_INCLUDE_DESTINATION}/libvm")
+
+INSTALL(TARGETS "libvm"
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        PUBLIC_HEADER DESTINATION "include")
