@@ -90,9 +90,9 @@ ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
 ################################################################################
 
 SET(LIBVM_DEFINES "SHAREMIND_NO_THREADS")
-IF(VM_FAST_BUILD)
+IF(NOT VM_RELEASE_BUILD)
   SET(LIBVM_DEFINES "${LIBVM_DEFINES};SHAREMIND_FAST_BUILD")
-ENDIF(VM_FAST_BUILD)
+ENDIF(NOT VM_RELEASE_BUILD)
 SET(LIBVM_SOURCES
     "libvm/vm_internal_core.c"
     "libvm/vm_internal_helpers.c")
