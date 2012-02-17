@@ -32,7 +32,7 @@
  *  Forward declarations:
 ********************************************************************************/
 
-static inline SharemindVmProcessException SharemindProgram_reinitialize_static_mem_slots(SharemindProgram * p);
+static inline SharemindVmError SharemindProgram_reinitialize_static_mem_slots(SharemindProgram * p);
 
 static inline uint64_t SharemindProgram_public_alloc_slot(SharemindProgram * p, SharemindMemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
 
@@ -644,7 +644,7 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
     assert(p->memorySlotNext == 1u);
 
-    const SharemindVmProcessException e = SharemindProgram_reinitialize_static_mem_slots(p);
+    const SharemindVmError e = SharemindProgram_reinitialize_static_mem_slots(p);
     if (e != SHAREMIND_VM_OK)
         return e;
 
@@ -682,7 +682,7 @@ uintptr_t SharemindProgram_get_current_ip(SharemindProgram *p) {
     return p->currentIp;
 }
 
-static inline SharemindVmProcessException SharemindProgram_reinitialize_static_mem_slots(SharemindProgram * p) {
+static inline SharemindVmError SharemindProgram_reinitialize_static_mem_slots(SharemindProgram * p) {
 
 #define INIT_STATIC_MEMSLOT(index,dataSection) \
     if (1) { \
