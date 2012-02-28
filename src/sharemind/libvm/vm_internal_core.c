@@ -10,6 +10,7 @@
 #include "vm_internal_core.h"
 
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #ifdef SHAREMIND_SOFT_FLOAT
 #include <sharemind/3rdparty/softfloat/softfloat.h>
@@ -411,33 +412,40 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_SYSCALL(sc,r,nargs) \
     if (1) { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        p->nextFrame->returnValueAddr = (r); \
+        SharemindStackFrame * nextFrame = p->nextFrame; \
+        nextFrame->returnValueAddr = (r); \
         const SharemindSyscallCallable rc = ((const SharemindSyscallBinding *) sc)->wrapper.callable; \
         p->syscallContext.libmodapi_internal = ((const SharemindSyscallBinding *) sc)->wrapper.internal; \
         p->syscallContext.moduleHandle = ((const SharemindSyscallBinding *) sc)->moduleHandle; \
         SharemindReference * ref; \
-        if (p->nextFrame->refstack.size == 0u) { \
+        bool hasRefs = (nextFrame->refstack.size > 0u); \
+        if (!hasRefs) { \
             ref = NULL; \
         } else { \
-            ref = SharemindReferenceVector_push(&p->nextFrame->refstack); \
+            ref = SharemindReferenceVector_push(&nextFrame->refstack); \
             SHAREMIND_MI_TRY_OOM(ref); \
             ref->pData = NULL; \
-            ref = p->nextFrame->refstack.data; \
+            ref = nextFrame->refstack.data; \
         } \
+        bool hasCRefs = (nextFrame->crefstack.size > 0u); \
         SharemindCReference * cref; \
-        if (p->nextFrame->crefstack.size == 0u) { \
+        if (!hasCRefs) { \
             cref = NULL; \
         } else { \
-            cref = SharemindCReferenceVector_push(&p->nextFrame->crefstack); \
+            cref = SharemindCReferenceVector_push(&nextFrame->crefstack); \
             SHAREMIND_MI_TRY_OOM(cref); \
             cref->pData = NULL; \
-            cref = p->nextFrame->crefstack.data; \
+            cref = nextFrame->crefstack.data; \
         } \
         SharemindModuleApi0x1SyscallCode st; \
-        st = (*rc)(p->nextFrame->stack.data, p->nextFrame->stack.size, \
+        st = (*rc)(nextFrame->stack.data, nextFrame->stack.size, \
                    ref, cref, \
                    (r), &p->syscallContext); \
-        SharemindStackFrame_destroy(SharemindFrameStack_top(&p->frames)); \
+        if (hasRefs) \
+            SharemindReferenceVector_pop(&nextFrame->refstack); \
+        if (hasCRefs) \
+            SharemindCReferenceVector_pop(&nextFrame->crefstack); \
+        SharemindStackFrame_destroy(nextFrame); \
         SharemindFrameStack_pop(&p->frames); \
         p->nextFrame = NULL; \
         switch (st) { \
