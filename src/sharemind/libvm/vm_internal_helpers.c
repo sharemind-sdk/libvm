@@ -783,7 +783,7 @@ uint64_t SharemindProgram_public_alloc(SharemindProgram * p, uint64_t nBytes, Sh
     return index;
 }
 
-static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
+static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, uint64_t nBytes) {
     assert(c);
     assert(c->internal);
 
