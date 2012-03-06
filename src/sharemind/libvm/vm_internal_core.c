@@ -26,7 +26,7 @@ typedef sf_float32 SharemindFloat32;
 #define SHAREMIND_DEBUG_PRINTSTATE \
     if (1) { \
         SHAREMIND_UPDATESTATE; \
-        SharemindProgram_print_state_bencoded(p, stderr); \
+        SharemindProcess_print_state_bencoded(p, stderr); \
         fprintf(stderr, "\n"); \
     } else (void) 0
 #define SHAREMIND_DEBUG_PRINTINSTRUCTION(t) \
@@ -46,15 +46,15 @@ typedef sf_float32 SharemindFloat32;
 /**
   Thread-local pointer to the program being executed.
 */
-static SharemindProgram * _SharemindProgram_SIGFPE_handler_p = NULL;
+static SharemindProcess * _SharemindProcess_SIGFPE_handler_p = NULL;
 #endif
 
 #ifdef __USE_POSIX
-static void _SharemindProgram_SIGFPE_handler(int signalNumber,
+static void _SharemindProcess_SIGFPE_handler(int signalNumber,
                                          siginfo_t * signalInfo,
                                          void * context)
     __attribute__ ((__noreturn__, __nothrow__));
-static void _SharemindProgram_SIGFPE_handler(int signalNumber,
+static void _SharemindProcess_SIGFPE_handler(int signalNumber,
                                          siginfo_t * signalInfo,
                                          void * context)
 {
@@ -73,27 +73,27 @@ static void _SharemindProgram_SIGFPE_handler(int signalNumber,
         default: e = SHAREMIND_HET_FPE_UNKNOWN; break;
     }
 
-    assert(_SharemindProgram_SIGFPE_handler_p);
-    siglongjmp(_SharemindProgram_SIGFPE_handler_p->safeJmpBuf[e], 1);
+    assert(_SharemindProcess_SIGFPE_handler_p);
+    siglongjmp(_SharemindProcess_SIGFPE_handler_p->safeJmpBuf[e], 1);
 }
 #else /* __USE_POSIX */
-static void _SharemindProgram_SIGFPE_handler(int signalNumber)
+static void _SharemindProcess_SIGFPE_handler(int signalNumber)
     __attribute__ ((__noreturn__, __nothrow__));
-static void _SharemindProgram_SIGFPE_handler(int signalNumber) {
-    signal(SIGFPE, _SharemindProgram_SIGFPE_handler);
+static void _SharemindProcess_SIGFPE_handler(int signalNumber) {
+    signal(SIGFPE, _SharemindProcess_SIGFPE_handler);
     (void) signalNumber;
-    assert(_SharemindProgram_SIGFPE_handler_p);
-    longjmp(_SharemindProgram_SIGFPE_handler_p->safeJmpBuf[SHAREMIND_HET_FPE_UNKNOWN], 1);
+    assert(_SharemindProcess_SIGFPE_handler_p);
+    longjmp(_SharemindProcess_SIGFPE_handler_p->safeJmpBuf[SHAREMIND_HET_FPE_UNKNOWN], 1);
 }
 #endif /* __USE_POSIX */
 
-static inline void _SharemindProgram_setupSignalHandlers(SharemindProgram * program) {
+static inline void _SharemindProcess_setupSignalHandlers(SharemindProcess * program) {
     /* Register SIGFPE handler: */
-    _SharemindProgram_SIGFPE_handler_p = program;
+    _SharemindProcess_SIGFPE_handler_p = program;
 #ifdef __USE_POSIX
     struct sigaction newFpeAction;
     memset(&newFpeAction, '\0', sizeof(struct sigaction));
-    newFpeAction.sa_sigaction = _SharemindProgram_SIGFPE_handler;
+    newFpeAction.sa_sigaction = _SharemindProcess_SIGFPE_handler;
     newFpeAction.sa_flags = SA_RESTART | SA_SIGINFO;
     if (sigaction(SIGFPE, &newFpeAction, &program->oldFpeAction) != 0) {
 #ifdef SHAREMIND_DEBUG
@@ -101,11 +101,11 @@ static inline void _SharemindProgram_setupSignalHandlers(SharemindProgram * prog
 #endif
     }
 #else /* __USE_POSIX */
-    program->oldFpeAction = signal(SIGFPE, _SharemindProgram_SIGFPE_handler);
+    program->oldFpeAction = signal(SIGFPE, _SharemindProcess_SIGFPE_handler);
 #endif /* __USE_POSIX */
 }
 
-static inline void _SharemindProgram_restoreSignalHandlers(SharemindProgram * program) {
+static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * program) {
     /* Restore old SIGFPE handler: */
 #ifdef __USE_POSIX
     if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0)
@@ -128,7 +128,7 @@ static inline void _SharemindProgram_restoreSignalHandlers(SharemindProgram * pr
 #endif
         }
     }
-    _SharemindProgram_SIGFPE_handler_p = NULL;
+    _SharemindProcess_SIGFPE_handler_p = NULL;
 }
 
 #define SHAREMIND_NO_SF_ENCLOSE(op) \
@@ -247,7 +247,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_DISPATCH(ip) if (1) { SHAREMIND_DISPATCH(ip); } else (void) 0
 #else
 #define SHAREMIND_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCRefStack) \
-    ((*((HaltCode (*)(SharemindProgram * const, \
+    ((*((HaltCode (*)(SharemindProcess * const, \
                            const SharemindCodeBlock *, \
                            const SharemindCodeBlock *, \
                            SharemindRegisterVector * const, \
@@ -264,7 +264,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     } else (void) 0
 
 #define SHAREMIND_MI_IS_INSTR(i) \
-    SharemindInstrSet_contains(&p->codeSections.data[p->currentCodeSectionIndex].instrset,(i))
+    SharemindInstrSet_contains(&p->program->codeSections.data[p->currentCodeSectionIndex].instrset,(i))
 
 #define SHAREMIND_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
@@ -273,7 +273,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             SHAREMIND_MI_TRY_EXCEPT(((uint64_t) -((reladdr) + 1)) < unsignedIp, \
                                SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } else { \
-            SHAREMIND_MI_TRY_EXCEPT(((uint64_t) (reladdr)) < p->codeSections.data[p->currentCodeSectionIndex].size - unsignedIp - 1u, \
+            SHAREMIND_MI_TRY_EXCEPT(((uint64_t) (reladdr)) < p->program->codeSections.data[p->currentCodeSectionIndex].size - unsignedIp - 1u, \
                                SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } \
         const SharemindCodeBlock * tip = ip + (reladdr); \
@@ -466,9 +466,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SHAREMIND_MI_CHECK_SYSCALL(a,r,nargs) \
     if (1) { \
-        SHAREMIND_MI_TRY_EXCEPT((a)->uint64[0] < p->bindings.size, \
+        SHAREMIND_MI_TRY_EXCEPT((a)->uint64[0] < p->program->bindings.size, \
                                 SHAREMIND_VM_PROCESS_INVALID_INDEX_SYSCALL); \
-        SHAREMIND_MI_SYSCALL(&p->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
+        SHAREMIND_MI_SYSCALL(&p->program->bindings.data[(size_t) (a)->uint64[0]],r,nargs); \
     } else (void) 0
 
 #define SHAREMIND_MI_RETURN(r) \
@@ -580,7 +580,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SHAREMIND_MI_MEM_ALLOC(dptr,sizereg) \
     if (1) { \
-        (dptr)->uint64[0] = SharemindProgram_public_alloc(p, (sizereg)->uint64[0], NULL); \
+        (dptr)->uint64[0] = SharemindProcess_public_alloc(p, (sizereg)->uint64[0], NULL); \
     } else (void) 0
 
 #define SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
@@ -591,7 +591,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SHAREMIND_MI_MEM_FREE(ptr) \
     if (1) { \
-        SharemindVmProcessException e = SharemindProgram_public_free(p, (ptr)->uint64[0]); \
+        SharemindVmProcessException e = SharemindProcess_public_free(p, (ptr)->uint64[0]); \
         if (unlikely(e != SHAREMIND_VM_PROCESS_OK)) { \
             SHAREMIND_MI_DO_EXCEPT(e); \
         } \
@@ -613,7 +613,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #else
 #define SHAREMIND_IMPL_INNER(name,code) \
     static inline HaltCode name ( \
-        SharemindProgram * const p, \
+        SharemindProcess * const p, \
         const SharemindCodeBlock * const codeStart, \
         const SharemindCodeBlock * ip, \
         SharemindRegisterVector * const globalStack, \
@@ -637,11 +637,13 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-SharemindVmError sharemind_vm_run(SharemindProgram * const p,
+SharemindVmError sharemind_vm_run(SharemindProcess * const p,
                  const SharemindInnerCommand sharemind_vm_run_command,
                  void * const sharemind_vm_run_data)
 {
     if (sharemind_vm_run_command == SHAREMIND_I_GET_IMPL_LABEL) {
+
+        assert(!p);
 
 #ifndef SHAREMIND_FAST_BUILD
 #define SHAREMIND_IMPL_LABEL(name) && label_impl_ ## name ,
@@ -672,9 +674,11 @@ SharemindVmError sharemind_vm_run(SharemindProgram * const p,
 
     } else if (sharemind_vm_run_command == SHAREMIND_I_RUN || sharemind_vm_run_command == SHAREMIND_I_CONTINUE) {
 
+        assert(p);
+
 #pragma STDC FENV_ACCESS ON
 
-        const SharemindCodeBlock * const codeStart = p->codeSections.data[p->currentCodeSectionIndex].data;
+        const SharemindCodeBlock * const codeStart = p->program->codeSections.data[p->currentCodeSectionIndex].data;
         const SharemindCodeBlock * ip = &codeStart[p->currentIp];
         SharemindRegisterVector * const globalStack = &p->globalFrame->stack;
         SharemindRegisterVector * thisStack = &p->thisFrame->stack;
@@ -713,7 +717,7 @@ SharemindVmError sharemind_vm_run(SharemindProgram * const p,
         _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_FLTRES,  SHAREMIND_VM_PROCESS_FLOATING_POINT_INEXACT_RESULT);
         _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_FLTINV,  SHAREMIND_VM_PROCESS_FLOATING_POINT_INVALID_OPERATION);
 
-        _SharemindProgram_setupSignalHandlers(p);
+        _SharemindProcess_setupSignalHandlers(p);
 #endif /* #ifndef SHAREMIND_SOFT_FLOAT */
 
 #ifndef SHAREMIND_FAST_BUILD
@@ -743,7 +747,7 @@ SharemindVmError sharemind_vm_run(SharemindProgram * const p,
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString((SharemindVmProcessException) p->exceptionValue) != 0);
 #ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProgram_restoreSignalHandlers(p);
+            _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
             if (p->hasSavedFpeEnv)
                 fesetenv(&p->savedFpeEnv);
@@ -757,7 +761,7 @@ SharemindVmError sharemind_vm_run(SharemindProgram * const p,
 
         halt:
 #ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProgram_restoreSignalHandlers(p);
+            _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
             if (p->hasSavedFpeEnv)
                 fesetenv(&p->savedFpeEnv);
@@ -770,7 +774,7 @@ SharemindVmError sharemind_vm_run(SharemindProgram * const p,
 
         trap:
 #ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProgram_restoreSignalHandlers(p);
+            _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
             if (p->hasSavedFpeEnv)
                 fesetenv(&p->savedFpeEnv);

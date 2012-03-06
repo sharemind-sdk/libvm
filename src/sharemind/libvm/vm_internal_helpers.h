@@ -33,6 +33,7 @@
 #include <sharemind/libmodapi/api_0x1.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/map.h>
+#include <sharemind/refs.h>
 #include <sharemind/stack.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
@@ -57,7 +58,7 @@ typedef enum {
 
 /*******************************************************************************
  *  SharemindSyscallBindings
-********************************************************************************/
+*******************************************************************************/
 
 SHAREMIND_VECTOR_DECLARE(SharemindSyscallBindings,SharemindSyscallBinding,,inline)
 SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindings,SharemindSyscallBinding,malloc,free,realloc,inline)
@@ -65,15 +66,29 @@ SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindings,SharemindSyscallBinding,malloc,
 
 /*******************************************************************************
  *  SharemindPdBindings
-********************************************************************************/
+*******************************************************************************/
 
-SHAREMIND_VECTOR_DECLARE(SharemindPdBindings,const SharemindPdpiContext *,,inline)
-SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,const SharemindPdpiContext *,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SharemindPdBindings,SharemindPd *,,inline)
+SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,SharemindPd *,malloc,free,realloc,inline)
+
+/*******************************************************************************
+ *  SharemindPdpiInstance
+*******************************************************************************/
+
+typedef struct {
+    SharemindPdpi * pdpi;
+    void * pdpiHandle;
+    size_t pdkIndex;
+    void * moduleHandle;
+} SharemindPdpiCacheItem;
+
+SHAREMIND_VECTOR_DECLARE(SharemindPdpiCache,SharemindPdpiCacheItem,,inline)
+SHAREMIND_VECTOR_DEFINE(SharemindPdpiCache,SharemindPdpiCacheItem,malloc,free,realloc,inline)
 
 
 /*******************************************************************************
  *  SharemindMemoryMap
-********************************************************************************/
+*******************************************************************************/
 
 struct SharemindMemorySlotSpecials_;
 typedef struct SharemindMemorySlotSpecials_ SharemindMemorySlotSpecials;
@@ -287,11 +302,14 @@ SHAREMIND_VECTOR_DECLARE(SharemindCodeSectionsVector,SharemindCodeSection,,inlin
 SHAREMIND_VECTOR_DEFINE(SharemindCodeSectionsVector,SharemindCodeSection,malloc,free,realloc,inline)
 SHAREMIND_VECTOR_DECLARE(SharemindDataSectionsVector,SharemindDataSection,,inline)
 SHAREMIND_VECTOR_DEFINE(SharemindDataSectionsVector,SharemindDataSection,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DECLARE(SharemindDataSectionSizesVector,uint32_t,,inline)
+SHAREMIND_VECTOR_DEFINE(SharemindDataSectionSizesVector,uint32_t,malloc,free,realloc,inline)
 SHAREMIND_STACK_DECLARE(SharemindFrameStack,SharemindStackFrame,,inline)
 SHAREMIND_STACK_DEFINE(SharemindFrameStack,SharemindStackFrame,malloc,free,inline)
 #else
 SHAREMIND_VECTOR_DECLARE(SharemindCodeSectionsVector,SharemindCodeSection,,)
 SHAREMIND_VECTOR_DECLARE(SharemindDataSectionsVector,SharemindDataSection,,)
+SHAREMIND_VECTOR_DECLARE(SharemindDataSectionSizesVector,uint32_t,,)
 SHAREMIND_STACK_DECLARE(SharemindFrameStack,SharemindStackFrame,,)
 #endif
 
@@ -313,16 +331,45 @@ typedef struct {
 } SharemindMemoryInfo;
 
 struct SharemindProgram_ {
-    SharemindVmProcessState state;
+    bool ready;
+
     SharemindVmError error;
 
     SharemindCodeSectionsVector codeSections;
     SharemindDataSectionsVector rodataSections;
     SharemindDataSectionsVector dataSections;
-    SharemindDataSectionsVector bssSections;
+    SharemindDataSectionSizesVector bssSectionSizes;
 
     SharemindSyscallBindings bindings;
     SharemindPdBindings pdBindings;
+
+    size_t activeLinkingUnit;
+
+    size_t prepareCodeSectionIndex;
+    uintptr_t prepareIp;
+
+    SharemindVm * vm;
+
+    SHAREMIND_REFS_DECLARE_FIELDS
+
+};
+
+SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
+
+
+/*******************************************************************************
+ *  SharemindProcess
+********************************************************************************/
+
+struct SharemindProcess_ {
+    SharemindProgram * program;
+
+    SharemindVmProcessState state;
+
+    SharemindDataSectionsVector dataSections;
+    SharemindDataSectionsVector bssSections;
+
+    SharemindPdpiCache pdpiCache;
 
     SharemindFrameStack frames;
     SharemindStackFrame * globalFrame;
@@ -339,7 +386,6 @@ struct SharemindProgram_ {
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;
 
-    SharemindVm * vm;
     SharemindModuleApi0x1SyscallContext syscallContext;
 
     SharemindMemoryInfo memPublicHeap;
@@ -347,28 +393,7 @@ struct SharemindProgram_ {
     SharemindMemoryInfo memReserved;
     SharemindMemoryInfo memTotal;
 
-#ifndef SHAREMIND_SOFT_FLOAT
-    int hasSavedFpeEnv;
-    fenv_t savedFpeEnv;
-#ifdef __USE_POSIX
-    sigjmp_buf safeJmpBuf[SHAREMIND_HET_COUNT];
-    struct sigaction oldFpeAction;
-#else
-    jmp_buf safeJmpBuf[_SHAREMIND_HET_COUNT];
-    void * oldFpeAction;
-#endif
-#endif
-
-#ifdef SHAREMIND_DEBUG
-    FILE * debugFileHandle;
-#endif
 };
-
-#ifdef SHAREMIND_DEBUG
-void SharemindRegisterVector_print_state_bencoded(SharemindRegisterVector * const v, FILE * const f) __attribute__ ((nonnull(1)));
-void SharemindStackFrame_print_state_bencoded(SharemindStackFrame * const s, FILE * const f) __attribute__ ((nonnull(1)));
-void SharemindProgram_print_state_bencoded(SharemindProgram * const p, FILE * const f) __attribute__ ((nonnull(1)));
-#endif /* SHAREMIND_DEBUG */
 
 uint64_t SharemindProgram_public_alloc(SharemindProgram * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot) __attribute__ ((nonnull(1)));
 SharemindVmProcessException SharemindProgram_public_free(SharemindProgram * p, uint64_t ptr) __attribute__ ((nonnull(1)));

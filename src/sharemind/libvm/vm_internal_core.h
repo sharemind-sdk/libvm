@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 SharemindVmError sharemind_vm_run(
-        SharemindProgram * p,
+        SharemindProcess * p,
         const SharemindInnerCommand c,
         void * d)
     __attribute__
@@ -42,8 +42,7 @@ SharemindVmError sharemind_vm_run(
          optimize("O2",
                   "-fexpensive-optimizations",
                   "-fno-gcse"),
-         hot,
-         nonnull(1)
+         hot
     ));
 
 

@@ -22,19 +22,10 @@ extern "C" {
 
 SHAREMIND_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
 
-struct SharemindProgram_;
-typedef struct SharemindProgram_ SharemindProgram;
-
 typedef struct {
     SharemindSyscallWrapper wrapper;
     void * moduleHandle;
 } SharemindSyscallBinding;
-
-typedef struct SharemindPdpiContext {
-    void * pdProcessHandle;
-    size_t pdkIndex;
-    void * moduleHandle;
-} SharemindPdpiContext;
 
 struct SharemindVirtualMachineContext_;
 typedef struct SharemindVirtualMachineContext_ SharemindVirtualMachineContext;
@@ -57,10 +48,10 @@ struct SharemindVirtualMachineContext_ {
     /**
       \param[in] context a pointer to this struct.
       \param[in] pdname the name of the protection domain.
-      \param[in] process the process requesting the pd process instance.
+      \returns a running protection domain with the given name.
       \retval NULL if no such protection domain is found.
     */
-    const SharemindPdpiContext * (*get_pd_process_instance_handle)(SharemindVirtualMachineContext * context, const char * pdName, SharemindProgram * process);
+    SharemindPd * (*find_pd)(SharemindVirtualMachineContext * context, const char * pdName);
 
     /** Pointer to any SHAREMIND_Context data. Not used by libvm. */
     void * internal;
@@ -69,13 +60,16 @@ struct SharemindVirtualMachineContext_ {
 
 struct SharemindVm_;
 typedef struct SharemindVm_ SharemindVm;
+struct SharemindProgram_;
+typedef struct SharemindProgram_ SharemindProgram;
+struct SharemindProcess_;
+typedef struct SharemindProcess_ SharemindProcess;
+
 SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context);
 void SharemindVm_free(SharemindVm * vm);
 
 #define SHAREMIND_VM_PROCESS_STATE_ENUM \
     (SHAREMIND_VM_PROCESS_INITIALIZED) \
-    (SHAREMIND_VM_PROCESS_PREPARING) \
-    (SHAREMIND_VM_PROCESS_PREPARED) \
     (SHAREMIND_VM_PROCESS_RUNNING) \
     (SHAREMIND_VM_PROCESS_TRAPPED) \
     (SHAREMIND_VM_PROCESS_TRAPPED_IN_SYSCALL) \
@@ -134,42 +128,61 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessException);
 
 
 /**
- * \brief Allocates and initializes a new SHAREMIND_Program instance.
- * \returns a pointer to the new SHAREMIND_Program instance.
+ * \brief Allocates and initializes a new SharemindProgram instance.
+ * \returns a pointer to the new SharemindProgram instance.
  * \retval NULL if allocation failed.
  */
 SharemindProgram * SharemindProgram_new(SharemindVm * vm) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \brief Deallocates a SHAREMIND_Program instance.
- * \param[in] program pointer to the SHAREMIND_Program instance to free.
+ * \brief Deallocates a SharemindProgram instance.
+ * \param[in] program pointer to the SharemindProgram instance to free.
  */
 void SharemindProgram_free(SharemindProgram * program) __attribute__ ((nonnull(1)));
 
 /**
  * \brief Loads the program sections from the given data.
- * \param program pointer to the SHAREMIND_Program to initialize.
+ * \param program pointer to the SharemindProgram to initialize.
  * \param[in] data pointer to the sharemind executable file data.
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
- * \returns an SHAREMIND_Error.
+ * \returns an SharemindVmError.
  */
 SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * program, const void * data, size_t dataSize) __attribute__ ((nonnull(1, 2), warn_unused_result));
+
+/**
+ * \returns whether the SharemindProgram instance is ready to be loaded by processes.
+ */
+bool SharemindProgram_is_ready(SharemindProgram * program) __attribute__ ((nonnull(1)));
+
+/**
+ * \brief Allocates and initializes a new SharemindProcess instance.
+ * \pre The SharemindProgram instance must be ready.
+ * \returns a pointer to the new SharemindProcess instance.
+ * \retval NULL if allocation failed.
+ */
+SharemindProcess * SharemindProcess_new(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+
+/**
+ * \brief Deallocates a SharemindProcess instance.
+ * \param[in] program pointer to the SharemindProcess instance to free.
+ */
+void SharemindProcess_free(SharemindProcess * process) __attribute__ ((nonnull(1)));
 
 /**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SHAREMIND_PREPARED
  * \param program The program to run.
- * \returns an SHAREMIND_Error.
+ * \returns an SharemindVmError.
  */
-SharemindVmError SharemindProgram_run(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindVmError SharemindProcess_run(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Continues execution of the given program in the background.
  * \pre program->state == SHAREMIND_TRAPPED || program->state == SHAREMIND_TRAPPED_IN_SYSCALL
  * \param program The program to continue.
- * \returns an SHAREMIND_Error.
+ * \returns an SharemindVmError.
  */
-SharemindVmError SharemindProgram_continue(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindVmError SharemindProcess_continue(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Stops execution of the given program running in the background.
@@ -180,33 +193,33 @@ SharemindVmError SharemindProgram_continue(SharemindProgram * program) __attribu
  * \pre program->state == SHAREMIND_RUNNING
  * \post program->state == SHAREMIND_TRAPPED || program->state == SHAREMIND_TRAPPED_IN_SYSCALL
  * \param program The program to stop.
- * \returns an SHAREMIND_Error.
+ * \returns an SharemindVmError.
  */
-SharemindVmError SharemindProgram_stop(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindVmError SharemindProcess_stop(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] program pointer to the SHAREMIND_Program instance.
+ * \param[in] program pointer to the SharemindProgram instance.
  * \returns the return value of the program.
  */
-int64_t SharemindProgram_get_return_value(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SharemindProcess_get_return_value(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] program pointer to the SHAREMIND_Program instance.
+ * \param[in] program pointer to the SharemindProgram instance.
  * \returns the exception value of the program.
  */
-SharemindVmProcessException SharemindProgram_get_exception(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindVmProcessException SharemindProcess_get_exception(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] program pointer to the SHAREMIND_Program instance.
+ * \param[in] program pointer to the SharemindProgram instance.
  * \returns the current code section of the program.
  */
-size_t SharemindProgram_get_current_code_section(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+size_t SharemindProcess_get_current_code_section(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \param[in] program pointer to the SHAREMIND_Program instance.
+ * \param[in] program pointer to the SharemindProgram instance.
  * \returns the current instruction pointer of the program.
  */
-uintptr_t SharemindProgram_get_current_ip(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+uintptr_t SharemindProcess_get_current_ip(SharemindProcess * program) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */
