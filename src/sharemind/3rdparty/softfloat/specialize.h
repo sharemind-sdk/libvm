@@ -69,6 +69,7 @@ typedef struct {
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
+sf_flag sf_float32_is_nan( sf_float32 a );
 sf_flag sf_float32_is_nan( sf_float32 a )
 {
 
@@ -162,6 +163,7 @@ static sf_float32 sf_propagateFloat32NaN( sf_float32 a, sf_float32 b )
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
+sf_flag sf_float64_is_nan( sf_float64 a );
 sf_flag sf_float64_is_nan( sf_float64 a )
 {
 

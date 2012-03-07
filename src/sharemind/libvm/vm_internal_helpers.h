@@ -101,7 +101,6 @@ typedef struct {
 } SharemindMemorySlot;
 
 struct SharemindMemorySlotSpecials_ {
-    uint64_t ptr;
     int readable;
     int writeable;
     void (*free)(SharemindMemorySlot *);
@@ -395,8 +394,8 @@ struct SharemindProcess_ {
 
 };
 
-uint64_t SharemindProgram_public_alloc(SharemindProgram * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot) __attribute__ ((nonnull(1)));
-SharemindVmProcessException SharemindProgram_public_free(SharemindProgram * p, uint64_t ptr) __attribute__ ((nonnull(1)));
+uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot);
+SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p, uint64_t ptr);
 
 #ifdef __cplusplus
 } /* extern "C" { */
