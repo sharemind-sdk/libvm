@@ -83,8 +83,19 @@ IF(NOT M4_DIR_B)
     SET(M4_DIR_B "${SHAREMIND_GEN_DIR}/sharemind/m4")
 ENDIF(NOT M4_DIR_B)
 
-SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wc++-compat -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
-SET(CMAKE_CXX_FLAGS "-std=gnu++98 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wunused-macros")
+SET(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -O2 -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wc++-compat -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wunused-macros")
+
+INCLUDE(CheckCCompilerFlag)
+MACRO(FLAGS_MAGIC flags)
+    CHECK_C_COMPILER_FLAG("-${flags}" SHAREMIND_HAS_CFLAGS__${flags})
+    IF(SHAREMIND_HAS_CFLAGS__${flags})
+        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -${flags}")
+    ENDIF(SHAREMIND_HAS_CFLAGS__${flags})
+ENDMACRO(FLAGS_MAGIC)
+FLAGS_MAGIC("Weverything")
+FLAGS_MAGIC("Wlogical-op")
+
+
 ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
 
 
