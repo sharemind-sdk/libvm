@@ -671,17 +671,17 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     /* Copy DATA section */
     SharemindDataSectionsVector_init(&p->dataSections);
     for (size_t i = 0u; i < program->dataSections.size; i++) {
-        SharemindDataSection * s = SharemindDataSectionsVector_push(&p->dataSections);
-        if (!s)
+        SharemindDataSection * processSection = SharemindDataSectionsVector_push(&p->dataSections);
+        if (!processSection)
             goto SharemindProcess_new_fail_data_sections;
-        SharemindDataSection * ss = &p->dataSections.data[i];
-        void * pData = malloc(ss->size);
+        SharemindDataSection * originalSection = &program->dataSections.data[i];
+        void * pData = malloc(originalSection->size);
         if (!pData) {
             SharemindDataSectionsVector_pop(&p->dataSections);
             goto SharemindProcess_new_fail_data_sections;
         }
-        SharemindMemorySlot_init(s, pData, ss->size, &rwDataSpecials);
-        memcpy(pData, ss->pData, ss->size);
+        SharemindMemorySlot_init(processSection, pData, originalSection->size, &rwDataSpecials);
+        memcpy(pData, originalSection->pData, originalSection->size);
     }
 
     SharemindDataSectionsVector_init(&p->bssSections);
