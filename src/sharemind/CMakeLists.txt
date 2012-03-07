@@ -11,6 +11,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION "2.8")
 CMAKE_POLICY(SET CMP0015 NEW)
 PROJECT("SHAREMIND_LIBVM" "C")
 
+# Find boost - seems to be required since the variables aren't populated otherwise
+FIND_PACKAGE(Boost REQUIRED)
+
 IF(NOT SHAREMIND_LIB_DIR)
     MESSAGE(FATAL_ERROR "SHAREMIND_LIB_DIR not defined!")
 ENDIF(NOT SHAREMIND_LIB_DIR)
@@ -64,7 +67,8 @@ INCLUDE_DIRECTORIES(BEFORE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../sharemind/.."
                                   "${SHAREMIND_EXT_LIBEXECUTABLE_DIR}/src"
                                   "${SHAREMIND_EXT_LIBMODAPI_DIR}/src"
                                   "${SHAREMIND_EXT_LIBVMI_DIR}/src"
-                                  "${SHAREMIND_EXT_VM_M4_DIR}/src")
+                                  "${SHAREMIND_EXT_VM_M4_DIR}/src"
+                                  ${Boost_INCLUDE_DIRS})
 
 IF(NOT SHAREMIND_VM_M4_SOURCE_DIR)
     ADD_SUBDIRECTORY("${SHAREMIND_EXT_VM_M4_DIR}/src/sharemind" "${SHAREMIND_EXT_DIR}/vm_m4")
