@@ -735,7 +735,7 @@ SharemindVmError sharemind_vm_run(SharemindProcess * const p,
             case HC_TRAP:
                 goto trap;
             default:
-                abort();
+                abort(); /* False positive with -Wunreachable-code. Used for debugging libvm. */
         }
 #endif
 
