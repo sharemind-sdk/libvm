@@ -684,7 +684,23 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
         memcpy(pData, originalSection->pData, originalSection->size);
     }
 
+    /* Initialize BSS sections */
     SharemindDataSectionsVector_init(&p->bssSections);
+    for (size_t i = 0u; i < program->bssSectionSizes.size; i++) {
+        SharemindDataSection * bssSection = SharemindDataSectionsVector_push(&p->bssSections);
+        if (!bssSection)
+            goto SharemindProcess_new_fail_bss_sections;
+
+        SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes.data[i]) <= sizeof(size_t));
+
+        void * pData = malloc(program->bssSectionSizes.data[i]);
+        if (!pData) {
+            SharemindDataSectionsVector_pop(&p->bssSections);
+            goto SharemindProcess_new_fail_bss_sections;
+        }
+        SharemindMemorySlot_init(bssSection, pData, program->bssSectionSizes.data[i], &rwDataSpecials);
+        memset(pData, 0, program->bssSectionSizes.data[i]);
+    }
 
 
     SharemindPdpiCache_init(&p->pdpiCache);
@@ -738,6 +754,10 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->nextFrame = NULL;
 
     return p;
+
+SharemindProcess_new_fail_bss_sections:
+
+    SharemindDataSectionsVector_destroy_with(&p->bssSections, &SharemindDataSection_destroy);
 
 SharemindProcess_new_fail_data_sections:
 
