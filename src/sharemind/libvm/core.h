@@ -16,7 +16,8 @@
 
 
 #include <stdint.h>
-#include "vm_internal_helpers.h"
+#include "libvm.h"
+#include "innercommand.h"
 
 
 #ifdef __cplusplus

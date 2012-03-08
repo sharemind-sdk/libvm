@@ -112,8 +112,10 @@ IF(NOT VM_RELEASE_BUILD)
   SET(LIBVM_DEFINES "${LIBVM_DEFINES};SHAREMIND_FAST_BUILD")
 ENDIF(NOT VM_RELEASE_BUILD)
 SET(LIBVM_SOURCES
-    "libvm/vm_internal_core.c"
-    "libvm/vm_internal_helpers.c")
+    "libvm/core.c"
+    "libvm/process.c"
+    "libvm/program.c"
+    "libvm/vm.c")
 #IF(VM_SOFT_FLOAT)
   SET(LIBVM_SOURCES ${LIBVM_SOURCES} "3rdparty/softfloat/softfloat.c")
   SET(LIBVM_DEFINES "${LIBVM_DEFINES};SHAREMIND_SOFT_FLOAT")
@@ -130,7 +132,7 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
 TARGET_LINK_LIBRARIES("libvm" "libvmi" "libexecutable" "m")
 
 
-INSTALL(FILES "libvm/vm.h"
+INSTALL(FILES "libvm/libvm.h"
         DESTINATION "${SHAREMIND_INCLUDE_DESTINATION}/libvm")
 
 INSTALL(TARGETS "libvm"

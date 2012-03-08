@@ -7,7 +7,7 @@
  * code is subject to the appropriate license agreement.
  */
 
-#include "vm_internal_core.h"
+#include "core.h"
 
 #include <limits.h>
 #include <stdbool.h>
@@ -20,6 +20,10 @@ typedef sf_float32 SharemindFloat32;
 #include <stdio.h>
 #endif
 #include <string.h>
+#include "preparationblock.h"
+#include "process.h"
+#include "program.h"
+#include "registervector.h"
 
 
 #ifdef SHAREMIND_DEBUG
