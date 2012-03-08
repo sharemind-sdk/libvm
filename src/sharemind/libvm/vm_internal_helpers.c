@@ -275,6 +275,7 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
         SharemindCodeSectionsVector_init(&p->codeSections);
         SharemindDataSectionsVector_init(&p->dataSections);
         SharemindDataSectionsVector_init(&p->rodataSections);
+        SharemindDataSectionSizesVector_init(&p->bssSectionSizes);
         SharemindSyscallBindings_init(&p->bindings);
         SharemindPdBindings_init(&p->pdBindings);
         SHAREMIND_REFS_INIT(p);
@@ -291,6 +292,7 @@ void SharemindProgram_free(SharemindProgram * const p) {
     SharemindCodeSectionsVector_destroy_with(&p->codeSections, &SharemindCodeSection_destroy);
     SharemindDataSectionsVector_destroy_with(&p->dataSections, &SharemindDataSection_destroy);
     SharemindDataSectionsVector_destroy_with(&p->rodataSections, &SharemindDataSection_destroy);
+    SharemindDataSectionSizesVector_destroy(&p->bssSectionSizes);
     SharemindSyscallBindings_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);
 
