@@ -129,7 +129,7 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${LIBVM_DEFINES}")
-TARGET_LINK_LIBRARIES("libvm" "libvmi" "libexecutable" "m")
+TARGET_LINK_LIBRARIES("libvm" "libexecutable" "libmodapi" "libvmi" "m")
 
 
 INSTALL(FILES "libvm/libvm.h"
