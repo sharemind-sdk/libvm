@@ -33,6 +33,38 @@ typedef struct {
     void * moduleHandle;
 } SharemindPdpiCacheItem;
 
+static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
+                                               SharemindPd * pd)
+        __attribute__ ((nonnull(1, 2), warn_unused_result));
+static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
+                                               SharemindPd * pd)
+{
+    assert(ci);
+    assert(pd);
+    ci->pdpi = SharemindPdpi_new(pd);
+    if (!ci->pdpi)
+        return false;
+
+    if (!SharemindPdpi_start(ci->pdpi))
+        return false;
+
+    ci->pdpiHandle = SharemindPdpi_get_handle(ci->pdpi);
+    SharemindPdk * pdk = SharemindPd_get_pdk(pd);
+    assert(pdk);
+    ci->pdkIndex = SharemindPdk_get_index(pdk);
+    SharemindModule * module = SharemindPdk_get_module(pdk);
+    assert(module);
+    ci->moduleHandle = SharemindModule_get_handle(module);
+    return true;
+}
+
+static inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * ci) __attribute__ ((nonnull(1)));
+static inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * ci) {
+    assert(ci);
+    assert(ci->pdpi);
+    SharemindPdpi_free(ci->pdpi);
+}
+
 SHAREMIND_VECTOR_DECLARE(SharemindPdpiCache,SharemindPdpiCacheItem,,static inline)
 SHAREMIND_VECTOR_DEFINE(SharemindPdpiCache,SharemindPdpiCacheItem,malloc,free,realloc,static inline)
 

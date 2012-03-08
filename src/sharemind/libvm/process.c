@@ -103,7 +103,20 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     assert(p->bssSections.size == program->bssSectionSizes.size);
 
 
+    /* Initialize PDPI cache: */
     SharemindPdpiCache_init(&p->pdpiCache);
+    for (size_t i = 0u; i < program->pdBindings.size; i++) {
+        SharemindPdpiCacheItem * ci = SharemindPdpiCache_push(&p->pdpiCache);
+        if (!ci)
+            goto SharemindProcess_new_fail_pdpiCache;
+
+        if (!SharemindPdpiCacheItem_init(ci, program->pdBindings.data[i])) {
+            if (!ci->pdpi)
+                SharemindPdpiCache_pop(&p->pdpiCache);
+            goto SharemindProcess_new_fail_pdpiCache;
+        }
+    }
+    assert(p->pdpiCache.size == program->pdBindings.size);
 
     SharemindFrameStack_init(&p->frames);
 
@@ -156,6 +169,10 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
 
     return p;
 
+SharemindProcess_new_fail_pdpiCache:
+
+    SharemindPdpiCache_destroy_with(&p->pdpiCache, &SharemindPdpiCacheItem_destroy);
+
 SharemindProcess_new_fail_bss_sections:
 
     SharemindDataSectionsVector_destroy_with(&p->bssSections, &SharemindDataSection_destroy);
@@ -189,7 +206,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 
     SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
 
-    SharemindPdpiCache_destroy(&p->pdpiCache);
+    SharemindPdpiCache_destroy_with(&p->pdpiCache, &SharemindPdpiCacheItem_destroy);
 
     SharemindDataSectionsVector_destroy_with(&p->bssSections, &SharemindDataSection_destroy);
     SharemindDataSectionsVector_destroy_with(&p->dataSections, &SharemindDataSection_destroy);
