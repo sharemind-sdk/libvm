@@ -77,14 +77,14 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
         if (!processSection)
             goto SharemindProcess_new_fail_data_sections;
         SharemindDataSection * originalSection = &program->dataSections.data[i];
-        void * pData = malloc(originalSection->size);
-        if (!pData) {
+        if (!SharemindDataSection_init(processSection, originalSection->size, &rwDataSpecials)) {
             SharemindDataSectionsVector_pop(&p->dataSections);
             goto SharemindProcess_new_fail_data_sections;
         }
-        SharemindMemorySlot_init(processSection, pData, originalSection->size, &rwDataSpecials);
-        memcpy(pData, originalSection->pData, originalSection->size);
+        assert(processSection->size == originalSection->size);
+        memcpy(processSection->pData, originalSection->pData, originalSection->size);
     }
+    assert(p->dataSections.size == program->dataSections.size);
 
     /* Initialize BSS sections */
     SharemindDataSectionsVector_init(&p->bssSections);
@@ -92,17 +92,15 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
         SharemindDataSection * bssSection = SharemindDataSectionsVector_push(&p->bssSections);
         if (!bssSection)
             goto SharemindProcess_new_fail_bss_sections;
-
         SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes.data[i]) <= sizeof(size_t));
-
-        void * pData = malloc(program->bssSectionSizes.data[i]);
-        if (!pData) {
+        if (!SharemindDataSection_init(bssSection, program->bssSectionSizes.data[i], &rwDataSpecials)) {
             SharemindDataSectionsVector_pop(&p->bssSections);
             goto SharemindProcess_new_fail_bss_sections;
         }
-        SharemindMemorySlot_init(bssSection, pData, program->bssSectionSizes.data[i], &rwDataSpecials);
-        memset(pData, 0, program->bssSectionSizes.data[i]);
+        assert(bssSection->size == program->bssSectionSizes.data[i]);
+        memset(bssSection->pData, 0, program->bssSectionSizes.data[i]);
     }
+    assert(p->bssSections.size == program->bssSectionSizes.size);
 
 
     SharemindPdpiCache_init(&p->pdpiCache);
@@ -113,20 +111,20 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->memorySlotNext = 1u;
     SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
 
+    /* Set currentCodeSectionIndex before SharemindProcess_reinitialize_static_mem_slots: */
+    p->currentCodeSectionIndex = program->activeLinkingUnit;
+    p->currentIp = 0u;
+
     /* Initialize section pointers: */
 
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 0u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 1u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
     assert(p->memorySlotNext == 1u);
-
     if (unlikely(!SharemindProcess_reinitialize_static_mem_slots(p)))
         goto SharemindProcess_new_fail_2;
 
     p->memorySlotNext += 3;
-
-    p->currentCodeSectionIndex = program->activeLinkingUnit;
-    p->currentIp = 0u;
 
     p->syscallContext.get_pd_process_instance_handle = &sharemind_get_pd_process_handle;
     p->syscallContext.publicAlloc = &sharemind_public_alloc;
@@ -144,6 +142,7 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     SharemindMemoryInfo_init(&p->memReserved);
     SharemindMemoryInfo_init(&p->memTotal);
 
+    p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
     p->globalFrame = SharemindFrameStack_push(&p->frames);
     if (unlikely(!p->globalFrame))
         goto SharemindProcess_new_fail_2;
@@ -204,9 +203,10 @@ void SharemindProcess_free(SharemindProcess * p) {
 
 static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProcess * p) {
 
-#define INIT_STATIC_MEMSLOT(index,dataSection) \
+#define INIT_STATIC_MEMSLOT(index,pSection) \
     if (1) { \
-        SharemindDataSection * const restrict staticSlot = SharemindDataSectionsVector_get_pointer(&p->dataSection ## Sections, p->currentCodeSectionIndex); \
+        assert((pSection)->size > p->currentCodeSectionIndex); \
+        SharemindDataSection * const restrict staticSlot = SharemindDataSectionsVector_get_pointer((pSection), p->currentCodeSectionIndex); \
         assert(staticSlot); \
         SharemindMemorySlot * const restrict slot = SharemindMemoryMap_get_or_insert(&p->memoryMap, (index)); \
         if (unlikely(!slot)) \
@@ -214,9 +214,9 @@ static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProce
         (*slot) = *staticSlot; \
     } else (void) 0
 
-    INIT_STATIC_MEMSLOT(1u,program->rodata);
-    INIT_STATIC_MEMSLOT(2u,data);
-    INIT_STATIC_MEMSLOT(3u,bss);
+    INIT_STATIC_MEMSLOT(1u,&p->program->rodataSections);
+    INIT_STATIC_MEMSLOT(2u,&p->dataSections);
+    INIT_STATIC_MEMSLOT(3u,&p->bssSections);
 
     return true;
 }
