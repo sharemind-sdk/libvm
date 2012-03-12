@@ -295,7 +295,10 @@ static inline uint64_t SharemindProcess_public_alloc_slot(SharemindProcess * p, 
     return index;
 }
 
-uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot) {
+uint64_t SharemindProcess_public_alloc(SharemindProcess * p,
+                                       uint64_t nBytes,
+                                       SharemindMemorySlot ** memorySlot)
+{
     assert(p);
     assert(p->memorySlotNext != 0u);
 
@@ -348,7 +351,9 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, Sh
     return index;
 }
 
-SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p, uint64_t ptr) {
+SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p,
+                                                         uint64_t ptr)
+{
     assert(p);
     assert(ptr != 0u);
     SharemindMemorySlot * slot = SharemindMemoryMap_get(&p->memoryMap, ptr);
@@ -378,7 +383,9 @@ SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p, u
  *  Other procedures:
 ********************************************************************************/
 
-static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, uint64_t nBytes) {
+static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
+                                       uint64_t nBytes)
+{
     assert(c);
     assert(c->internal);
 
@@ -391,7 +398,9 @@ static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, 
     return SharemindProcess_public_alloc(p, nBytes, NULL);
 }
 
-static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
+static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
+                                 uint64_t ptr)
+{
     assert(c);
     assert(c->internal);
 
@@ -415,7 +424,9 @@ static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
     return slot->size;
 }
 
-static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
+static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
+                                       uint64_t ptr)
+{
     assert(c);
     assert(c->internal);
 
@@ -429,7 +440,9 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c, 
     return slot->pData;
 }
 
-static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
+static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
+                                      size_t nBytes)
+{
     assert(c);
     assert(c->internal);
 
@@ -478,7 +491,9 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c, s
     return ptr;
 }
 
-static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c, void * ptr) {
+static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
+                                  void * ptr)
+{
     assert(c);
     assert(c->internal);
 
@@ -514,7 +529,9 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c, void 
     return true;
 }
 
-static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
+static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
+                                     size_t nBytes)
+{
     assert(c);
     assert(c->internal);
 
@@ -546,7 +563,9 @@ static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c, si
     return true;
 }
 
-static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) {
+static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
+                                     size_t nBytes)
+{
     assert(c);
     assert(c->internal);
 
@@ -564,10 +583,10 @@ static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c, si
 }
 
 int sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext * c,
-                                uint64_t pd_index,
-                                void ** pdProcessHandle,
-                                size_t * pdkIndex,
-                                void ** moduleHandle)
+                                    uint64_t pd_index,
+                                    void ** pdProcessHandle,
+                                    size_t * pdkIndex,
+                                    void ** moduleHandle)
 {
     assert(c);
     assert(c->internal);
