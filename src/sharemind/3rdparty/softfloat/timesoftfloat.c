@@ -37,19 +37,6 @@ enum {
     minIterations = 1000
 };
 
-static void fail( const char *message, ... )
-{
-    va_list varArgs;
-
-    fputs( "timesoftfloat: ", stderr );
-    va_start( varArgs, message );
-    vfprintf( stderr, message, varArgs );
-    va_end( varArgs );
-    fputs( ".\n", stderr );
-    exit( EXIT_FAILURE );
-
-}
-
 static char *functionName;
 static char *roundingPrecisionName, *roundingModeName, *tininessModeName;
 
