@@ -446,7 +446,7 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     assert(c);
     assert(c->internal);
 
-    if (unlikely(nBytes <= 0))
+    if (unlikely(nBytes == 0))
         return NULL;
 
     SharemindProcess * const p = (SharemindProcess *) c->internal;
@@ -535,7 +535,7 @@ static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
     assert(c);
     assert(c->internal);
 
-    if (unlikely(nBytes <= 0u))
+    if (unlikely(nBytes == 0u))
         return true;
 
     SharemindProcess * const p = (SharemindProcess *) c->internal;
