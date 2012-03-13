@@ -55,12 +55,12 @@ static SharemindProcess * _SharemindProcess_SIGFPE_handler_p = NULL;
 
 #ifdef __USE_POSIX
 static void _SharemindProcess_SIGFPE_handler(int signalNumber,
-                                         siginfo_t * signalInfo,
-                                         void * context)
+                                             siginfo_t * signalInfo,
+                                             void * context)
     __attribute__ ((__noreturn__, __nothrow__));
 static void _SharemindProcess_SIGFPE_handler(int signalNumber,
-                                         siginfo_t * signalInfo,
-                                         void * context)
+                                             siginfo_t * signalInfo,
+                                             void * context)
 {
     (void) signalNumber;
     (void) context;
@@ -641,9 +641,10 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-SharemindVmError sharemind_vm_run(SharemindProcess * const p,
-                 const SharemindInnerCommand sharemind_vm_run_command,
-                 void * const sharemind_vm_run_data)
+SharemindVmError sharemind_vm_run(
+        SharemindProcess * const p,
+        const SharemindInnerCommand sharemind_vm_run_command,
+        void * const sharemind_vm_run_data)
 {
     if (sharemind_vm_run_command == SHAREMIND_I_GET_IMPL_LABEL) {
 
