@@ -358,7 +358,7 @@ SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p,
     assert(ptr != 0u);
     SharemindMemorySlot * slot = SharemindMemoryMap_get(&p->memoryMap, ptr);
     if (unlikely(!slot))
-        return SHAREMIND_VM_PROCESS_INVALID_REFERENCE;
+        return SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE;
 
     if (unlikely(slot->nrefs != 0u))
         return SHAREMIND_VM_PROCESS_MEMORY_IN_USE;

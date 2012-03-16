@@ -590,7 +590,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
     if (1) { \
         (dest) = SharemindMemoryMap_get(&p->memoryMap, (index)); \
-        SHAREMIND_MI_TRY_EXCEPT((dest),SHAREMIND_VM_PROCESS_INVALID_REFERENCE); \
+        SHAREMIND_MI_TRY_EXCEPT((dest),SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE); \
     } else (void) 0
 
 #define SHAREMIND_MI_MEM_FREE(ptr) \
