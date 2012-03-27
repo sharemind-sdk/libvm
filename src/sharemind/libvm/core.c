@@ -441,7 +441,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             cref->pData = NULL; \
             cref = nextFrame->crefstack.data; \
         } \
-        SharemindModuleApi0x1SyscallCode st; \
+        SharemindModuleApi0x1Error st; \
         st = (*rc)(nextFrame->stack.data, nextFrame->stack.size, \
                    ref, cref, \
                    (r), &p->syscallContext); \
@@ -453,17 +453,26 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SharemindFrameStack_pop(&p->frames); \
         p->nextFrame = NULL; \
         switch (st) { \
-            case SHAREMIND_MODULE_API_0x1_SC_OK: \
+            case SHAREMIND_MODULE_API_0x1_OK: \
+                /* Success! */ \
                 break; \
-            case SHAREMIND_MODULE_API_0x1_SC_OUT_OF_MEMORY: \
+            case SHAREMIND_MODULE_API_0x1_OUT_OF_MEMORY: \
                 SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
                 break; \
-            case SHAREMIND_MODULE_API_0x1_SC_INVALID_CALL: \
+            case SHAREMIND_MODULE_API_0x1_SHAREMIND_ERROR: \
+                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SHAREMIND_ERROR_IN_SYSCALL); \
+                break; \
+            case SHAREMIND_MODULE_API_0x1_MODULE_ERROR: \
+                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_MODULE_ERROR_IN_SYSCALL); \
+                break; \
+            case SHAREMIND_MODULE_API_0x1_INVALID_CALL: \
                 SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_INVALID_SYSCALL_INVOCATION); \
                 break; \
-            case SHAREMIND_MODULE_API_0x1_SC_GENERAL_FAILURE: /* Fall through: */ \
+            case SHAREMIND_MODULE_API_0x1_GENERAL_ERROR: \
+                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_GENERAL_SYSCALL_FAILURE); \
+                break; \
             default: \
-                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SYSCALL_FAILURE); \
+                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_UNKNOWN_SYSCALL_RETURN_CODE); \
                 break; \
         } \
     } else (void) 0
