@@ -44,11 +44,9 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c, void 
 static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) __attribute__ ((nonnull(1)));
 static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c, size_t nBytes) __attribute__ ((nonnull(1)));
 
-static int sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext * c,
-                                           uint64_t pd_index,
-                                           void ** pdProcessHandle,
-                                           size_t * pdkIndex,
-                                           void ** moduleHandle) __attribute__ ((nonnull(1)));
+static const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
+        SharemindModuleApi0x1SyscallContext * c,
+        uint64_t pd_index) __attribute__ ((nonnull(1)));
 
 
 /*******************************************************************************
@@ -56,6 +54,8 @@ static int sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext *
 ********************************************************************************/
 
 static inline void SharemindProcess_destroy(SharemindProcess * p);
+static inline bool SharemindProcess_start_pdpis(SharemindProcess * p);
+static inline void SharemindProcess_stop_pdpis(SharemindProcess * p);
 
 SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     assert(program);
@@ -139,7 +139,7 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
 
     p->memorySlotNext += 3;
 
-    p->syscallContext.get_pd_process_instance_handle = &sharemind_get_pd_process_handle;
+    p->syscallContext.get_pdpi_info = &sharemind_get_pdpi_info;
     p->syscallContext.publicAlloc = &sharemind_public_alloc;
     p->syscallContext.publicFree = &sharemind_public_free;
     p->syscallContext.publicMemPtrSize = &sharemind_public_get_size;
@@ -218,6 +218,27 @@ void SharemindProcess_free(SharemindProcess * p) {
     free(p);
 }
 
+
+static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
+    const SharemindPdpiCache * const cache = &p->pdpiCache;
+    size_t i;
+    for (i = 0u; i < cache->size; i++) {
+        if (!SharemindPdpiCacheItem_start(&cache->data[i])) {
+            while (i)
+                SharemindPdpiCacheItem_stop(&cache->data[--i]);
+            return false;
+        }
+    }
+    return true;
+}
+
+static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
+    const SharemindPdpiCache * const cache = &p->pdpiCache;
+    size_t i = cache->size;
+    while (i)
+        SharemindPdpiCacheItem_stop(&cache->data[--i]);
+}
+
 static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProcess * p) {
 
 #define INIT_STATIC_MEMSLOT(index,pSection) \
@@ -245,7 +266,14 @@ SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
     if (unlikely(!p->state == SHAREMIND_VM_PROCESS_INITIALIZED))
         return SHAREMIND_VM_INVALID_INPUT_STATE;
 
-    return sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
+    if (!SharemindProcess_start_pdpis(p))
+        return SHAREMIND_VM_PDPI_STARTUP_FAILED;
+
+    const SharemindVmError e = sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
+    if (e != SHAREMIND_VM_RUNTIME_TRAP)
+        SharemindProcess_stop_pdpis(p);
+
+    return e;
 }
 
 int64_t SharemindProcess_get_return_value(SharemindProcess *p) {
@@ -584,31 +612,24 @@ static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
     return true;
 }
 
-int sharemind_get_pd_process_handle(SharemindModuleApi0x1SyscallContext * c,
-                                    uint64_t pd_index,
-                                    void ** pdProcessHandle,
-                                    size_t * pdkIndex,
-                                    void ** moduleHandle)
+const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
+        SharemindModuleApi0x1SyscallContext * c,
+        uint64_t pd_index)
 {
     assert(c);
     assert(c->internal);
 
     if (pd_index > SIZE_MAX)
-        return 1;
+        return NULL;
 
     SharemindProcess * const p = (SharemindProcess *) c->internal;
     assert(p);
 
     const SharemindPdpiCacheItem * const pdpiCacheItem = SharemindPdpiCache_get_const_pointer(&p->pdpiCache, pd_index);
-    if (!pdpiCacheItem)
-        return 1;
+    if (pdpiCacheItem) {
+        assert(pdpiCacheItem->info.pdpiHandle);
+        return &pdpiCacheItem->info;
+    }
 
-    if (pdProcessHandle)
-        *pdProcessHandle = pdpiCacheItem->pdpiHandle;
-    if (pdkIndex)
-        *pdkIndex = pdpiCacheItem->pdkIndex;
-    if (moduleHandle)
-        *moduleHandle = pdpiCacheItem->moduleHandle;
-
-    return 0;
+    return NULL;
 }
