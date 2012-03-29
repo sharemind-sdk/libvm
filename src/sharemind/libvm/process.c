@@ -218,6 +218,32 @@ void SharemindProcess_free(SharemindProcess * p) {
     free(p);
 }
 
+size_t SharemindProcess_get_pdpi_count(const SharemindProcess * process) {
+    return process->pdpiCache.size;
+}
+
+SharemindPdpi * SharemindProcess_get_pdpi(const SharemindProcess * process,
+                                          size_t pdpiIndex)
+{
+    const SharemindPdpiCache * const cache = &process->pdpiCache;
+    if (pdpiIndex < cache->size)
+        return cache->data[pdpiIndex].pdpi;
+
+    return NULL;
+}
+
+bool SharemindProcess_set_pdpi_facility(SharemindProcess * process,
+                                        const char * name,
+                                        void * facility,
+                                        void * context)
+{
+    const SharemindPdpiCache * const cache = &process->pdpiCache;
+    for (size_t i = 0u; i < cache->size; i++)
+        if (!SharemindPdpi_set_facility(cache->data[i].pdpi, name, facility, context))
+            return false;
+
+    return true;
+}
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
     const SharemindPdpiCache * const cache = &p->pdpiCache;

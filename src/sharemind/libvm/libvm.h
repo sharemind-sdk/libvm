@@ -176,6 +176,40 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) __attribute_
 void SharemindProcess_free(SharemindProcess * process) __attribute__ ((nonnull(1)));
 
 /**
+ * \param[in] process pointer to the SharemindProcess instance.
+ * \returns the number of protection domain process instances for this process.
+ */
+size_t SharemindProcess_get_pdpi_count(const SharemindProcess * process) __attribute__ ((nonnull(1)));
+
+/**
+ * \param[in] process pointer to the SharemindProcess instance.
+ * \param[in] pdpiIndex The index of the PDPI.
+ * \returns the a protection domain process instance for the given index.
+ * \retval NULL if no such PDPI exists.
+ */
+SharemindPdpi * SharemindProcess_get_pdpi(const SharemindProcess * process,
+                                          size_t pdpiIndex) __attribute__ ((nonnull(1)));
+
+/**
+ * \brief Sets a PDPI facility for all the PDPI's of the given process.
+ * \param[in] process pointer to the SharemindProcess instance.
+ * \param[in] name The name of the facility to set.
+ * \param[in] facility The facility to set.
+ * \param[in] context The facility context to set.
+ * \warning This destructively overwrites any previously set PDPI facility in
+            the respective SharemindPdpi instance.
+ * \warning When an out of memory error is encountered this procedure provides
+            no rollback. This means that some associated PDPI's might have the
+            facility set and some have not.
+ * \returns whether setting the facility succeeded.
+ * \retval false Out of memory.
+ */
+bool SharemindProcess_set_pdpi_facility(SharemindProcess * process,
+                                        const char * name,
+                                        void * facility,
+                                        void * context) __attribute__ ((nonnull(1,2)));
+
+/**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SHAREMIND_PREPARED
  * \param process The process to run.
