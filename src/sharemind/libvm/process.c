@@ -410,7 +410,9 @@ static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
     return SharemindProcess_public_free(p, ptr) == SHAREMIND_VM_PROCESS_OK;
 }
 
-static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c, uint64_t ptr) {
+static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
+                                        uint64_t ptr)
+{
     assert(c);
     assert(c->internal);
 
