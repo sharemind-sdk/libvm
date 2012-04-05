@@ -337,7 +337,7 @@ struct preprocess_pass2_function {
     uint64_t code;
     SharemindVmError (*f)(SharemindProgram * const p, SharemindCodeSection * s, SharemindCodeBlock * c, size_t * i);
 };
-struct preprocess_pass2_function preprocess_pass2_functions[] = {
+static struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include <sharemind/m4/preprocess_pass2_functions.h>
     { .code = 0u, .f = NULL }
 };

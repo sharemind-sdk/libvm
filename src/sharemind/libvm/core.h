@@ -43,7 +43,8 @@ SharemindVmError sharemind_vm_run(
          optimize("O2",
                   "-fexpensive-optimizations",
                   "-fno-gcse"),
-         hot
+         hot,
+         visibility("internal")
     ));
 
 
