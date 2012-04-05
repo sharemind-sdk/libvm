@@ -209,7 +209,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void
 
                 LOAD_BINDSECTION_CASE(PDBIND,
                     for (size_t i = 0; i < p->pdBindings.size; i++)
-                        if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]), pos) == 0)
+                        if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]), (const char *) pos) == 0)
                             return SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND;
 
                     SharemindPd ** pdBinding = SharemindPdBindings_push(&p->pdBindings);
