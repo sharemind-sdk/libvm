@@ -1133,7 +1133,7 @@ sf_float32 sf_float32_div( sf_float32 a, sf_float32 b )
 
 sf_float32 sf_float32_rem( sf_float32 a, sf_float32 b )
 {
-    sf_flag aSign, bSign, zSign;
+    sf_flag aSign, /* bSign, */ zSign;
     sf_int16 aExp, bExp, expDiff;
     sf_bits32 aSig, bSig;
     sf_bits32 q;
@@ -1146,7 +1146,7 @@ sf_float32 sf_float32_rem( sf_float32 a, sf_float32 b )
     aSign = sf_extractFloat32Sign( a );
     bSig = sf_extractFloat32Frac( b );
     bExp = sf_extractFloat32Exp( b );
-    bSign = sf_extractFloat32Sign( b );
+    /* bSign = sf_extractFloat32Sign( b ); */
     if ( aExp == 0xFF ) {
         if ( aSig || ( ( bExp == 0xFF ) && bSig ) ) {
             return sf_propagateFloat32NaN( a, b );
@@ -2003,7 +2003,7 @@ sf_float64 sf_float64_div( sf_float64 a, sf_float64 b )
 
 sf_float64 sf_float64_rem( sf_float64 a, sf_float64 b )
 {
-    sf_flag aSign, bSign, zSign;
+    sf_flag aSign, /* bSign, */ zSign;
     sf_int16 aExp, bExp, expDiff;
     sf_bits64 aSig, bSig;
     sf_bits64 q, alternateASig;
@@ -2014,7 +2014,7 @@ sf_float64 sf_float64_rem( sf_float64 a, sf_float64 b )
     aSign = sf_extractFloat64Sign( a );
     bSig = sf_extractFloat64Frac( b );
     bExp = sf_extractFloat64Exp( b );
-    bSign = sf_extractFloat64Sign( b );
+    /* bSign = sf_extractFloat64Sign( b ); */
     if ( aExp == 0x7FF ) {
         if ( aSig || ( ( bExp == 0x7FF ) && bSig ) ) {
             return sf_propagateFloat64NaN( a, b );
