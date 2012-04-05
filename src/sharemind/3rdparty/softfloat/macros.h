@@ -52,7 +52,8 @@ extern "C" {
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void sf_shift32RightJamming( sf_bits32 a, sf_int16 count, sf_bits32 * restrict zPtr )
+static inline void sf_shift32RightJamming(sf_bits32 a, sf_int16 count,
+                                          sf_bits32 * const restrict zPtr)
 {
     sf_bits32 z;
 
@@ -78,7 +79,8 @@ SF_INLINE void sf_shift32RightJamming( sf_bits32 a, sf_int16 count, sf_bits32 * 
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void sf_shift64RightJamming( sf_bits64 a, sf_int16 count, sf_bits64 * restrict zPtr )
+static inline void sf_shift64RightJamming(sf_bits64 a, sf_int16 count,
+                                          sf_bits64 * const restrict zPtr)
 {
     sf_bits64 z;
 
@@ -112,9 +114,10 @@ SF_INLINE void sf_shift64RightJamming( sf_bits64 a, sf_int16 count, sf_bits64 * 
 | described above, and is returned at the location pointed to by `z1Ptr'.)
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void
- sf_shift64ExtraRightJamming(
-     sf_bits64 a0, sf_bits64 a1, sf_int16 count, sf_bits64 * restrict z0Ptr, sf_bits64 * restrict z1Ptr )
+static inline void sf_shift64ExtraRightJamming(sf_bits64 a0, sf_bits64 a1,
+                                               sf_int16 count,
+                                               sf_bits64 * const restrict z0Ptr,
+                                               sf_bits64 * const restrict z1Ptr)
 {
     sf_bits64 z0, z1;
     sf_int8 negCount = ( - count ) & 63;
@@ -148,9 +151,10 @@ SF_INLINE void
 | are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void
- sf_add128(
-     sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1, sf_bits64 * restrict z0Ptr, sf_bits64 * restrict z1Ptr )
+static inline void sf_add128(sf_bits64 a0, sf_bits64 a1,
+                             sf_bits64 b0, sf_bits64 b1,
+                             sf_bits64 * const restrict z0Ptr,
+                             sf_bits64 * const restrict z1Ptr)
 {
     sf_bits64 z1;
 
@@ -168,9 +172,10 @@ SF_INLINE void
 | `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void
- sf_sub128(
-     sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1, sf_bits64 * restrict z0Ptr, sf_bits64 * restrict z1Ptr )
+static inline void sf_sub128(sf_bits64 a0, sf_bits64 a1,
+                             sf_bits64 b0, sf_bits64 b1,
+                             sf_bits64 * const restrict z0Ptr,
+                             sf_bits64 * const restrict z1Ptr)
 {
 
     *z1Ptr = a1 - b1;
@@ -184,7 +189,9 @@ SF_INLINE void
 | `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE void sf_mul64To128( sf_bits64 a, sf_bits64 b, sf_bits64 * restrict z0Ptr, sf_bits64 * restrict z1Ptr )
+static inline void sf_mul64To128(sf_bits64 a, sf_bits64 b,
+                                 sf_bits64 * const restrict z0Ptr,
+                                 sf_bits64 * const restrict z1Ptr)
 {
     sf_bits32 aHigh, aLow, bHigh, bLow;
     sf_bits64 z0, zMiddleA, zMiddleB, z1;
@@ -216,8 +223,7 @@ SF_INLINE void sf_mul64To128( sf_bits64 a, sf_bits64 b, sf_bits64 * restrict z0P
 | unsigned integer is returned.
 *----------------------------------------------------------------------------*/
 
-static sf_bits64 sf_estimateDiv128To64( sf_bits64 a0, sf_bits64 a1, sf_bits64 b )
-{
+static inline sf_bits64 sf_estimateDiv128To64(sf_bits64 a0, sf_bits64 a1, sf_bits64 b) {
     sf_bits64 b0, b1;
     sf_bits64 rem0, rem1, term0, term1;
     sf_bits64 z;
@@ -248,8 +254,7 @@ static sf_bits64 sf_estimateDiv128To64( sf_bits64 a0, sf_bits64 a1, sf_bits64 b 
 | value.
 *----------------------------------------------------------------------------*/
 
-static sf_bits32 sf_estimateSqrt32( sf_int16 aExp, sf_bits32 a )
-{
+static inline sf_bits32 sf_estimateSqrt32(sf_int16 aExp, sf_bits32 a) {
     static const sf_bits16 sqrtOddAdjustments[] = {
         0x0004, 0x0022, 0x005D, 0x00B1, 0x011D, 0x019F, 0x0236, 0x02E0,
         0x039C, 0x0468, 0x0545, 0x0631, 0x072B, 0x0832, 0x0946, 0x0A67
@@ -282,8 +287,7 @@ static sf_bits32 sf_estimateSqrt32( sf_int16 aExp, sf_bits32 a )
 | `a'.  If `a' is zero, 32 is returned.
 *----------------------------------------------------------------------------*/
 
-static sf_int8 sf_countLeadingZeros32( sf_bits32 a )
-{
+static inline sf_int8 sf_countLeadingZeros32(sf_bits32 a) {
     static const sf_int8 countLeadingZerosHigh[] = {
         8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
         3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -324,8 +328,7 @@ static sf_int8 sf_countLeadingZeros32( sf_bits32 a )
 | `a'.  If `a' is zero, 64 is returned.
 *----------------------------------------------------------------------------*/
 
-static sf_int8 sf_countLeadingZeros64( sf_bits64 a )
-{
+static inline sf_int8 sf_countLeadingZeros64(sf_bits64 a) {
     sf_int8 shiftCount;
 
     if ( a < ( (sf_bits64) 1 )<<32 ) {
@@ -346,7 +349,8 @@ static sf_int8 sf_countLeadingZeros64( sf_bits64 a )
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_eq128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1 )
+static inline sf_flag sf_eq128(sf_bits64 a0, sf_bits64 a1,
+                               sf_bits64 b0, sf_bits64 b1)
 {
 
     return ( a0 == b0 ) && ( a1 == b1 );
@@ -359,7 +363,8 @@ SF_INLINE sf_flag sf_eq128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_le128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1 )
+static inline sf_flag sf_le128(sf_bits64 a0, sf_bits64 a1,
+                               sf_bits64 b0, sf_bits64 b1)
 {
 
     return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 <= b1 ) );
@@ -372,7 +377,8 @@ SF_INLINE sf_flag sf_le128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 
 | returns 0.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_lt128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1 )
+static inline sf_flag sf_lt128(sf_bits64 a0, sf_bits64 a1,
+                               sf_bits64 b0, sf_bits64 b1)
 {
 
     return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 < b1 ) );
@@ -385,7 +391,8 @@ SF_INLINE sf_flag sf_lt128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_ne128( sf_bits64 a0, sf_bits64 a1, sf_bits64 b0, sf_bits64 b1 )
+static inline sf_flag sf_ne128(sf_bits64 a0, sf_bits64 a1,
+                               sf_bits64 b0, sf_bits64 b1)
 {
 
     return ( a0 != b0 ) || ( a1 != b1 );

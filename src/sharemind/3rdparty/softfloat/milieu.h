@@ -94,13 +94,6 @@ typedef  int64_t sf_sbits64;
 #define SF_ULIT64( a ) UINT64_C( a )
 
 /*----------------------------------------------------------------------------
-| The macro `SF_INLINE' can be used before functions that should be inlined.  If
-| a compiler does not support explicit inlining, this macro should be defined
-| to be `static'.
-*----------------------------------------------------------------------------*/
-#define SF_INLINE extern inline
-
-/*----------------------------------------------------------------------------
 | Symbolic Boolean literals.
 *----------------------------------------------------------------------------*/
 enum {

@@ -168,8 +168,7 @@ static sf_int64 sf_roundAndPackInt64(
 | Returns the fraction bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_bits32 sf_extractFloat32Frac( sf_float32 a )
-{
+static inline sf_bits32 sf_extractFloat32Frac(sf_float32 a) {
 
     return a & 0x007FFFFF;
 
@@ -179,8 +178,7 @@ SF_INLINE sf_bits32 sf_extractFloat32Frac( sf_float32 a )
 | Returns the exponent bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_int16 sf_extractFloat32Exp( sf_float32 a )
-{
+static inline sf_int16 sf_extractFloat32Exp(sf_float32 a) {
 
     return ( a>>23 ) & 0xFF;
 
@@ -190,8 +188,7 @@ SF_INLINE sf_int16 sf_extractFloat32Exp( sf_float32 a )
 | Returns the sign bit of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_extractFloat32Sign( sf_float32 a )
-{
+static inline sf_flag sf_extractFloat32Sign(sf_float32 a) {
 
     return (sf_flag) (a>>31);
 
@@ -204,9 +201,9 @@ SF_INLINE sf_flag sf_extractFloat32Sign( sf_float32 a )
 | `zSigPtr', respectively.
 *----------------------------------------------------------------------------*/
 
-static void
- sf_normalizeFloat32Subnormal(
-    sf_bits32 aSig, sf_int16 * restrict zExpPtr, sf_bits32 * restrict zSigPtr )
+static inline void sf_normalizeFloat32Subnormal(sf_bits32 aSig,
+                                                sf_int16 * const restrict zExpPtr,
+                                                sf_bits32 * const restrict zSigPtr)
 {
     sf_int8 shiftCount;
 
@@ -227,8 +224,7 @@ static void
 | significand.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_float32 sf_packFloat32( sf_flag zSign, sf_int16 zExp, sf_bits32 zSig )
-{
+static inline sf_float32 sf_packFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig) {
 
     return ( ( (sf_bits32) zSign )<<31 ) + ( ( (sf_bits32) zExp )<<23 ) + zSig;
 
@@ -256,9 +252,7 @@ SF_INLINE sf_float32 sf_packFloat32( sf_flag zSign, sf_int16 zExp, sf_bits32 zSi
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static sf_float32 sf_roundAndPackFloat32(
-    sf_flag zSign, sf_int16 zExp, sf_bits32 zSig )
-{
+static inline sf_float32 sf_roundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig) {
     sf_int8 roundingMode;
     sf_flag roundNearestEven;
     sf_int8 roundIncrement, roundBits;
@@ -318,9 +312,7 @@ static sf_float32 sf_roundAndPackFloat32(
 | floating-point exponent.
 *----------------------------------------------------------------------------*/
 
-static sf_float32
- sf_normalizeRoundAndPackFloat32( sf_flag zSign, sf_int16 zExp, sf_bits32 zSig )
-{
+static inline sf_float32 sf_normalizeRoundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig) {
     sf_int8 shiftCount;
 
     shiftCount = (sf_int8) (sf_countLeadingZeros32( zSig ) - 1);
@@ -332,8 +324,7 @@ static sf_float32
 | Returns the fraction bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_bits64 sf_extractFloat64Frac( sf_float64 a )
-{
+static inline sf_bits64 sf_extractFloat64Frac(sf_float64 a) {
 
     return a & SF_LIT64( 0x000FFFFFFFFFFFFF );
 
@@ -343,8 +334,7 @@ SF_INLINE sf_bits64 sf_extractFloat64Frac( sf_float64 a )
 | Returns the exponent bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_int16 sf_extractFloat64Exp( sf_float64 a )
-{
+static inline sf_int16 sf_extractFloat64Exp(sf_float64 a) {
 
     return ( a>>52 ) & 0x7FF;
 
@@ -354,8 +344,7 @@ SF_INLINE sf_int16 sf_extractFloat64Exp( sf_float64 a )
 | Returns the sign bit of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_flag sf_extractFloat64Sign( sf_float64 a )
-{
+static inline sf_flag sf_extractFloat64Sign(sf_float64 a) {
 
     return (sf_flag) (a>>63);
 
@@ -368,9 +357,9 @@ SF_INLINE sf_flag sf_extractFloat64Sign( sf_float64 a )
 | `zSigPtr', respectively.
 *----------------------------------------------------------------------------*/
 
-static void
- sf_normalizeFloat64Subnormal(
-    sf_bits64 aSig, sf_int16 * restrict zExpPtr, sf_bits64 * restrict zSigPtr )
+static inline void sf_normalizeFloat64Subnormal(sf_bits64 aSig,
+                                                sf_int16 * const restrict zExpPtr,
+                                                sf_bits64 * const restrict zSigPtr)
 {
     sf_int8 shiftCount;
 
@@ -391,8 +380,7 @@ static void
 | significand.
 *----------------------------------------------------------------------------*/
 
-SF_INLINE sf_float64 sf_packFloat64( sf_flag zSign, sf_int16 zExp, sf_bits64 zSig )
-{
+static inline sf_float64 sf_packFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig) {
 
     return ( ( (sf_bits64) zSign )<<63 ) + ( ( (sf_bits64) zExp )<<52 ) + zSig;
 
@@ -420,9 +408,7 @@ SF_INLINE sf_float64 sf_packFloat64( sf_flag zSign, sf_int16 zExp, sf_bits64 zSi
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static sf_float64 sf_roundAndPackFloat64(
-    sf_flag zSign, sf_int16 zExp, sf_bits64 zSig )
-{
+static inline sf_float64 sf_roundAndPackFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig) {
     sf_int8 roundingMode;
     sf_flag roundNearestEven;
     sf_int16 roundIncrement, roundBits;
@@ -482,8 +468,9 @@ static sf_float64 sf_roundAndPackFloat64(
 | floating-point exponent.
 *----------------------------------------------------------------------------*/
 
-static sf_float64
- sf_normalizeRoundAndPackFloat64( sf_flag zSign, sf_int16 zExp, sf_bits64 zSig )
+static inline sf_float64 sf_normalizeRoundAndPackFloat64(sf_flag zSign,
+                                                         sf_int16 zExp,
+                                                         sf_bits64 zSig)
 {
     sf_int8 shiftCount;
 
@@ -1304,7 +1291,7 @@ sf_flag sf_float32_eq( sf_float32 a, sf_float32 b )
     if (    ( ( sf_extractFloat32Exp( a ) == 0xFF ) && sf_extractFloat32Frac( a ) )
          || ( ( sf_extractFloat32Exp( b ) == 0xFF ) && sf_extractFloat32Frac( b ) )
        ) {
-        if ( sf_float32_is_signaling_nan( a ) || sf_float32_is_signaling_nan( b ) ) {
+        if ( sf_float32_is_signaling_nan_( a ) || sf_float32_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
@@ -1394,7 +1381,7 @@ sf_flag sf_float32_le_quiet( sf_float32 a, sf_float32 b )
     if (    ( ( sf_extractFloat32Exp( a ) == 0xFF ) && sf_extractFloat32Frac( a ) )
          || ( ( sf_extractFloat32Exp( b ) == 0xFF ) && sf_extractFloat32Frac( b ) )
        ) {
-        if ( sf_float32_is_signaling_nan( a ) || sf_float32_is_signaling_nan( b ) ) {
+        if ( sf_float32_is_signaling_nan_( a ) || sf_float32_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
@@ -1420,7 +1407,7 @@ sf_flag sf_float32_lt_quiet( sf_float32 a, sf_float32 b )
     if (    ( ( sf_extractFloat32Exp( a ) == 0xFF ) && sf_extractFloat32Frac( a ) )
          || ( ( sf_extractFloat32Exp( b ) == 0xFF ) && sf_extractFloat32Frac( b ) )
        ) {
-        if ( sf_float32_is_signaling_nan( a ) || sf_float32_is_signaling_nan( b ) ) {
+        if ( sf_float32_is_signaling_nan_( a ) || sf_float32_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
@@ -2156,7 +2143,7 @@ sf_flag sf_float64_eq( sf_float64 a, sf_float64 b )
     if (    ( ( sf_extractFloat64Exp( a ) == 0x7FF ) && sf_extractFloat64Frac( a ) )
          || ( ( sf_extractFloat64Exp( b ) == 0x7FF ) && sf_extractFloat64Frac( b ) )
        ) {
-        if ( sf_float64_is_signaling_nan( a ) || sf_float64_is_signaling_nan( b ) ) {
+        if ( sf_float64_is_signaling_nan_( a ) || sf_float64_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
@@ -2246,7 +2233,7 @@ sf_flag sf_float64_le_quiet( sf_float64 a, sf_float64 b )
     if (    ( ( sf_extractFloat64Exp( a ) == 0x7FF ) && sf_extractFloat64Frac( a ) )
          || ( ( sf_extractFloat64Exp( b ) == 0x7FF ) && sf_extractFloat64Frac( b ) )
        ) {
-        if ( sf_float64_is_signaling_nan( a ) || sf_float64_is_signaling_nan( b ) ) {
+        if ( sf_float64_is_signaling_nan_( a ) || sf_float64_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
@@ -2272,7 +2259,7 @@ sf_flag sf_float64_lt_quiet( sf_float64 a, sf_float64 b )
     if (    ( ( sf_extractFloat64Exp( a ) == 0x7FF ) && sf_extractFloat64Frac( a ) )
          || ( ( sf_extractFloat64Exp( b ) == 0x7FF ) && sf_extractFloat64Frac( b ) )
        ) {
-        if ( sf_float64_is_signaling_nan( a ) || sf_float64_is_signaling_nan( b ) ) {
+        if ( sf_float64_is_signaling_nan_( a ) || sf_float64_is_signaling_nan_( b ) ) {
             sf_float_raise( sf_float_flag_invalid );
         }
         return 0;
