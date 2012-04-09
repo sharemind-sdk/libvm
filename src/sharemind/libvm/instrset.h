@@ -15,7 +15,7 @@
 #endif
 
 
-#include <sharemind/instrset.h>
+#include <sharemind/simpleset.h>
 #include <stdlib.h>
 
 
@@ -24,8 +24,8 @@ extern "C" {
 #endif
 
 
-SHAREMIND_INSTRSET_DECLARE(SharemindInstrSet,static inline)
-SHAREMIND_INSTRSET_DEFINE(SharemindInstrSet,malloc,free,static inline)
+SHAREMIND_SIMPLESET_DECLARE(SharemindInstrSet,uintptr_t,static inline)
+SHAREMIND_SIMPLESET_DEFINE(SharemindInstrSet,uintptr_t,malloc,free,static inline)
 
 
 #ifdef __cplusplus
