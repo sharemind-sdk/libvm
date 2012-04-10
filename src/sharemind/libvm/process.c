@@ -219,12 +219,14 @@ void SharemindProcess_free(SharemindProcess * p) {
 }
 
 size_t SharemindProcess_get_pdpi_count(const SharemindProcess * process) {
+    assert(process);
     return process->pdpiCache.size;
 }
 
 SharemindPdpi * SharemindProcess_get_pdpi(const SharemindProcess * process,
                                           size_t pdpiIndex)
 {
+    assert(process);
     const SharemindPdpiCache * const cache = &process->pdpiCache;
     if (pdpiIndex < cache->size)
         return cache->data[pdpiIndex].pdpi;
@@ -232,11 +234,13 @@ SharemindPdpi * SharemindProcess_get_pdpi(const SharemindProcess * process,
     return NULL;
 }
 
-bool SharemindProcess_set_pdpi_facility(SharemindProcess * process,
-                                        const char * name,
-                                        void * facility,
-                                        void * context)
+bool SharemindProcess_set_pdpi_facility(SharemindProcess * const process,
+                                        const char * const name,
+                                        void * const facility,
+                                        void * const context)
 {
+    assert(process);
+    assert(name);
     const SharemindPdpiCache * const cache = &process->pdpiCache;
     for (size_t i = 0u; i < cache->size; i++)
         if (!SharemindPdpi_set_facility(cache->data[i].pdpi, name, facility, context))
@@ -246,6 +250,7 @@ bool SharemindProcess_set_pdpi_facility(SharemindProcess * process,
 }
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
+    assert(p);
     const SharemindPdpiCache * const cache = &p->pdpiCache;
     size_t i;
     for (i = 0u; i < cache->size; i++) {
@@ -259,6 +264,7 @@ static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
 }
 
 static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
+    assert(p);
     const SharemindPdpiCache * const cache = &p->pdpiCache;
     size_t i = cache->size;
     while (i)
@@ -266,6 +272,7 @@ static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
 }
 
 static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProcess * p) {
+    assert(p);
 
 #define INIT_STATIC_MEMSLOT(index,pSection) \
     if (1) { \
@@ -302,21 +309,25 @@ SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
     return e;
 }
 
-int64_t SharemindProcess_get_return_value(SharemindProcess *p) {
+int64_t SharemindProcess_get_return_value(SharemindProcess * p) {
+    assert(p);
     return p->returnValue.int64[0];
 }
 
-SharemindVmProcessException SharemindProcess_get_exception(SharemindProcess *p) {
+SharemindVmProcessException SharemindProcess_get_exception(SharemindProcess * p) {
+    assert(p);
     assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
     assert(SharemindVmProcessException_toString((SharemindVmProcessException) p->exceptionValue) != 0);
     return (SharemindVmProcessException) p->exceptionValue;
 }
 
-size_t SharemindProcess_get_current_code_section(SharemindProcess *p) {
+size_t SharemindProcess_get_current_code_section(SharemindProcess * p) {
+    assert(p);
     return p->currentCodeSectionIndex;
 }
 
-uintptr_t SharemindProcess_get_current_ip(SharemindProcess *p) {
+uintptr_t SharemindProcess_get_current_ip(SharemindProcess * p) {
+    assert(p);
     return p->currentIp;
 }
 
