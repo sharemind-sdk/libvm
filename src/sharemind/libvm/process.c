@@ -148,7 +148,8 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->syscallContext.freePrivate = &sharemind_private_free;
     p->syscallContext.reservePrivate = &sharemind_private_reserve;
     p->syscallContext.releasePrivate = &sharemind_private_release;
-    p->syscallContext.internal = p;
+    p->syscallContext.vm_internal = p;
+    p->syscallContext.process_internal = NULL;
 
     SharemindMemoryInfo_init(&p->memPublicHeap);
     SharemindMemoryInfo_init(&p->memPrivate);
@@ -247,6 +248,13 @@ bool SharemindProcess_set_pdpi_facility(SharemindProcess * const process,
             return false;
 
     return true;
+}
+
+void SharemindProcess_set_process_internal(SharemindProcess * const process,
+                                           void * const value)
+{
+    assert(process);
+    process->syscallContext.process_internal = value;
 }
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
@@ -452,12 +460,12 @@ static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
                                        uint64_t nBytes)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
     if (unlikely(nBytes > UINT64_MAX))
         return 0u;
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     return SharemindProcess_public_alloc(p, nBytes, NULL);
@@ -467,9 +475,9 @@ static int sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
                                  uint64_t ptr)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     return SharemindProcess_public_free(p, ptr) == SHAREMIND_VM_PROCESS_OK;
@@ -479,9 +487,9 @@ static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
                                         uint64_t ptr)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
-    const SharemindProcess * const p = (SharemindProcess *) c->internal;
+    const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     const SharemindMemorySlot * slot = SharemindMemoryMap_get_const(&p->memoryMap, ptr);
@@ -495,9 +503,9 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
                                        uint64_t ptr)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
-    const SharemindProcess * const p = (SharemindProcess *) c->internal;
+    const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     const SharemindMemorySlot * slot = SharemindMemoryMap_get_const(&p->memoryMap, ptr);
@@ -511,12 +519,12 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
                                       size_t nBytes)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
     if (unlikely(nBytes == 0))
         return NULL;
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     /* Check memory limits: */
@@ -562,12 +570,12 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
                                   void * ptr)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
     if (unlikely(!ptr))
         return false;
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     /* Check if pointer is in private memory map: */
@@ -600,12 +608,12 @@ static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
                                      size_t nBytes)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
     if (unlikely(nBytes == 0u))
         return true;
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     /* Check memory limits: */
@@ -634,9 +642,9 @@ static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
                                      size_t nBytes)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     /* Check for underflow: */
@@ -654,12 +662,12 @@ const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
         uint64_t pd_index)
 {
     assert(c);
-    assert(c->internal);
+    assert(c->vm_internal);
 
     if (pd_index > SIZE_MAX)
         return NULL;
 
-    SharemindProcess * const p = (SharemindProcess *) c->internal;
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
     const SharemindPdpiCacheItem * const pdpiCacheItem = SharemindPdpiCache_get_const_pointer(&p->pdpiCache, pd_index);

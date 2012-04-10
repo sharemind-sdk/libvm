@@ -210,6 +210,11 @@ bool SharemindProcess_set_pdpi_facility(SharemindProcess * process,
                                         void * context) __attribute__ ((nonnull(1,2)));
 
 /**
+ * \brief Sets the process_internal field for all SharemindSyscallContext structs.
+ */
+void SharemindProcess_set_process_internal(SharemindProcess * process, void * value) __attribute__ ((nonnull(1)));
+
+/**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SHAREMIND_PREPARED
  * \param process The process to run.
