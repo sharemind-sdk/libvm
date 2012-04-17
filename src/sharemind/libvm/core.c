@@ -490,7 +490,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_RETURN(r) \
     if (1) { \
         if (unlikely(p->nextFrame)) { \
-            SharemindStackFrame_destroy(SharemindFrameStack_top(&p->frames)); \
+            SharemindStackFrame_destroy(p->nextFrame); \
             SharemindFrameStack_pop(&p->frames); \
             p->nextFrame = NULL; \
         } \
