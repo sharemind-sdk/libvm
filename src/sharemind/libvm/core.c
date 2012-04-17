@@ -498,6 +498,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
             if (p->thisFrame->returnValueAddr) \
                 *p->thisFrame->returnValueAddr = (r); \
             ip = p->thisFrame->returnAddr; \
+            SharemindStackFrame_destroy(p->thisFrame); \
             p->thisFrame = p->thisFrame->prev; \
             SharemindFrameStack_pop(&p->frames); \
             SHAREMIND_CALL_RETURN_DISPATCH(ip); \
