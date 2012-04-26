@@ -176,6 +176,12 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
 #define SHAREMIND_MI_TMUL_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) * (s2))
 #define SHAREMIND_MI_TDIV_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) / (s2))
 #define SHAREMIND_MI_TMOD_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) % (s2))
+#define SHAREMIND_MI_TEQ_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) == (s2))
+#define SHAREMIND_MI_TNE_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) != (s2))
+#define SHAREMIND_MI_TLT_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) < (s2))
+#define SHAREMIND_MI_TLE_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) <= (s2))
+#define SHAREMIND_MI_TGT_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) > (s2))
+#define SHAREMIND_MI_TGE_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) >= (s2))
 #else /* #ifndef SHAREMIND_SOFT_FLOAT */
 #define SHAREMIND_RESTORE_FPE_ENV
 #define SHAREMIND_SF_ENCLOSE(op) \
@@ -218,6 +224,12 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
 #define SHAREMIND_MI_TMUL_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_mul((s1), (s2)))
 #define SHAREMIND_MI_TDIV_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_div((s1), (s2)))
 #define SHAREMIND_MI_TMOD_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_mod((s1), (s2)))
+#define SHAREMIND_MI_TEQ_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_eq((s1), (s2)))
+#define SHAREMIND_MI_TNE_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = !sf_float32_eq((s1), (s2)))
+#define SHAREMIND_MI_TLT_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_lt((s1), (s2)))
+#define SHAREMIND_MI_TLE_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_le((s1), (s2)))
+#define SHAREMIND_MI_TGT_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_lt((s2), (s1)))
+#define SHAREMIND_MI_TGE_FLOAT32(d,s1,s2) SHAREMIND_SF_ENCLOSE((d) = sf_float32_le((s2), (s1)))
 #endif /* #ifndef SHAREMIND_SOFT_FLOAT */
 
 #ifndef SHAREMIND_FAST_BUILD
