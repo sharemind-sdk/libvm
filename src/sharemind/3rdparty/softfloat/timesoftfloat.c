@@ -34,6 +34,11 @@ these four paragraphs for those parts of this code that are retained.
 #include "softfloat.h"
 
 enum {
+    FALSE = 0,
+    TRUE  = 1
+};
+
+enum {
     minIterations = 1000
 };
 
