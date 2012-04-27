@@ -252,7 +252,7 @@ static inline sf_float32 sf_packFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static inline sf_float32 sf_roundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig) {
+sf_float32 sf_roundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig) {
     sf_int8 roundingMode;
     sf_flag roundNearestEven;
     sf_int8 roundIncrement, roundBits;
@@ -408,7 +408,7 @@ static inline sf_float64 sf_packFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static inline sf_float64 sf_roundAndPackFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig) {
+sf_float64 sf_roundAndPackFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig) {
     sf_int8 roundingMode;
     sf_flag roundNearestEven;
     sf_int16 roundIncrement, roundBits;
