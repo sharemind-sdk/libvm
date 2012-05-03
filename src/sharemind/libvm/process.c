@@ -590,7 +590,10 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
     free(ptr);
 
     /* Remove pointer from valid list: */
-    int r = SharemindPrivateMemoryMap_remove(&p->privateMemoryMap, ptr);
+    #ifndef NDEBUG
+    int r =
+    #endif
+        SharemindPrivateMemoryMap_remove(&p->privateMemoryMap, ptr);
     assert(r);
 
     /* Update memory statistics: */
