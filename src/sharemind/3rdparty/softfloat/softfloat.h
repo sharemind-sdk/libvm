@@ -166,12 +166,6 @@ sf_flag sf_float64_eq_signaling( sf_float64, sf_float64 );
 sf_flag sf_float64_le_quiet( sf_float64, sf_float64 );
 sf_flag sf_float64_lt_quiet( sf_float64, sf_float64 );
 sf_flag sf_float64_is_signaling_nan( sf_float64 );
-
-/*----------------------------------------------------------------------------
-| Some internal functions exported for use in Sharemind
-*----------------------------------------------------------------------------*/
-sf_float32 sf_roundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig);
-sf_float64 sf_roundAndPackFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig);
     
 #pragma GCC visibility pop
 
