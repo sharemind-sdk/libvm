@@ -102,6 +102,19 @@ FLAGS_MAGIC("Wlogical-op")
 
 ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
 
+################################################################################
+# libsoftfloat
+################################################################################
+
+ADD_LIBRARY("libsoftfloat" STATIC "3rdparty/softfloat/softfloat.c")
+SET_SOURCE_FILES_PROPERTIES("3rdparty/softfloat/softfloat.c" PROPERTIES
+                            COMPILE_FLAGS "-fPIC")
+SET_TARGET_PROPERTIES("libsoftfloat" PROPERTIES
+                      OUTPUT_NAME "sharemind_softfloat"
+                      LIBRARY_OUTPUT_DIRECTORY "${SHAREMIND_LIB_DIR}"
+                      VERSION "0.1.0.0"
+                      SOVERSION "0.1"
+                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
 
 ################################################################################
 # libvm
@@ -117,7 +130,6 @@ SET(LIBVM_SOURCES
     "libvm/program.c"
     "libvm/vm.c")
 #IF(VM_SOFT_FLOAT)
-  SET(LIBVM_SOURCES ${LIBVM_SOURCES} "3rdparty/softfloat/softfloat.c")
   SET(LIBVM_DEFINES "${LIBVM_DEFINES};SHAREMIND_SOFT_FLOAT")
 #ENDIF(VM_SOFT_FLOAT)
 ADD_LIBRARY("libvm" SHARED ${LIBVM_SOURCES})
@@ -129,7 +141,7 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${LIBVM_DEFINES}")
-TARGET_LINK_LIBRARIES("libvm" "libexecutable" "libmodapi" "libvmi" "m")
+TARGET_LINK_LIBRARIES("libvm" "libexecutable" "libmodapi" "libsoftfloat" "libvmi" "m")
 
 
 INSTALL(FILES "libvm/libvm.h"
