@@ -116,6 +116,14 @@ sf_int64 sf_float32_to_int64( sf_float32 );
 sf_int64 sf_float32_to_int64_round_to_zero( sf_float32 );
 sf_float64 sf_float32_to_float64( sf_float32 );
 
+
+/*----------------------------------------------------------------------------
+| Software IEC/IEEE packing routines.
+*----------------------------------------------------------------------------*/
+sf_float32 sf_roundAndPackFloat32(sf_flag zSign, sf_int16 zExp, sf_bits32 zSig);
+sf_float64 sf_roundAndPackFloat64(sf_flag zSign, sf_int16 zExp, sf_bits64 zSig);
+
+
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision operations.
 *----------------------------------------------------------------------------*/
