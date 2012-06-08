@@ -171,7 +171,8 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void
         pos = ((const char *) pos) + extraPadding[sh->length % 8]; \
     } break;
 
-            switch (type) {
+            SHAREMIND_STATIC_ASSERT(sizeof(type) <= sizeof(int));
+            switch ((int) type) {
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
                     SharemindVmError r = SharemindProgram_addCodeSection(p, (const SharemindCodeBlock *) pos, sh->length);

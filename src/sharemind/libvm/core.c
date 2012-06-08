@@ -755,7 +755,8 @@ SharemindVmError sharemind_vm_run(
 
         #include <sharemind/m4/dispatches.h>
 #else
-        switch (SHAREMIND_DISPATCH(ip)) {
+        SHAREMIND_STATIC_ASSERT(sizeof(HaltCode) <= sizeof(int));
+        switch ((int) SHAREMIND_DISPATCH(ip)) {
             case HC_EOF:
                 goto eof;
             case HC_EXCEPT:
