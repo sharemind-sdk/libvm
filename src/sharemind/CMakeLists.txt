@@ -47,6 +47,13 @@ IF(NOT EXISTS "${SHAREMIND_EXT_LIBMODAPI_DIR}/src/sharemind/CMakeLists.txt")
     MESSAGE(FATAL "SHAREMIND_EXT_LIBMODAPI_DIR is invalid!")
 ENDIF()
 
+IF(NOT SHAREMIND_EXT_LIBSOFTFLOAT_DIR)
+    SET(SHAREMIND_EXT_LIBSOFTFLOAT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../ext/libsoftfloat")
+ENDIF(NOT SHAREMIND_EXT_LIBSOFTFLOAT_DIR)
+IF(NOT EXISTS "${SHAREMIND_EXT_LIBSOFTFLOAT_DIR}/src/sharemind/CMakeLists.txt")
+    MESSAGE(FATAL "SHAREMIND_EXT_LIBSOFTFLOAT_DIR is invalid!")
+ENDIF()
+
 IF(NOT SHAREMIND_EXT_LIBVMI_DIR)
     SET(SHAREMIND_EXT_LIBVMI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../ext/libvmi")
 ENDIF(NOT SHAREMIND_EXT_LIBVMI_DIR)
@@ -79,6 +86,9 @@ ENDIF(NOT SHAREMIND_LIBEXECUTABLE_SOURCE_DIR)
 IF(NOT SHAREMIND_LIBMODAPI_SOURCE_DIR)
     ADD_SUBDIRECTORY("${SHAREMIND_EXT_LIBMODAPI_DIR}/src/sharemind" "${SHAREMIND_EXT_DIR}/libmodapi")
 ENDIF(NOT SHAREMIND_LIBMODAPI_SOURCE_DIR)
+IF(NOT SHAREMIND_LIBSOFTFLOAT_SOURCE_DIR)
+    ADD_SUBDIRECTORY("${SHAREMIND_EXT_LIBSOFTFLOAT_DIR}/src/sharemind" "${SHAREMIND_EXT_DIR}/3rdparty/libsoftfloat")
+ENDIF(NOT SHAREMIND_LIBSOFTFLOAT_SOURCE_DIR)
 IF(NOT SHAREMIND_LIBVMI_SOURCE_DIR)
     ADD_SUBDIRECTORY("${SHAREMIND_EXT_LIBVMI_DIR}/src/sharemind" "${SHAREMIND_EXT_DIR}/libvmi")
 ENDIF(NOT SHAREMIND_LIBVMI_SOURCE_DIR)
@@ -101,20 +111,6 @@ FLAGS_MAGIC("Wlogical-op")
 
 
 ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
-
-################################################################################
-# libsoftfloat
-################################################################################
-
-ADD_LIBRARY("libsoftfloat" STATIC "3rdparty/softfloat/softfloat.c")
-SET_SOURCE_FILES_PROPERTIES("3rdparty/softfloat/softfloat.c" PROPERTIES
-                            COMPILE_FLAGS "-fPIC")
-SET_TARGET_PROPERTIES("libsoftfloat" PROPERTIES
-                      OUTPUT_NAME "sharemind_softfloat"
-                      LIBRARY_OUTPUT_DIRECTORY "${SHAREMIND_LIB_DIR}"
-                      VERSION "0.1.0.0"
-                      SOVERSION "0.1"
-                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans")
 
 ################################################################################
 # libvm
