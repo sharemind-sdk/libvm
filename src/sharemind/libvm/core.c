@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #ifdef SHAREMIND_SOFT_FLOAT
-#include <sharemind/3rdparty/softfloat/softfloat.h>
+#include <sharemind/3rdparty/libsoftfloat/softfloat.h>
 #endif
 typedef sf_float32 SharemindFloat32;
 #ifdef SHAREMIND_DEBUG
