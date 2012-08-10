@@ -14,7 +14,9 @@
 #error including an internal header!
 #endif
 
-
+#ifdef SHAREMIND_SOFT_FLOAT
+#include <sharemind/3rdparty/libsoftfloat/softfloat.h>
+#endif
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "libvm.h"
@@ -51,6 +53,10 @@ struct SharemindProcess_ {
 
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;
+
+#ifdef SHAREMIND_SOFT_FLOAT
+    sf_fpu_state fpuState;
+#endif
 
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;

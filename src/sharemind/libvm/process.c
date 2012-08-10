@@ -128,6 +128,8 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->currentCodeSectionIndex = program->activeLinkingUnit;
     p->currentIp = 0u;
 
+    p->fpuState = sf_fpu_state_default;
+
     /* Initialize section pointers: */
 
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 0u));
