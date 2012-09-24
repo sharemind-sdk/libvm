@@ -70,6 +70,10 @@ struct SharemindProcess_ {
     SharemindMemoryInfo memReserved;
     SharemindMemoryInfo memTotal;
 
+#ifdef __MACH__
+    clock_serv_t macClock;
+#endif
+
 };
 
 uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot);

@@ -47,6 +47,8 @@ typedef struct SharemindProcessProfiler_ {
 
 #if defined(CLOCK_MONOTONIC_RAW)
 #define LIBVM_TIME_INSTRUCTION_GETTIME(t) do { clock_gettime(CLOCK_MONOTONIC_RAW, &(t)); } while(0)
+#elif __MACH__ // OS X does not have clock_gettime, use clock_get_time
+#define LIBVM_TIME_INSTRUCTION_GETTIME(c) do { clock_get_time(p->macClock, &(c)); } while (0)
 #else
 #define LIBVM_TIME_INSTRUCTION_GETTIME(t) do { clock_gettime(CLOCK_MONOTONIC, &(t)); } while(0)
 #endif

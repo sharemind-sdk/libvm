@@ -17,13 +17,18 @@
 #include <sharemind/static_assert.h>
 #include <time.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#define SHAREMIND_LIBVM_TIME_TYPE struct mach_timespec_t
+#else
 #define SHAREMIND_LIBVM_TIME_TYPE struct timespec
+#endif
+
 
 typedef struct SharemindInstrProfile_ {
     uint64_t calls;

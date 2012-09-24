@@ -241,6 +241,10 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;
 
+    #ifdef __MACH__
+    host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &p->macClock);
+    #endif
+
     return p;
 
 SharemindProcess_new_fail_pdpiCache:
@@ -272,6 +276,10 @@ SharemindProcess_new_fail_0:
 
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
     assert(p);
+
+    #ifdef __MACH__
+    mach_port_deallocate(mach_task_self(), p->macClock);
+    #endif
 
     if (p->profiler)
         SharemindProcessProfiler_free(p->profiler);
