@@ -270,7 +270,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_TRAP SHAREMIND_DO_TRAP
 
 #ifndef SHAREMIND_FAST_BUILD
-#define SHAREMIND_DISPATCH(ip) goto *((ip)->p[0])
+#define SHAREMIND_DISPATCH(ip) do { SHAREMIND_VM_TIMING goto *((ip)->p[0]); } while(0)
 #define SHAREMIND_MI_DISPATCH(ip) if (1) { SHAREMIND_DISPATCH(ip); } else (void) 0
 #else
 #define SHAREMIND_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCRefStack) \
@@ -282,7 +282,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
                            const SharemindReferenceVector *, \
                            const SharemindCReferenceVector *))((ip)->p[0])))(p,codeStart,ip,globalStack,_thisStack,_thisRefStack,_thisCRefStack))
 #define SHAREMIND_DISPATCH(ip) SHAREMIND_DISPATCH_OTHERFRAME(ip,thisStack,thisRefStack,thisCRefStack)
-#define SHAREMIND_MI_DISPATCH(newIp) if (1) { (void) (newIp); return SHAREMIND_DISPATCH(ip); } else (void) 0
+#define SHAREMIND_MI_DISPATCH(newIp) if (1) { (void) (newIp); SHAREMIND_VM_TIMING return SHAREMIND_DISPATCH(ip); } else (void) 0
 #endif
 
 #define SHAREMIND_MI_JUMP_REL(n) \
@@ -291,7 +291,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     } else (void) 0
 
 #define SHAREMIND_MI_IS_INSTR(i) \
-    SharemindInstrSet_contains(&p->program->codeSections.data[p->currentCodeSectionIndex].instrset,(i))
+    (SharemindInstrMap_get(&p->program->codeSections.data[p->currentCodeSectionIndex].instrmap,((size_t) (i))) != NULL)
 
 #define SHAREMIND_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
@@ -304,7 +304,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
                                SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } \
         const SharemindCodeBlock * tip = ip + (reladdr); \
-        SHAREMIND_MI_TRY_EXCEPT(SHAREMIND_MI_IS_INSTR((uintptr_t) (tip - codeStart)), SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
+        SHAREMIND_MI_TRY_EXCEPT(SHAREMIND_MI_IS_INSTR(tip - codeStart), SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         SHAREMIND_MI_DISPATCH(ip = tip); \
     } else (void) 0
 
@@ -419,7 +419,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SHAREMIND_DISPATCH((ip)); \
     } else (void) 0
 #else
-#define SHAREMIND_CALL_RETURN_DISPATCH(ip) return SHAREMIND_DISPATCH_OTHERFRAME((ip), &p->thisFrame->stack, &p->thisFrame->refstack, &p->thisFrame->crefstack)
+#define SHAREMIND_CALL_RETURN_DISPATCH(ip) do { SHAREMIND_VM_TIMING return SHAREMIND_DISPATCH_OTHERFRAME((ip), &p->thisFrame->stack, &p->thisFrame->refstack, &p->thisFrame->crefstack); } while(0)
 #endif
 
 #define SHAREMIND_MI_CALL(a,r,nargs) \
@@ -429,7 +429,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
         p->thisFrame = p->nextFrame; \
         p->nextFrame = NULL; \
-        ip = codeStart + (a); \
+        ip = codeStart + ((size_t) (a)); \
         SHAREMIND_CALL_RETURN_DISPATCH(ip); \
     } else (void) 0
 
@@ -677,7 +677,7 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-SharemindVmError sharemind_vm_run(
+SharemindVmError SHAREMIND_VM_RUN_PROCESS_NAME(
         SharemindProcess * const p,
         const SharemindInnerCommand sharemind_vm_run_command,
         void * const sharemind_vm_run_data)
@@ -761,12 +761,16 @@ SharemindVmError sharemind_vm_run(
         _SharemindProcess_setupSignalHandlers(p);
 #endif /* #ifndef SHAREMIND_SOFT_FLOAT */
 
+        SHAREMIND_VM_TIMING_START
+
 #ifndef SHAREMIND_FAST_BUILD
         SHAREMIND_MI_DISPATCH(ip);
 
         #include <sharemind/m4/dispatches.h>
 #else
+        SHAREMIND_VM_TIMING
         HaltCode haltCode = SHAREMIND_DISPATCH(ip);
+        SHAREMIND_VM_TIMING_STOP
         SHAREMIND_STATIC_ASSERT(sizeof(haltCode) <= sizeof(int));
         switch ((int) haltCode) {
             case HC_EOF:
@@ -786,6 +790,9 @@ SharemindVmError sharemind_vm_run(
             p->exceptionValue = SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS;
 
         except:
+#ifndef SHAREMIND_FAST_BUILD
+            SHAREMIND_VM_TIMING_STOP
+#endif
             assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString((SharemindVmProcessException) p->exceptionValue) != 0);
@@ -803,6 +810,9 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
+#ifndef SHAREMIND_FAST_BUILD
+            SHAREMIND_VM_TIMING_STOP
+#endif
 #ifndef SHAREMIND_SOFT_FLOAT
             _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
@@ -816,6 +826,9 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_OK;
 
         trap:
+#ifndef SHAREMIND_FAST_BUILD
+            SHAREMIND_VM_TIMING_STOP
+#endif
 #ifndef SHAREMIND_SOFT_FLOAT
             _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */

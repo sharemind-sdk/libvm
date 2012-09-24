@@ -37,7 +37,8 @@ IF(NOT SHAREMIND_RELEASE_BUILD)
   SET(SHAREMIND_LIBVM_DEFINES "${SHAREMIND_LIBVM_DEFINES};SHAREMIND_FAST_BUILD")
 ENDIF(NOT SHAREMIND_RELEASE_BUILD)
 SET(SHAREMIND_LIBVM_SOURCES
-    "libvm/core.c"
+    "libvm/core_run.c"
+    "libvm/core_profile.c"
     "libvm/process.c"
     "libvm/program.c"
     "libvm/vm.c")

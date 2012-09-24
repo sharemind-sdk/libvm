@@ -18,7 +18,7 @@
 #include <sharemind/codeblock.h>
 #include <stddef.h>
 #include <string.h>
-#include "instrset.h"
+#include "instrmap.h"
 
 
 #ifdef __cplusplus
@@ -29,7 +29,8 @@ extern "C" {
 typedef struct {
     SharemindCodeBlock * data;
     size_t size;
-    SharemindInstrSet instrset;
+    SharemindInstrMap instrmap;
+    SharemindInstrMapP blockmap;
 } SharemindCodeSection;
 
 
@@ -60,7 +61,8 @@ static inline int SharemindCodeSection_init(SharemindCodeSection * s,
     s->size = codeSize;
     memcpy(s->data, code, memSize);
 
-    SharemindInstrSet_init(&s->instrset);
+    SharemindInstrMap_init(&s->instrmap);
+    SharemindInstrMapP_init(&s->blockmap);
 
     return 1;
 }
@@ -70,7 +72,8 @@ static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s) 
 static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s) {
     assert(s);
     free(s->data);
-    SharemindInstrSet_destroy(&s->instrset);
+    SharemindInstrMapP_destroy(&s->blockmap);
+    SharemindInstrMap_destroy(&s->instrmap);
 }
 
 

@@ -12,6 +12,7 @@
 #include "process.h"
 
 #include <limits.h>
+#include <stdio.h>
 #include <string.h>
 #include "core.h"
 #include "rwdataspecials.h"
@@ -49,6 +50,75 @@ static const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
         uint64_t pd_index) __attribute__ ((nonnull(1)));
 
 
+
+/*******************************************************************************
+ *  SharemindInstrTimings:
+********************************************************************************/
+
+static SharemindProcessProfiler * SharemindProcessProfiler_new(const SharemindProgram * prog) {
+    typedef SharemindCodeSectionProfile CSP;
+    typedef SharemindInstrProfile SIP;
+
+    SharemindProcessProfiler * prof = (SharemindProcessProfiler *) malloc(sizeof(SharemindProcessProfiler));
+    if (!prof)
+        return NULL;
+
+    const size_t numCodeSections = prog->codeSections.size;
+    assert(numCodeSections > 0u);
+    if ((SIZE_MAX / sizeof(CSP)) < numCodeSections)
+        goto error_1;
+
+    prof->profile.codeSectionProfiles = (CSP *) malloc(sizeof(CSP) * numCodeSections);
+    if (!prof->profile.codeSectionProfiles)
+        goto error_1;
+
+    prof->profile.numCodeSections = numCodeSections;
+
+    {
+        SharemindCodeSectionProfile * csp = &prof->profile.codeSectionProfiles[0u];
+        prof->currentCodeSectionProfile = csp;
+
+        const SharemindCodeSection * cs = &prog->codeSections.data[0u];
+        for (size_t i = 0u; i < numCodeSections; i++, csp++, cs++) {
+            csp->numInstructions = cs->size;
+            if ((SIZE_MAX / sizeof(SIP)) < csp->numInstructions
+                || !(csp->instrProfiles = (SIP *) malloc(sizeof(SIP) * csp->numInstructions)))
+            {
+                while (--i)
+                    free((--csp)->instrProfiles);
+                goto error_2;
+            }
+            SIP * ip = csp->instrProfiles;
+            for (size_t j = 0u; j < csp->numInstructions; j++, ip++) {
+                ip->calls = 0u;
+                LIBVM_TIME_TYPE_INIT_PERIOD(ip->timeTaken);
+            }
+        }
+    }
+
+    LIBVM_TIME_TYPE_INIT_PERIOD(prof->profile.timeTaken);
+    prof->currentInstrProfile = NULL;
+    return prof;
+
+error_2:
+
+    free(prof->profile.codeSectionProfiles);
+
+error_1:
+
+    free(prof);
+    return NULL;
+}
+
+static inline void SharemindProcessProfiler_free(SharemindProcessProfiler * prof) {
+    for (size_t i = 0u; i < prof->profile.numCodeSections; i++)
+        free(prof->profile.codeSectionProfiles[i].instrProfiles);
+    free(prof->profile.codeSectionProfiles);
+    free(prof);
+}
+
+
+
 /*******************************************************************************
  *  SharemindProcess:
 ********************************************************************************/
@@ -69,6 +139,7 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
         goto SharemindProcess_new_fail_1;
 
     p->program = program;
+    p->profiler = NULL;
 
     /* Copy DATA section */
     SharemindDataSectionsVector_init(&p->dataSections);
@@ -202,6 +273,9 @@ SharemindProcess_new_fail_0:
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
     assert(p);
 
+    if (p->profiler)
+        SharemindProcessProfiler_free(p->profiler);
+
     SharemindProgram_refs_unref(p->program);
 
     SharemindPrivateMemoryMap_destroy_with(&p->privateMemoryMap, &SharemindPrivateMemoryMap_destroyer);
@@ -305,6 +379,9 @@ static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProce
 SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
     assert(p);
 
+    if (p->program->executionStyle != SHAREMIND_VM_REGULAR_EXECUTION)
+        return SHAREMIND_VM_INVALID_EXECUTION_STATE;
+
     /** \todo Add support for continue/restart */
     if (unlikely(!p->state == SHAREMIND_VM_PROCESS_INITIALIZED))
         return SHAREMIND_VM_INVALID_INPUT_STATE;
@@ -313,6 +390,40 @@ SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
         return SHAREMIND_VM_PDPI_STARTUP_FAILED;
 
     const SharemindVmError e = sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
+    if (e != SHAREMIND_VM_RUNTIME_TRAP)
+        SharemindProcess_stop_pdpis(p);
+
+    return e;
+}
+
+SharemindVmError SharemindProcess_profile(SharemindProcess * const p) {
+    assert(p);
+
+    if (p->program->executionStyle != SHAREMIND_VM_PROFILING_EXECUTION)
+        return SHAREMIND_VM_INVALID_EXECUTION_STATE;
+
+    size_t numCodeSections = p->program->codeSections.size;
+    if (SIZE_MAX / sizeof(SharemindProcessProfile) < numCodeSections)
+        return SHAREMIND_VM_OUT_OF_MEMORY;
+
+    /** \todo Add support for continue/restart */
+    if (unlikely(!p->state == SHAREMIND_VM_PROCESS_INITIALIZED))
+        return SHAREMIND_VM_INVALID_INPUT_STATE;
+
+    /* Reset timing information: */
+    if (p->profiler)
+        SharemindProcessProfiler_free(p->profiler);
+    p->profiler = SharemindProcessProfiler_new(p->program);
+    if (!p->profiler)
+        return SHAREMIND_VM_OUT_OF_MEMORY;
+
+    if (!SharemindProcess_start_pdpis(p)) {
+        SharemindProcessProfiler_free(p->profiler);
+        p->profiler = NULL;
+        return SHAREMIND_VM_PDPI_STARTUP_FAILED;
+    }
+
+    const SharemindVmError e = sharemind_vm_profile(p, SHAREMIND_I_RUN, NULL);
     if (e != SHAREMIND_VM_RUNTIME_TRAP)
         SharemindProcess_stop_pdpis(p);
 
@@ -452,6 +563,14 @@ SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p,
     SharemindMemoryMap_remove(&p->memoryMap, ptr);
 
     return SHAREMIND_VM_PROCESS_OK;
+}
+
+const SharemindProcessProfile * SharemindProcess_get_profile_results(const SharemindProcess * p) {
+    assert(p);
+    if (p->profiler)
+        return &p->profiler->profile;
+
+    return NULL;
 }
 
 /*******************************************************************************

@@ -19,6 +19,7 @@
 #include <stdio.h>
 /*#include <limits.h>
 #include <stdbool.h>*/
+#include "core.h"
 #include "innercommand.h"
 #include "preparationblock.h"
 #include "rodataspecials.h"
@@ -52,7 +53,9 @@ static SharemindVmError SharemindProgram_addCodeSection(
  * \param program The program to prepare.
  * \returns an SharemindVmError.
  */
-static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * program) __attribute__ ((nonnull(1), warn_unused_result));
+static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * program,
+                                                    SharemindExecutionStyle executionStyle)
+        __attribute__ ((nonnull(1), warn_unused_result));
 
 
 /*******************************************************************************
@@ -100,10 +103,16 @@ void SharemindProgram_free(SharemindProgram * const p) {
 
 static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
-SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void * data, size_t dataSize) {
+SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
+                                                const void * data,
+                                                size_t dataSize,
+                                                SharemindExecutionStyle executionStyle)
+{
     assert(p);
     assert(!p->ready);
     assert(data);
+
+    p->executionStyle = executionStyle;
 
     if (dataSize < sizeof(SharemindExecutableCommonHeader))
         return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
@@ -254,7 +263,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p, const void
     }
     p->activeLinkingUnit = h->activeLinkingUnit;
 
-    return SharemindProgram_endPrepare(p);
+    return SharemindProgram_endPrepare(p, executionStyle);
 }
 
 static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const p,
@@ -304,7 +313,7 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     if (1) { \
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
         SharemindPreparationBlock pb = { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
-        if (sharemind_vm_run(NULL, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) != SHAREMIND_VM_OK) \
+        if ((*runner)(NULL, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) != SHAREMIND_VM_OK) \
             abort(); \
         SHAREMIND_PREPARE_CURRENT_I += (numargs); \
     } else (void) 0
@@ -313,7 +322,7 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
 #define SHAREMIND_PREPARE_CODESIZE (s)->size
 #define SHAREMIND_PREPARE_CURRENT_CODE_SECTION s
 
-#define SHAREMIND_PREPARE_IS_INSTR(addr) SharemindInstrSet_contains(&s->instrset, (addr))
+#define SHAREMIND_PREPARE_IS_INSTR(addr) (SharemindInstrMap_get(&s->instrmap, (addr)) != NULL)
 #define SHAREMIND_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= 0x00 && (c) <= SHAREMIND_VM_PROCESS_EXCEPTION_COUNT && (c) != SHAREMIND_VM_PROCESS_OK && SharemindVmProcessException_toString((SharemindVmProcessException) (c)) != NULL)
 #define SHAREMIND_PREPARE_SYSCALL(argNum) \
     if (1) { \
@@ -323,7 +332,7 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     } else (void) 0
 
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
-    static SharemindVmError prepare_pass2_ ## name (SharemindProgram * const p, SharemindCodeSection * s, SharemindCodeBlock * c, size_t * i) { \
+    static SharemindVmError prepare_pass2_ ## name (SharemindProgram * const p, SharemindCodeSection * s, SharemindCodeBlock * c, size_t * i, SharemindCoreVmRunner runner) { \
         (void) p; (void) s; (void) c; (void) i; \
         SharemindVmError returnCode = SHAREMIND_VM_OK; \
         code \
@@ -336,16 +345,22 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     { .code = bytecode, .f = prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     uint64_t code;
-    SharemindVmError (*f)(SharemindProgram * const p, SharemindCodeSection * s, SharemindCodeBlock * c, size_t * i);
+    SharemindVmError (*f)(SharemindProgram * const p, SharemindCodeSection * s, SharemindCodeBlock * c, size_t * i, SharemindCoreVmRunner runner);
 };
 static struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include <sharemind/m4/preprocess_pass2_functions.h>
     { .code = 0u, .f = NULL }
 };
 
-static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) {
+static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p,
+                                                    SharemindExecutionStyle executionStyle)
+{
     assert(p);
     assert(!p->ready);
+
+    const SharemindCoreVmRunner runner = executionStyle == SHAREMIND_VM_REGULAR_EXECUTION
+                                       ? &sharemind_vm_run
+                                       : &sharemind_vm_profile;
 
     SharemindPreparationBlock pb;
 
@@ -359,16 +374,27 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
         assert(c);
 
         /* Initialize instructions hashmap: */
-        for (size_t i = 0u; i < s->size; i++) {
+        size_t numInstrs = 0u;
+        for (size_t i = 0u; i < s->size; i++, numInstrs++) {
             const SharemindVmInstruction * const instr = sharemind_vm_instruction_from_code(c[i].uint64[0]);
             if (!instr) {
                 SHAREMIND_PREPARE_INVALID_INSTRUCTION_OUTER;
             }
 
             SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(i + instr->numArgs < s->size,
-                                              SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS);
-            SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(SharemindInstrSet_insert(&s->instrset, i),
-                                              SHAREMIND_VM_OUT_OF_MEMORY);
+                                                   SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS);
+            SharemindInstrMapValue * v = SharemindInstrMap_get_or_insert(&s->instrmap, i);
+            SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(v != NULL,
+                                                   SHAREMIND_VM_OUT_OF_MEMORY);
+            SharemindInstrMapValue ** v2 = SharemindInstrMapP_get_or_insert(&s->blockmap, numInstrs);
+            if (v2 == NULL) {
+                SharemindInstrMap_remove(&s->instrmap, i);
+                SHAREMIND_PREPARE_ERROR_OUTER(SHAREMIND_VM_OUT_OF_MEMORY);
+            }
+            v->blockIndex = i;
+            v->instructionBlockIndex = numInstrs;
+            v->description = instr;
+            (*v2) = v;
             i += instr->numArgs;
         }
 
@@ -383,7 +409,7 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
                     SHAREMIND_PREPARE_INVALID_INSTRUCTION_OUTER;
                 }
                 if (ppf->code == c[i].uint64[0]) {
-                    returnCode = (*(ppf->f))(p, s, c, &i);
+                    returnCode = (*(ppf->f))(p, s, c, &i, runner);
                     if (returnCode != SHAREMIND_VM_OK)
                         goto prepare_codesection_return_error;
                     break;
@@ -396,7 +422,7 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
         c[s->size].uint64[0] = 0u; /* && eof */
         pb.block = &c[s->size];
         pb.type = 2;
-        if (sharemind_vm_run(NULL, SHAREMIND_I_GET_IMPL_LABEL, &pb) != SHAREMIND_VM_OK)
+        if ((*runner)(NULL, SHAREMIND_I_GET_IMPL_LABEL, &pb) != SHAREMIND_VM_OK)
             abort();
 
         continue;
@@ -411,9 +437,28 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
     return SHAREMIND_VM_OK;
 }
 
-bool SharemindProgram_is_ready(SharemindProgram * p) {
+bool SharemindProgram_is_ready(const SharemindProgram * p) {
     assert(p);
     return p->ready;
+}
+
+const SharemindVmInstruction * SharemindProgram_get_instruction(const SharemindProgram * p,
+                                                                size_t codeSection,
+                                                                size_t instructionIndex)
+{
+    assert(p);
+    if (!p->ready)
+        return NULL;
+
+    if (codeSection >= p->codeSections.size)
+        return NULL;
+
+    SharemindInstrMapValue ** v = SharemindInstrMapP_get(&p->codeSections.data[codeSection].blockmap,
+                                                         instructionIndex);
+    if (v)
+        return (*v)->description;
+
+    return NULL;
 }
 
 SHAREMIND_REFS_DEFINE_FUNCTIONS(SharemindProgram)

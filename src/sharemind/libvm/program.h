@@ -50,6 +50,7 @@ typedef enum {
 
 struct SharemindProgram_ {
     bool ready;
+    SharemindExecutionStyle executionStyle;
 
     SharemindVmError error;
 

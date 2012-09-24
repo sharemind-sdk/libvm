@@ -24,6 +24,7 @@
 #include "memorymap.h"
 #include "pdpicache.h"
 #include "privatememorymap.h"
+#include "profile.h"
 #include "stackframe.h"
 
 
@@ -34,6 +35,7 @@ extern "C" {
 
 struct SharemindProcess_ {
     SharemindProgram * program;
+    SharemindProcessProfiler * profiler;
 
     SharemindVmProcessState state;
 
