@@ -49,11 +49,6 @@ typedef enum {
 
 
 struct SharemindProgram_ {
-    bool ready;
-    SharemindExecutionStyle executionStyle;
-
-    SharemindVmError error;
-
     SharemindCodeSectionsVector codeSections;
     SharemindDataSectionsVector rodataSections;
     SharemindDataSectionsVector dataSections;
@@ -62,6 +57,8 @@ struct SharemindProgram_ {
     SharemindSyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;
 
+    SHAREMIND_REFS_DECLARE_FIELDS
+
     size_t activeLinkingUnit;
 
     size_t prepareCodeSectionIndex;
@@ -69,7 +66,9 @@ struct SharemindProgram_ {
 
     SharemindVm * vm;
 
-    SHAREMIND_REFS_DECLARE_FIELDS
+    SharemindVmError error;
+    SharemindExecutionStyle executionStyle;
+    bool ready;
 
 };
 

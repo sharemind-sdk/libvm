@@ -71,16 +71,19 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
             return NULL;
         }
 
-        p->ready = false;
-        p->error = SHAREMIND_VM_OK;
-        p->vm = vm;
         SharemindCodeSectionsVector_init(&p->codeSections);
         SharemindDataSectionsVector_init(&p->dataSections);
         SharemindDataSectionsVector_init(&p->rodataSections);
         SharemindDataSectionSizesVector_init(&p->bssSectionSizes);
         SharemindSyscallBindingsVector_init(&p->bindings);
         SharemindPdBindings_init(&p->pdBindings);
+
         SHAREMIND_REFS_INIT(p);
+
+        p->vm = vm;
+        p->error = SHAREMIND_VM_OK;
+        p->ready = false;
+
     }
     return p;
 }
