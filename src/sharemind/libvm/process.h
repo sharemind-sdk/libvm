@@ -37,8 +37,6 @@ struct SharemindProcess_ {
     SharemindProgram * program;
     SharemindProcessProfiler * profiler;
 
-    SharemindVmProcessState state;
-
     SharemindDataSectionsVector dataSections;
     SharemindDataSectionsVector bssSections;
 
@@ -74,6 +72,7 @@ struct SharemindProcess_ {
     clock_serv_t macClock;
 #endif
 
+    SharemindVmProcessState state;
 };
 
 uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot);
