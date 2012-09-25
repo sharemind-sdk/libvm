@@ -45,9 +45,11 @@ SharemindVmError sharemind_vm_run(
          _SHAREMIND_NOCLONE
          noinline
          warn_unused_result,
+         #ifndef __clang__
          optimize("O2",
                   "-fexpensive-optimizations",
                   "-fno-gcse"),
+         #endif
          hot,
          visibility("internal")
     ));
@@ -61,9 +63,11 @@ SharemindVmError sharemind_vm_profile(
          _SHAREMIND_NOCLONE
          noinline
          warn_unused_result,
+         #ifndef __clang__
          optimize("O2",
                   "-fexpensive-optimizations",
                   "-fno-gcse"),
+         #endif
          hot,
          visibility("internal")
     ));
