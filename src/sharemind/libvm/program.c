@@ -287,7 +287,6 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     return SHAREMIND_VM_OK;
 }
 
-#define SHAREMIND_PREPARE_NOP (void)0
 #define SHAREMIND_PREPARE_INVALID_INSTRUCTION_OUTER SHAREMIND_PREPARE_ERROR_OUTER(SHAREMIND_VM_PREPARE_ERROR_INVALID_INSTRUCTION)
 #define SHAREMIND_PREPARE_ERROR_OUTER(e) \
     if (1) { \
@@ -320,7 +319,6 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
 #define SHAREMIND_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
 #define SHAREMIND_PREPARE_CURRENT_I (*i)
 #define SHAREMIND_PREPARE_CODESIZE (s)->size
-#define SHAREMIND_PREPARE_CURRENT_CODE_SECTION s
 
 #define SHAREMIND_PREPARE_IS_INSTR(addr) (SharemindInstrMap_get(&s->instrmap, (addr)) != NULL)
 #define SHAREMIND_PREPARE_IS_EXCEPTIONCODE(c) ((c) >= 0x00 && (c) <= SHAREMIND_VM_PROCESS_EXCEPTION_COUNT && (c) != SHAREMIND_VM_PROCESS_OK && SharemindVmProcessException_toString((SharemindVmProcessException) (c)) != NULL)
