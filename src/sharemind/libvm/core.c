@@ -695,7 +695,7 @@ SharemindVmError SHAREMIND_VM_RUN_PROCESS_NAME(
 #include <sharemind/m4/static_label_structs.h>
         static void * system_labels[] = { &_func_impl_eof, &_func_impl_except, &_func_impl_halt, &_func_impl_trap };
 #endif
-        // static void *(*labels[3])[] = { &instr_labels, &empty_impl_labels, &system_labels };
+        /* static void *(*labels[3])[] = { &instr_labels, &empty_impl_labels, &system_labels }; */
 
         SharemindPreparationBlock * pb = (SharemindPreparationBlock *) sharemind_vm_run_data;
         switch (pb->type) {

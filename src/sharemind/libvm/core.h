@@ -11,7 +11,7 @@
 #define SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H
 
 #ifndef SHAREMIND_INTERNAL__
-#define SHAREMIND_INTERNAL__
+#error including an internal header!
 #endif
 
 

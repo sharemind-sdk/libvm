@@ -10,6 +10,10 @@
 #ifndef SHAREMIND_LIBSHAREMIND_VM_INTERNAL_PROFILE_H
 #define SHAREMIND_LIBSHAREMIND_VM_INTERNAL_PROFILE_H
 
+#ifndef SHAREMIND_INTERNAL__
+#error including an internal header!
+#endif
+
 #include <stdint.h>
 #include <stdlib.h>
 #include "libvm.h"
@@ -45,10 +49,10 @@ typedef struct SharemindProcessProfiler_ {
     } \
   } while(0)
 
-#if defined(CLOCK_MONOTONIC_RAW)
+#ifdef __MACH__ /* OS X does not have clock_gettime, use clock_get_time */
+#define LIBVM_TIME_INSTRUCTION_GETTIME(t) do { clock_get_time(p->macClock, &(t)); } while (0)
+#elif defined(CLOCK_MONOTONIC_RAW)
 #define LIBVM_TIME_INSTRUCTION_GETTIME(t) do { clock_gettime(CLOCK_MONOTONIC_RAW, &(t)); } while(0)
-#elif __MACH__ // OS X does not have clock_gettime, use clock_get_time
-#define LIBVM_TIME_INSTRUCTION_GETTIME(c) do { clock_get_time(p->macClock, &(c)); } while (0)
 #else
 #define LIBVM_TIME_INSTRUCTION_GETTIME(t) do { clock_gettime(CLOCK_MONOTONIC, &(t)); } while(0)
 #endif
