@@ -184,7 +184,7 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
 #define SHAREMIND_MI_TGE_FLOAT32(d,s1,s2) SHAREMIND_NO_SF_ENCLOSE((d) = (s1) >= (s2))
 #else /* #ifndef SHAREMIND_SOFT_FLOAT */
 #define SHAREMIND_MI_FPU_STATE (p->fpuState)
-#define SHAREMIND_MI_FPU_STATE_SET(v) do { p->fpuState = (v); } while(0)
+#define SHAREMIND_MI_FPU_STATE_SET(v) do { p->fpuState = (sf_fpu_state) (v); } while(0)
 #define SHAREMIND_RESTORE_FPE_ENV
 #define SHAREMIND_SF_E(type,dest,n,...) \
     if(1) { \
