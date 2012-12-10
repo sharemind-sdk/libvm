@@ -7,6 +7,7 @@
  * code is subject to the appropriate license agreement.
  */
 
+#define SHAREMIND_INTERNAL__
 #include "core.h"
 
 #include <limits.h>
@@ -25,6 +26,15 @@ typedef sf_float32 SharemindFloat32;
 #include "program.h"
 #include "registervector.h"
 
+#ifndef SHAREMIND_VM_TIMING
+#define SHAREMIND_VM_TIMING
+#endif
+#ifndef SHAREMIND_VM_TIMING_START
+#define SHAREMIND_VM_TIMING_START
+#endif
+#ifndef SHAREMIND_VM_TIMING_STOP
+#define SHAREMIND_VM_TIMING_STOP
+#endif
 
 #ifdef SHAREMIND_DEBUG
 #define SHAREMIND_DEBUG_PRINTSTATE \
@@ -677,7 +687,7 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-SharemindVmError SHAREMIND_VM_RUN_PROCESS_NAME(
+SharemindVmError sharemind_vm_run(
         SharemindProcess * const p,
         const SharemindInnerCommand sharemind_vm_run_command,
         void * const sharemind_vm_run_data)

@@ -30,23 +30,6 @@ extern "C" {
 #endif
 
 
-typedef struct SharemindInstrProfile_ {
-    uint64_t calls;
-    SHAREMIND_LIBVM_TIME_TYPE timeTaken;
-} SharemindInstrProfile;
-
-typedef struct SharemindCodeSectionProfile_ {
-    SharemindInstrProfile * instrProfiles;
-    size_t numInstructions;
-} SharemindCodeSectionProfile;
-
-typedef struct SharemindProcessProfile_ {
-    SHAREMIND_LIBVM_TIME_TYPE timeTaken;
-    SharemindCodeSectionProfile * codeSectionProfiles;
-    size_t numCodeSections;
-} SharemindProcessProfile;
-
-
 SHAREMIND_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
 
 typedef struct {
@@ -108,7 +91,6 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessState);
     ((SHAREMIND_VM_OK, = 0)) \
     ((SHAREMIND_VM_OUT_OF_MEMORY,)) \
     ((SHAREMIND_VM_INVALID_INPUT_STATE,)) \
-    ((SHAREMIND_VM_INVALID_EXECUTION_STATE,)) \
     ((SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,)) \
     ((SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION,)) \
     ((SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER,)) \
@@ -158,13 +140,9 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmError);
 SHAREMIND_ENUM_CUSTOM_DEFINE(SharemindVmProcessException, SHAREMIND_VM_PROCESS_EXCEPTION_ENUM);
 SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessException);
 
-typedef enum SharemindExecutionStyle_ {
-    SHAREMIND_VM_REGULAR_EXECUTION,
-    SHAREMIND_VM_PROFILING_EXECUTION
-} SharemindExecutionStyle;
-
 /**
  * \brief Allocates and initializes a new SharemindProgram instance.
+ * \param vm The SharemindVm instance under which to run.
  * \returns a pointer to the new SharemindProgram instance.
  * \retval NULL if allocation failed.
  */
@@ -181,13 +159,11 @@ void SharemindProgram_free(SharemindProgram * program) __attribute__ ((nonnull(1
  * \param program pointer to the SharemindProgram to initialize.
  * \param[in] data pointer to the sharemind executable file data.
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
- * \param[in] executionStyle the style of execution to process the input for.
  * \returns an SharemindVmError.
  */
 SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * program,
                                                 const void * data,
-                                                size_t dataSize,
-                                                SharemindExecutionStyle executionStyle)
+                                                size_t dataSize)
     __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
@@ -269,14 +245,6 @@ void SharemindProcess_set_process_internal(SharemindProcess * process, void * va
 SharemindVmError SharemindProcess_run(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
- * \brief Starts profiling of the given program in the background.
- * \pre program->state == SHAREMIND_PREPARED
- * \param process The process to profile.
- * \returns an SharemindVmError.
- */
-SharemindVmError SharemindProcess_profile(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
-
-/**
  * \brief Continues execution of the given program in the background.
  * \pre process->state == SHAREMIND_TRAPPED
  * \param process The process to continue.
@@ -319,12 +287,6 @@ size_t SharemindProcess_get_current_code_section(SharemindProcess * process) __a
  * \returns the current instruction pointer of the program.
  */
 uintptr_t SharemindProcess_get_current_ip(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
-
-/**
- * \param[in] process pointer to the SharemindProcess instance.
- * \returns a pointe to the profile results or NULL on error.
- */
-const SharemindProcessProfile * SharemindProcess_get_profile_results(const SharemindProcess * process);
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -67,7 +67,6 @@ struct SharemindProgram_ {
     SharemindVm * vm;
 
     SharemindVmError error;
-    SharemindExecutionStyle executionStyle;
     bool ready;
 
 };
