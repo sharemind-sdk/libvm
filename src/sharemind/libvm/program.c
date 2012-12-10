@@ -61,7 +61,9 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * program)
  *  SharemindProgram
 ********************************************************************************/
 
-SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
+SharemindProgram * SharemindProgram_new(SharemindVm * vm,
+                                        SharemindVirtualMachineContext * overrides)
+{
     SharemindProgram * const p = (SharemindProgram *) malloc(sizeof(SharemindProgram));
     if (likely(p)) {
 
@@ -82,6 +84,7 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
         p->vm = vm;
         p->error = SHAREMIND_VM_OK;
         p->ready = false;
+        p->overrides = overrides;
 
     }
     return p;
@@ -89,6 +92,10 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm) {
 
 void SharemindProgram_free(SharemindProgram * const p) {
     assert(p);
+
+    if (p->overrides && p->overrides->destructor)
+        (*(p->overrides->destructor))(p->overrides);
+
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(p);
 
     SharemindVm_refs_unref(p->vm);
@@ -207,7 +214,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
                 LOAD_BINDSECTION_CASE(BIND,
                     if (((const char *) pos)[0u] == '\0')
                         return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
-                    const SharemindSyscallBinding * b = SharemindVm_find_syscall(p->vm, (const char *) pos);
+                    const SharemindSyscallBinding * b = SharemindProgram_find_syscall(p, (const char *) pos);
                     if (!b) {
                         fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
                         return SHAREMIND_VM_PREPARE_UNDEFINED_BIND;
@@ -223,7 +230,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
                     for (size_t i = 0; i < p->pdBindings.size; i++)
                         if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]), (const char *) pos) == 0)
                             return SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND;
-                    SharemindPd * b = SharemindVm_find_pd(p->vm, (const char *) pos);
+                    SharemindPd * b = SharemindProgram_find_pd(p, (const char *) pos);
                     if (!b) {
                         fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);
                         return SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND;

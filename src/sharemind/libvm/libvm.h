@@ -143,10 +143,12 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessException);
 /**
  * \brief Allocates and initializes a new SharemindProgram instance.
  * \param vm The SharemindVm instance under which to run.
+ * \param overrides If not NULL, may provide overrides for SharemindVm context.
  * \returns a pointer to the new SharemindProgram instance.
  * \retval NULL if allocation failed.
  */
-SharemindProgram * SharemindProgram_new(SharemindVm * vm) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindProgram * SharemindProgram_new(SharemindVm * vm,
+                                        SharemindVirtualMachineContext * overrides) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \brief Deallocates a SharemindProgram instance.
