@@ -42,7 +42,7 @@ typedef struct SharemindVirtualMachineContext_ SharemindVirtualMachineContext;
 struct SharemindVirtualMachineContext_ {
 
     /**
-      A destructor (e.g. free) for this SHAREMIND_context.
+      A destructor (e.g. free) for this SharemindVirtualMachineContext.
       \param[in] context a pointer to this struct.
     */
     void (*destructor)(SharemindVirtualMachineContext * context);
@@ -63,7 +63,7 @@ struct SharemindVirtualMachineContext_ {
     */
     SharemindPd * (*find_pd)(SharemindVirtualMachineContext * context, const char * pdName);
 
-    /** Pointer to any SHAREMIND_Context data. Not used by libvm. */
+    /** Pointer to any SharemindVirtualMachineContext data. Not used by libvm. */
     void * internal;
 
 };

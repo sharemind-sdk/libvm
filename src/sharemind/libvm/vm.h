@@ -36,6 +36,9 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindVm)
 
 static inline const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) {
+    assert(vm);
+    assert(signature);
+    assert(signature[0u]);
     if (!vm->context || !vm->context->find_syscall)
         return NULL;
 
@@ -44,8 +47,11 @@ static inline const SharemindSyscallBinding * SharemindVm_find_syscall(Sharemind
 
 static inline SharemindPd * SharemindVm_find_pd(SharemindVm * vm, const char * pdName) __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline SharemindPd * SharemindVm_find_pd(SharemindVm * vm, const char * pdName) {
+    assert(vm);
+    assert(pdName);
+    assert(pdName[0u]);
     if (!vm->context || !vm->context->find_pd)
-        return 0;
+        return NULL;
 
     return (*(vm->context->find_pd))(vm->context, pdName);
 }

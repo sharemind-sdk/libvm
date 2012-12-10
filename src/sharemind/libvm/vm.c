@@ -38,11 +38,8 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context) {
 void SharemindVm_free(SharemindVm * vm) {
     assert(vm);
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(vm);
-    if (vm->context) {
-        if (vm->context->destructor) {
-            (*(vm->context->destructor))(vm->context);
-        }
-    }
+    if (vm->context && vm->context->destructor)
+        (*(vm->context->destructor))(vm->context);
     free(vm);
 }
 

@@ -205,32 +205,32 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
                 } break;
 
                 LOAD_BINDSECTION_CASE(BIND,
-                    SharemindSyscallBinding * binding = SharemindSyscallBindingsVector_push(&p->bindings);
-                    if (!binding)
-                        return SHAREMIND_VM_OUT_OF_MEMORY;
+                    if (((const char *) pos)[0u] == '\0')
+                        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
                     const SharemindSyscallBinding * b = SharemindVm_find_syscall(p->vm, (const char *) pos);
                     if (!b) {
-                        SharemindSyscallBindingsVector_pop(&p->bindings);
                         fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
                         return SHAREMIND_VM_PREPARE_UNDEFINED_BIND;
                     }
+                    SharemindSyscallBinding * binding = SharemindSyscallBindingsVector_push(&p->bindings);
+                    if (!binding)
+                        return SHAREMIND_VM_OUT_OF_MEMORY;
                     (*binding) = *b;)
 
                 LOAD_BINDSECTION_CASE(PDBIND,
+                    if (((const char *) pos)[0u] == '\0')
+                        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
                     for (size_t i = 0; i < p->pdBindings.size; i++)
                         if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]), (const char *) pos) == 0)
                             return SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND;
-
-                    SharemindPd ** pdBinding = SharemindPdBindings_push(&p->pdBindings);
-                    if (!pdBinding)
-                        return SHAREMIND_VM_OUT_OF_MEMORY;
-
                     SharemindPd * b = SharemindVm_find_pd(p->vm, (const char *) pos);
                     if (!b) {
-                        SharemindPdBindings_pop(&p->pdBindings);
                         fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);
                         return SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND;
                     }
+                    SharemindPd ** pdBinding = SharemindPdBindings_push(&p->pdBindings);
+                    if (!pdBinding)
+                        return SHAREMIND_VM_OUT_OF_MEMORY;
                     (*pdBinding) = b;)
 
                 default:
