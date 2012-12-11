@@ -66,10 +66,6 @@ struct SharemindProcess_ {
     SharemindMemoryInfo memReserved;
     SharemindMemoryInfo memTotal;
 
-#ifdef __MACH__
-    clock_serv_t macClock;
-#endif
-
     SharemindVmProcessState state;
 };
 
