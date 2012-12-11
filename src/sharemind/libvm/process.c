@@ -204,10 +204,6 @@ SharemindProcess_new_fail_0:
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
     assert(p);
 
-    #ifdef __MACH__
-    mach_port_deallocate(mach_task_self(), p->macClock);
-    #endif
-
     SharemindProgram_refs_unref(p->program);
 
     SharemindPrivateMemoryMap_destroy_with(&p->privateMemoryMap, &SharemindPrivateMemoryMap_destroyer);
