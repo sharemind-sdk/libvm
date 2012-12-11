@@ -172,10 +172,6 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;
 
-    #ifdef __MACH__
-    host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &p->macClock);
-    #endif
-
     return p;
 
 SharemindProcess_new_fail_pdpiCache:
