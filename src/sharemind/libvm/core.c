@@ -44,13 +44,8 @@ typedef sf_float64 SharemindFloat64;
         SharemindProcess_print_state_bencoded(p, stderr); \
         fprintf(stderr, "\n"); \
     } else (void) 0
-#define SHAREMIND_DEBUG_PRINTINSTRUCTION(t) \
-    if (1) { \
-        fprintf(p->debugFileHandle, "%s\n", SHAREMIND_2S(SHAREMIND_INSTR_NAME(t))); \
-    } else (void) 0
 #else
 #define SHAREMIND_DEBUG_PRINTSTATE (void) 0
-#define SHAREMIND_DEBUG_PRINTINSTRUCTION(t) (void) 0
 #endif
 
 #ifndef SHAREMIND_SOFT_FLOAT
@@ -223,7 +218,6 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
 #else /* #ifndef SHAREMIND_SOFT_FLOAT */
 #define SHAREMIND_MI_FPU_STATE (p->fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) do { p->fpuState = (sf_fpu_state) (v); } while(0)
-#define SHAREMIND_RESTORE_FPE_ENV
 #define SHAREMIND_SF_E(type,dest,n,...) \
     if(1) { \
         p->fpuState = p->fpuState & ~sf_fpu_state_exception_mask; \
@@ -593,20 +587,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         } \
     } else (void) 0
 
-#define SHAREMIND_MI_GET_T_reg(d,t,i) \
-    if (1) { \
-        const SharemindCodeBlock * r = SharemindRegisterVector_get_const_pointer(globalStack, (i)); \
-        SHAREMIND_MI_TRY_EXCEPT(r,SHAREMIND_VM_PROCESS_INVALID_INDEX_REGISTER); \
-        (d) = & SHAREMIND_MI_BLOCK_AS(r, t); \
-    } else (void) 0
-
-#define SHAREMIND_MI_GET_T_stack(d,t,i) \
-    if (1) { \
-        const SharemindCodeBlock * r = SharemindRegisterVector_get_const_pointer(thisStack, (i)); \
-        SHAREMIND_MI_TRY_EXCEPT(r,SHAREMIND_VM_PROCESS_INVALID_INDEX_STACK); \
-        (d) = & SHAREMIND_MI_BLOCK_AS(r, t); \
-    } else (void) 0
-
 #define _SHAREMIND_MI_GET(d,i,fromwhere,exception,isconst) \
     if (1) { \
         (d) = SharemindRegisterVector_get_ ## isconst ## pointer((fromwhere), (i)); \
@@ -637,10 +617,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 
 #define SHAREMIND_MI_BLOCK_AS(b,t) (b->t[0])
 #define SHAREMIND_MI_BLOCK_AS_P(b,t) (&b->t[0])
-#define SHAREMIND_MI_ARG(n)        (* SHAREMIND_MI_ARG_P(n))
 #define SHAREMIND_MI_ARG_P(n)      (ip + (n))
 #define SHAREMIND_MI_ARG_AS(n,t)   (SHAREMIND_MI_BLOCK_AS(SHAREMIND_MI_ARG_P(n),t))
-#define SHAREMIND_MI_ARG_AS_P(n,t) (& SHAREMIND_MI_BLOCK_AS(SHAREMIND_MI_ARG_P(n), t))
 
 #ifndef SHAREMIND_SOFT_FLOAT
 #define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) a = (double) b
