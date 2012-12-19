@@ -53,7 +53,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
  * \param program The program to prepare.
  * \returns an SharemindVmError.
  */
-static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * program)
+static SharemindProgramLoadResult SharemindProgram_endPrepare(SharemindProgram * program)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 
@@ -112,42 +112,50 @@ void SharemindProgram_free(SharemindProgram * const p) {
 
 static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
-SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
-                                                const void * data,
-                                                size_t dataSize)
+#define RETURN_SPLR(e,p) \
+    do { \
+        SharemindProgramLoadResult r__; \
+        r__.error = e; \
+        r__.position = p; \
+        return r__; \
+    } while (0)
+
+SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
+                                                          const void * data,
+                                                          size_t dataSize)
 {
     assert(p);
     assert(!p->ready);
     assert(data);
 
     if (dataSize < sizeof(SharemindExecutableCommonHeader))
-        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data);
 
     const SharemindExecutableCommonHeader * ch;
     if (SharemindExecutableCommonHeader_read(data, &ch) != SHAREMIND_EXECUTABLE_READ_OK)
-        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data);
 
     if (ch->fileFormatVersion > 0u)
-        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE; /** \todo new error code? */
+        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data); /** \todo new error code? */
 
 
     const void * pos = ((const uint8_t *) data) + sizeof(SharemindExecutableCommonHeader);
 
     const SharemindExecutableHeader0x0 * h;
     if (SharemindExecutableHeader0x0_read(pos, &h) != SHAREMIND_EXECUTABLE_READ_OK)
-        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
     pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableHeader0x0);
 
     for (unsigned ui = 0; ui <= h->numberOfUnitsMinusOne; ui++) {
         const SharemindExecutableUnitHeader0x0 * uh;
         if (SharemindExecutableUnitHeader0x0_read(pos, &uh) != SHAREMIND_EXECUTABLE_READ_OK)
-            return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+            RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
         pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableUnitHeader0x0);
         for (unsigned si = 0; si <= uh->sectionsMinusOne; si++) {
             const SharemindExecutableSectionHeader0x0 * sh;
             if (SharemindExecutableSectionHeader0x0_read(pos, &sh) != SHAREMIND_EXECUTABLE_READ_OK)
-                return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+                RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
             pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableSectionHeader0x0);
 
@@ -156,17 +164,17 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
 
 #if SIZE_MAX < UINT32_MAX
             if (unlikely(sh->length > SIZE_MAX))
-                return SHAREMIND_VM_OUT_OF_MEMORY;
+                RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
 #endif
 
 #define LOAD_DATASECTION_CASE(utype,ltype,spec) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         SharemindDataSection * s = SharemindDataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
-            return SHAREMIND_VM_OUT_OF_MEMORY; \
+            RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos); \
         if (unlikely(!SharemindDataSection_init(s, sh->length, (spec)))) { \
             SharemindDataSectionsVector_pop(&p->ltype ## Sections); \
-            return SHAREMIND_VM_OUT_OF_MEMORY; \
+            RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos); \
         } \
         memcpy(s->pData, pos, sh->length); \
         pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8]; \
@@ -178,7 +186,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
         const char * endPos = ((const char *) pos) + sh->length; \
         /* Check for 0-termination: */ \
         if (unlikely(*(endPos - 1))) \
-            return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE; \
+            RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, pos); \
         do { \
             code \
             pos = ((const char *) pos) + strlen((const char *) pos) + 1; \
@@ -190,9 +198,9 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
             switch ((int) type) {
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
-                    SharemindVmError r = SharemindProgram_addCodeSection(p, (const SharemindCodeBlock *) pos, sh->length);
+                    const SharemindVmError r = SharemindProgram_addCodeSection(p, (const SharemindCodeBlock *) pos, sh->length);
                     if (r != SHAREMIND_VM_OK)
-                        return r;
+                        RETURN_SPLR(r, pos);
 
                     pos = ((const uint8_t *) pos) + sh->length * sizeof(SharemindCodeBlock);
                 } break;
@@ -204,7 +212,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
 
                     uint32_t * s = SharemindDataSectionSizesVector_push(&p->bssSectionSizes);
                     if (unlikely(!s))
-                        return SHAREMIND_VM_OUT_OF_MEMORY;
+                        RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
 
                     SHAREMIND_STATIC_ASSERT(sizeof(*s) == sizeof(sh->length));
                     (*s) = sh->length;
@@ -213,31 +221,27 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
 
                 LOAD_BINDSECTION_CASE(BIND,
                     if (((const char *) pos)[0u] == '\0')
-                        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+                        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, pos);
                     const SharemindSyscallBinding * b = SharemindProgram_find_syscall(p, (const char *) pos);
-                    if (!b) {
-                        fprintf(stderr, "No syscall with the signature: %s\n", (const char *) pos);
-                        return SHAREMIND_VM_PREPARE_UNDEFINED_BIND;
-                    }
+                    if (!b)
+                        RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND, pos);
                     SharemindSyscallBinding * binding = SharemindSyscallBindingsVector_push(&p->bindings);
                     if (!binding)
-                        return SHAREMIND_VM_OUT_OF_MEMORY;
+                        RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
                     (*binding) = *b;)
 
                 LOAD_BINDSECTION_CASE(PDBIND,
                     if (((const char *) pos)[0u] == '\0')
-                        return SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE;
+                        RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, pos);
                     for (size_t i = 0; i < p->pdBindings.size; i++)
                         if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]), (const char *) pos) == 0)
-                            return SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND;
+                            RETURN_SPLR(SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND, pos);
                     SharemindPd * b = SharemindProgram_find_pd(p, (const char *) pos);
-                    if (!b) {
-                        fprintf(stderr, "No protection domain with the name: %s\n", (const char *) pos);
-                        return SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND;
-                    }
+                    if (!b)
+                        RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND, pos);
                     SharemindPd ** pdBinding = SharemindPdBindings_push(&p->pdBindings);
                     if (!pdBinding)
-                        return SHAREMIND_VM_OUT_OF_MEMORY;
+                        RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
                     (*pdBinding) = b;)
 
                 default:
@@ -247,15 +251,15 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
         }
 
         if (unlikely(p->codeSections.size == ui))
-            return SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION;
+            RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION, NULL);
 
 #define PUSH_EMPTY_DATASECTION(ltype,spec) \
     if (p->ltype ## Sections.size == ui) { \
         SharemindDataSection * s = SharemindDataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
-            return SHAREMIND_VM_OUT_OF_MEMORY; \
+            RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, NULL); \
         if (unlikely(!SharemindDataSection_init(s, 0u, (spec)))) \
-            return SHAREMIND_VM_OUT_OF_MEMORY; \
+            RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, NULL); \
     }
 
         PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)
@@ -263,7 +267,7 @@ SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * p,
         if (p->bssSectionSizes.size == ui) {
             uint32_t * s = SharemindDataSectionSizesVector_push(&p->bssSectionSizes);
             if (unlikely(!s))
-                return SHAREMIND_VM_OUT_OF_MEMORY;
+                RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, NULL);
             (*s) = 0u;
         }
     }
@@ -356,7 +360,7 @@ static struct preprocess_pass2_function preprocess_pass2_functions[] = {
     { .code = 0u, .f = NULL }
 };
 
-static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) {
+static SharemindProgramLoadResult SharemindProgram_endPrepare(SharemindProgram * const p) {
     assert(p);
     assert(!p->ready);
 
@@ -427,12 +431,12 @@ static SharemindVmError SharemindProgram_endPrepare(SharemindProgram * const p) 
 
     prepare_codesection_return_error:
         p->prepareCodeSectionIndex = j;
-        return returnCode;
+        RETURN_SPLR(returnCode, NULL);
     }
 
     p->ready = true;
 
-    return SHAREMIND_VM_OK;
+    RETURN_SPLR(SHAREMIND_VM_OK, NULL);
 }
 
 bool SharemindProgram_is_ready(const SharemindProgram * p) {

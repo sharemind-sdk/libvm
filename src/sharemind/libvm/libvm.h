@@ -156,6 +156,22 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm,
  */
 void SharemindProgram_free(SharemindProgram * program) __attribute__ ((nonnull(1)));
 
+struct SharemindProgramLoadResult_ {
+
+    /** The error code. */
+    SharemindVmError error;
+
+    /**
+      Position of the error of NULL if the error is not related to an exact
+      position of the data passed. In case of SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
+      SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND and SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND
+      this refers to the bind name.
+    */
+    const void * position;
+
+};
+typedef struct SharemindProgramLoadResult_ SharemindProgramLoadResult;
+
 /**
  * \brief Loads the program sections from the given data.
  * \param program pointer to the SharemindProgram to initialize.
@@ -163,7 +179,7 @@ void SharemindProgram_free(SharemindProgram * program) __attribute__ ((nonnull(1
  * \param[in] dataSize size of the data pointed to by the data parameter, in bytes.
  * \returns an SharemindVmError.
  */
-SharemindVmError SharemindProgram_load_from_sme(SharemindProgram * program,
+SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * program,
                                                 const void * data,
                                                 size_t dataSize)
     __attribute__ ((nonnull(1, 2), warn_unused_result));
