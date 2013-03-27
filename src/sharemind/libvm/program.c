@@ -322,7 +322,7 @@ static SharemindVmError SharemindProgram_addCodeSection(SharemindProgram * const
     if (1) { \
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
         SharemindPreparationBlock pb = { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
-        if (sharemind_vm_run(NULL, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) != SHAREMIND_VM_OK) \
+        if (runner(NULL, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) != SHAREMIND_VM_OK) \
             abort(); \
         SHAREMIND_PREPARE_CURRENT_I += (numargs); \
     } else (void) 0
