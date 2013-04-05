@@ -27,15 +27,6 @@ typedef sf_float64 SharemindFloat64;
 #include "program.h"
 #include "registervector.h"
 
-#ifndef SHAREMIND_VM_TIMING
-#define SHAREMIND_VM_TIMING
-#endif
-#ifndef SHAREMIND_VM_TIMING_START
-#define SHAREMIND_VM_TIMING_START
-#endif
-#ifndef SHAREMIND_VM_TIMING_STOP
-#define SHAREMIND_VM_TIMING_STOP
-#endif
 
 #ifdef SHAREMIND_DEBUG
 #define SHAREMIND_DEBUG_PRINTSTATE \
@@ -305,7 +296,7 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
 #define SHAREMIND_DO_HALT if (1) { goto halt; } else (void) 0
 #define SHAREMIND_DO_TRAP if (1) { goto trap; } else (void) 0
 #else
-typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
+typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_DO_EXCEPT if (1) { return HC_EXCEPT; } else (void) 0
 #define SHAREMIND_DO_HALT if (1) { return HC_HALT; } else (void) 0
 #define SHAREMIND_DO_TRAP if (1) { return HC_TRAP; } else (void) 0
@@ -327,19 +318,11 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
 #define SHAREMIND_MI_TRAP SHAREMIND_DO_TRAP
 
 #ifndef SHAREMIND_FAST_BUILD
-#define SHAREMIND_DISPATCH(ip) do { SHAREMIND_VM_TIMING goto *((ip)->p[0]); } while(0)
+#define SHAREMIND_DISPATCH(ip) do { goto *((ip)->p[0]); } while(0)
 #define SHAREMIND_MI_DISPATCH(ip) if (1) { SHAREMIND_DISPATCH(ip); } else (void) 0
 #else
-#define SHAREMIND_DISPATCH_OTHERFRAME(ip,_thisStack,_thisRefStack,_thisCRefStack) \
-    ((*((HaltCode (*)(SharemindProcess * const, \
-                           const SharemindCodeBlock *, \
-                           const SharemindCodeBlock *, \
-                           SharemindRegisterVector * const, \
-                           SharemindRegisterVector *, \
-                           const SharemindReferenceVector *, \
-                           const SharemindCReferenceVector *))((ip)->fp[0])))(p,codeStart,ip,globalStack,_thisStack,_thisRefStack,_thisCRefStack))
-#define SHAREMIND_DISPATCH(ip) SHAREMIND_DISPATCH_OTHERFRAME(ip,thisStack,thisRefStack,thisCRefStack)
-#define SHAREMIND_MI_DISPATCH(newIp) if (1) { (void) (newIp); SHAREMIND_VM_TIMING return SHAREMIND_DISPATCH(ip); } else (void) 0
+#define SHAREMIND_DISPATCH(ip)    if (1) { (void) (ip); SHAREMIND_UPDATESTATE; return HC_NEXT; } else (void) 0
+#define SHAREMIND_MI_DISPATCH(ip) if (1) { (void) (ip); SHAREMIND_UPDATESTATE; return HC_NEXT; } else (void) 0
 #endif
 
 #define SHAREMIND_MI_JUMP_REL(n) \
@@ -476,7 +459,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
         SHAREMIND_DISPATCH((ip)); \
     } else (void) 0
 #else
-#define SHAREMIND_CALL_RETURN_DISPATCH(ip) do { SHAREMIND_VM_TIMING return SHAREMIND_DISPATCH_OTHERFRAME((ip), &p->thisFrame->stack, &p->thisFrame->refstack, &p->thisFrame->crefstack); } while(0)
+#define SHAREMIND_CALL_RETURN_DISPATCH(ip) SHAREMIND_DISPATCH((ip))
 #endif
 
 #define SHAREMIND_MI_CALL(a,r,nargs) \
@@ -729,18 +712,16 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP } HaltCode;
     label_impl_ ## name : code
 #else
 #define SHAREMIND_IMPL_INNER(name,code) \
-    static inline HaltCode name ( \
-        SharemindProcess * const p, \
-        const SharemindCodeBlock * const codeStart, \
-        const SharemindCodeBlock * ip, \
-        SharemindRegisterVector * const globalStack, \
-        SharemindRegisterVector * thisStack, \
-        const SharemindReferenceVector * thisRefStack, \
-        const SharemindCReferenceVector * thisCRefStack) \
+    static inline HaltCode name (SharemindProcess * const p) \
     { \
-        (void) codeStart; (void) globalStack; (void) thisStack; \
-        (void) thisRefStack; (void) thisCRefStack; \
-        SHAREMIND_UPDATESTATE; \
+        const SharemindCodeBlock * const codeStart = p->program->codeSections.data[p->currentCodeSectionIndex].data; \
+        const SharemindCodeBlock * ip = &codeStart[p->currentIp]; \
+        SharemindRegisterVector * const globalStack = &p->globalFrame->stack; \
+        SharemindRegisterVector * thisStack = &p->thisFrame->stack; \
+        SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack; \
+        SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack; \
+        (void) codeStart; (void) ip; (void) globalStack; \
+        (void) thisStack; (void) thisRefStack; (void) thisCRefStack; \
         code \
     }
 #define SHAREMIND_IMPL(name,code) SHAREMIND_IMPL_INNER(func_impl_ ## name, code)
@@ -771,14 +752,7 @@ SharemindVmError sharemind_vm_run(
 #include <sharemind/m4/static_label_structs.h>
         static const ImplLabelType system_labels[] = { && eof, && except, && halt, && trap };
 #else
-        typedef HaltCode (* ImplLabelType)(
-                SharemindProcess * const p,
-                const SharemindCodeBlock * const codeStart,
-                const SharemindCodeBlock * ip,
-                SharemindRegisterVector * const globalStack,
-                SharemindRegisterVector * thisStack,
-                const SharemindReferenceVector * thisRefStack,
-                const SharemindCReferenceVector * thisCRefStack);
+        typedef HaltCode (* ImplLabelType)(SharemindProcess * const p);
 #define SHAREMIND_CBPTR fp
         typedef void (* CbPtrType)(void);
 #define SHAREMIND_IMPL_LABEL(name) & func_impl_ ## name ,
@@ -808,13 +782,6 @@ SharemindVmError sharemind_vm_run(
         assert(p);
 
 #pragma STDC FENV_ACCESS ON
-
-        const SharemindCodeBlock * const codeStart = p->program->codeSections.data[p->currentCodeSectionIndex].data;
-        const SharemindCodeBlock * ip = &codeStart[p->currentIp];
-        SharemindRegisterVector * const globalStack = &p->globalFrame->stack;
-        SharemindRegisterVector * thisStack = &p->thisFrame->stack;
-        SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;
-        SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack;
 
 #ifndef SHAREMIND_SOFT_FLOAT
         p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0);
@@ -851,16 +818,23 @@ SharemindVmError sharemind_vm_run(
         _SharemindProcess_setupSignalHandlers(p);
 #endif /* #ifndef SHAREMIND_SOFT_FLOAT */
 
-        SHAREMIND_VM_TIMING_START
+        const SharemindCodeBlock * const codeStart = p->program->codeSections.data[p->currentCodeSectionIndex].data;
 
 #ifndef SHAREMIND_FAST_BUILD
+        const SharemindCodeBlock * ip = &codeStart[p->currentIp];
+        SharemindRegisterVector * const globalStack = &p->globalFrame->stack;
+        SharemindRegisterVector * thisStack = &p->thisFrame->stack;
+        SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;
+        SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack;
+
         SHAREMIND_MI_DISPATCH(ip);
 
         #include <sharemind/m4/dispatches.h>
 #else
-        SHAREMIND_VM_TIMING
-        HaltCode haltCode = SHAREMIND_DISPATCH(ip);
-        SHAREMIND_VM_TIMING_STOP
+        HaltCode haltCode;
+        do {
+            haltCode = (*((HaltCode (*)(SharemindProcess * const)) (codeStart[p->currentIp].fp[0])))(p);
+        } while (haltCode == HC_NEXT);
         SHAREMIND_STATIC_ASSERT(sizeof(haltCode) <= sizeof(int));
         switch ((int) haltCode) {
             case HC_EOF:
@@ -880,9 +854,6 @@ SharemindVmError sharemind_vm_run(
             p->exceptionValue = SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS;
 
         except:
-#ifndef SHAREMIND_FAST_BUILD
-            SHAREMIND_VM_TIMING_STOP
-#endif
             assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString((SharemindVmProcessException) p->exceptionValue) != 0);
@@ -900,9 +871,6 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
-#ifndef SHAREMIND_FAST_BUILD
-            SHAREMIND_VM_TIMING_STOP
-#endif
 #ifndef SHAREMIND_SOFT_FLOAT
             _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
@@ -916,9 +884,6 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_OK;
 
         trap:
-#ifndef SHAREMIND_FAST_BUILD
-            SHAREMIND_VM_TIMING_STOP
-#endif
 #ifndef SHAREMIND_SOFT_FLOAT
             _SharemindProcess_restoreSignalHandlers(p);
             /** \todo Check for errors */
