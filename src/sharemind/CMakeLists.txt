@@ -57,7 +57,25 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${SHAREMIND_LIBVM_DEFINES}")
-TARGET_LINK_LIBRARIES("libvm" "libexecutable" "libmodapi" "libsoftfloat" "libvmi" "m")
+
+MACRO(SHAREMIND_LIBVM_TARGETLIB libname)
+  IF(TARGET "lib${libname}")
+    SET(SHAREMIND_LIBVM_TARGETLIB_${libname} "lib${libname}")
+  ELSE()
+    SET(SHAREMIND_LIBVM_TARGETLIB_${libname} "-L${CMAKE_PREFIX_PATH}/lib" "sharemind_${libname}")
+  ENDIF()
+ENDMACRO()
+SHAREMIND_LIBVM_TARGETLIB(executable)
+SHAREMIND_LIBVM_TARGETLIB(modapi)
+SHAREMIND_LIBVM_TARGETLIB(softfloat)
+SHAREMIND_LIBVM_TARGETLIB(vmi)
+
+TARGET_LINK_LIBRARIES("libvm"
+                      ${SHAREMIND_LIBVM_TARGETLIB_executable}
+                      ${SHAREMIND_LIBVM_TARGETLIB_modapi}
+                      ${SHAREMIND_LIBVM_TARGETLIB_softfloat}
+                      ${SHAREMIND_LIBVM_TARGETLIB_vmi}
+                      "m")
 
 INSTALL(TARGETS "libvm"
         LIBRARY DESTINATION "lib")
