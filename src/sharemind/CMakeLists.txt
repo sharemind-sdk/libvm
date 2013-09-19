@@ -10,6 +10,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION "2.8")
 PROJECT("SHAREMIND_LIBVM" "C")
 
+INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_PREFIX_PATH}/include)
+
 # Find boost - seems to be required since the variables aren't populated otherwise
 FIND_PACKAGE(Boost REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
