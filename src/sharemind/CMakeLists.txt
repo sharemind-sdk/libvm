@@ -53,7 +53,8 @@ ENDMACRO(FLAGS_MAGIC)
 FLAGS_MAGIC("Weverything")
 FLAGS_MAGIC("Wlogical-op")
 
-ADD_DEFINITIONS("-D_XOPEN_SOURCE=500" "-D__STDC_LIMIT_MACROS")
+SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS")
+ADD_DEFINITIONS("${LIBVM_INSTALL_DEFINITIONS}")
 
 ################################################################################
 # libvm
@@ -76,9 +77,11 @@ ENDIF()
 
 ADD_LIBRARY("libvm" ${SHAREMIND_LIBVM_LINKING_MODE} ${SHAREMIND_LIBVM_SOURCES})
 ADD_DEPENDENCIES("libvm" m4_preprocess_pass2_functions_h m4_static_label_structs_h m4_dispatches_h)
+
+SET(LIBVM_VERSION "0.1.0.0")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       OUTPUT_NAME "sharemind_vm"
-                      VERSION "0.1.0.0"
+                      VERSION "${LIBVM_VERSION}"
                       SOVERSION "0.1"
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${SHAREMIND_LIBVM_DEFINES}")
@@ -100,3 +103,17 @@ INSTALL(TARGETS "libvm"
 
 INSTALL(FILES "libvm/libvm.h"
         DESTINATION "include/sharemind/libvm")
+
+# Install cmake files:
+FILE(GLOB_RECURSE sharemind_libvm_in_files "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
+ADD_CUSTOM_TARGET("include_sharemind_libvm_in_files_in_IDE" SOURCES ${sharemind_libvm_in_files})
+SET(LIBVM_INSTALL_LINK_LIBRARIES "-L${CMAKE_INSTALL_PREFIX}/lib" "-lsharemind_vm")
+SET(LIBVM_INSTALL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfig.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake" @ONLY)
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfigVersion.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake" @ONLY)
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake"
+        DESTINATION "lib/SharemindLibvm")
