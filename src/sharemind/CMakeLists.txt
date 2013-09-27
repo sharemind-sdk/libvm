@@ -14,6 +14,29 @@ FOREACH(dir IN LISTS CMAKE_PREFIX_PATH)
   INCLUDE_DIRECTORIES(BEFORE SYSTEM "${dir}/include")
 ENDFOREACH()
 
+FUNCTION(SHAREMIND_FIND_TARGETLIB libname)
+  IF(NOT DEFINED SHAREMIND_TARGETLIB_${libname})
+    IF(TARGET "lib${libname}")
+      SET(SHAREMIND_TARGETLIB_${libname} "lib${libname}" PARENT_SCOPE)
+    ELSE()
+      FIND_LIBRARY(libfn "sharemind_${libname}")
+      IF(NOT libfn)
+        IF("${ARGN}" STREQUAL "OPTIONAL")
+          MESSAGE(WARNING "Library \"sharemind_${libname}\" not found!")
+        ELSE()
+          MESSAGE(FATAL_ERROR "Required library \"sharemind_${libname}\" not found!")
+        ENDIF()
+      ELSE()
+        SET(libs)
+        GET_FILENAME_COMPONENT(libpath "${libfn}" PATH)
+        LIST(APPEND libs "-L${libpath}")
+        LIST(APPEND libs "sharemind_${libname}")
+        SET(SHAREMIND_TARGETLIB_${libname} "${libs}" PARENT_SCOPE)
+      ENDIF()
+    ENDIF()
+  ENDIF()
+ENDFUNCTION()
+
 # Find boost - seems to be required since the variables aren't populated otherwise
 FIND_PACKAGE(Boost REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -60,27 +83,16 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${SHAREMIND_LIBVM_DEFINES}")
 
-MACRO(SHAREMIND_LIBVM_TARGETLIB libname)
-  IF(TARGET "lib${libname}")
-    SET(SHAREMIND_LIBVM_TARGETLIB_${libname} "lib${libname}")
-  ELSE()
-    SET(SHAREMIND_LIBVM_TARGETLIB_${libname})
-    FOREACH(dir IN LISTS CMAKE_PREFIX_PATH)
-      LIST(APPEND SHAREMIND_LIBVM_TARGETLIB_${libname} "-L${dir}/lib")
-    ENDFOREACH()
-    LIST(APPEND SHAREMIND_LIBVM_TARGETLIB_${libname} "sharemind_${libname}")
-  ENDIF()
-ENDMACRO()
-SHAREMIND_LIBVM_TARGETLIB(executable)
-SHAREMIND_LIBVM_TARGETLIB(modapi)
-SHAREMIND_LIBVM_TARGETLIB(softfloat)
-SHAREMIND_LIBVM_TARGETLIB(vmi)
+SHAREMIND_FIND_TARGETLIB(executable)
+SHAREMIND_FIND_TARGETLIB(modapi)
+SHAREMIND_FIND_TARGETLIB(softfloat)
+SHAREMIND_FIND_TARGETLIB(vmi)
 
 TARGET_LINK_LIBRARIES("libvm"
-                      ${SHAREMIND_LIBVM_TARGETLIB_executable}
-                      ${SHAREMIND_LIBVM_TARGETLIB_modapi}
-                      ${SHAREMIND_LIBVM_TARGETLIB_softfloat}
-                      ${SHAREMIND_LIBVM_TARGETLIB_vmi}
+                      ${SHAREMIND_TARGETLIB_executable}
+                      ${SHAREMIND_TARGETLIB_modapi}
+                      ${SHAREMIND_TARGETLIB_softfloat}
+                      ${SHAREMIND_TARGETLIB_vmi}
                       "m")
 
 INSTALL(TARGETS "libvm"
