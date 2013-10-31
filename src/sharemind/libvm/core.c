@@ -781,7 +781,9 @@ SharemindVmError sharemind_vm_run(
 
         assert(p);
 
+#ifndef __GNUC__
 #pragma STDC FENV_ACCESS ON
+#endif
 
 #ifndef SHAREMIND_SOFT_FLOAT
         p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0);
