@@ -72,7 +72,13 @@ struct SharemindProgram_ {
 
 };
 
+#ifdef __GNUC__
+#pragma GCC visibility push(internal)
+#endif
 SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
+#ifdef __GNUC__
+#pragma GCC visibility pop
+#endif
 
 
 static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(SharemindProgram * p, const char * signature) __attribute__ ((nonnull(1, 2), warn_unused_result));

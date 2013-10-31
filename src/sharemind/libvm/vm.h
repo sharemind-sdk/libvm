@@ -31,7 +31,13 @@ struct SharemindVm_ {
     SHAREMIND_REFS_DECLARE_FIELDS
 };
 
+#ifdef __GNUC__
+#pragma GCC visibility push(internal)
+#endif
 SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindVm)
+#ifdef __GNUC__
+#pragma GCC visibility pop
+#endif
 
 
 static inline const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) __attribute__ ((nonnull(1, 2), warn_unused_result));

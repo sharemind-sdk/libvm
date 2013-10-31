@@ -69,8 +69,13 @@ struct SharemindProcess_ {
     SharemindVmProcessState state;
 };
 
-uint64_t SharemindProcess_public_alloc(SharemindProcess * p, uint64_t nBytes, SharemindMemorySlot ** memorySlot);
-SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p, uint64_t ptr);
+uint64_t SharemindProcess_public_alloc(SharemindProcess * p,
+                                       uint64_t nBytes,
+                                       SharemindMemorySlot ** memorySlot)
+        __attribute__ ((visibility("internal")));
+SharemindVmProcessException SharemindProcess_public_free(SharemindProcess * p,
+                                                         uint64_t ptr)
+        __attribute__ ((visibility("internal")));
 
 
 #ifdef __cplusplus
