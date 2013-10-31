@@ -97,6 +97,14 @@ TARGET_LINK_LIBRARIES("libvm"
                       ${SHAREMIND_TARGETLIB_vmi}
                       "m")
 
+FIND_PROGRAM(LIBVM_STRIP strip)
+IF(NOT LIBVM_STRIP)
+    MESSAGE(WARNING "\"strip\" not found.")
+ELSE()
+    ADD_CUSTOM_COMMAND(TARGET "libvm" POST_BUILD COMMAND
+                       "${LIBVM_STRIP}" --strip-all "$<TARGET_FILE:libvm>")
+ENDIF()
+
 INSTALL(TARGETS "libvm"
         LIBRARY DESTINATION "lib")
 
