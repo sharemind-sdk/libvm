@@ -131,39 +131,38 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
     if (dataSize < sizeof(SharemindExecutableCommonHeader))
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data);
 
-    const SharemindExecutableCommonHeader * ch;
+    SharemindExecutableCommonHeader ch;
     if (SharemindExecutableCommonHeader_read(data, &ch) != SHAREMIND_EXECUTABLE_READ_OK)
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data);
 
-    if (ch->fileFormatVersion > 0u)
+    if (ch.fileFormatVersion > 0u)
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data); /** \todo new error code? */
-
 
     const void * pos = ((const uint8_t *) data) + sizeof(SharemindExecutableCommonHeader);
 
-    const SharemindExecutableHeader0x0 * h;
+    SharemindExecutableHeader0x0 h;
     if (SharemindExecutableHeader0x0_read(pos, &h) != SHAREMIND_EXECUTABLE_READ_OK)
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
     pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableHeader0x0);
 
-    for (unsigned ui = 0; ui <= h->numberOfUnitsMinusOne; ui++) {
-        const SharemindExecutableUnitHeader0x0 * uh;
+    for (unsigned ui = 0; ui <= h.numberOfUnitsMinusOne; ui++) {
+        SharemindExecutableUnitHeader0x0 uh;
         if (SharemindExecutableUnitHeader0x0_read(pos, &uh) != SHAREMIND_EXECUTABLE_READ_OK)
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
         pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableUnitHeader0x0);
-        for (unsigned si = 0; si <= uh->sectionsMinusOne; si++) {
-            const SharemindExecutableSectionHeader0x0 * sh;
+        for (unsigned si = 0; si <= uh.sectionsMinusOne; si++) {
+            SharemindExecutableSectionHeader0x0 sh;
             if (SharemindExecutableSectionHeader0x0_read(pos, &sh) != SHAREMIND_EXECUTABLE_READ_OK)
                 RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
             pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableSectionHeader0x0);
 
-            SHAREMIND_EXECUTABLE_SECTION_TYPE type = SharemindExecutableSectionHeader0x0_type(sh);
+            SHAREMIND_EXECUTABLE_SECTION_TYPE type = SharemindExecutableSectionHeader0x0_type(&sh);
             assert(type != (SHAREMIND_EXECUTABLE_SECTION_TYPE) -1);
 
 #if SIZE_MAX < UINT32_MAX
-            if (unlikely(sh->length > SIZE_MAX))
+            if (unlikely(sh.length > SIZE_MAX))
                 RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
 #endif
 
@@ -172,18 +171,18 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
         SharemindDataSection * s = SharemindDataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
             RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos); \
-        if (unlikely(!SharemindDataSection_init(s, sh->length, (spec)))) { \
+        if (unlikely(!SharemindDataSection_init(s, sh.length, (spec)))) { \
             SharemindDataSectionsVector_pop(&p->ltype ## Sections); \
             RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos); \
         } \
-        memcpy(s->pData, pos, sh->length); \
-        pos = ((const uint8_t *) pos) + sh->length + extraPadding[sh->length % 8]; \
+        memcpy(s->pData, pos, sh.length); \
+        pos = ((const uint8_t *) pos) + sh.length + extraPadding[sh.length % 8]; \
     } break;
 #define LOAD_BINDSECTION_CASE(utype,code) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
-        if (sh->length <= 0) \
+        if (sh.length <= 0) \
             break; \
-        const char * endPos = ((const char *) pos) + sh->length; \
+        const char * endPos = ((const char *) pos) + sh.length; \
         /* Check for 0-termination: */ \
         if (unlikely(*(endPos - 1))) \
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, pos); \
@@ -191,18 +190,18 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
             code \
             pos = ((const char *) pos) + strlen((const char *) pos) + 1; \
         } while (pos != endPos); \
-        pos = ((const char *) pos) + extraPadding[sh->length % 8]; \
+        pos = ((const char *) pos) + extraPadding[sh.length % 8]; \
     } break;
 
             SHAREMIND_STATIC_ASSERT(sizeof(type) <= sizeof(int));
             switch ((int) type) {
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
-                    const SharemindVmError r = SharemindProgram_addCodeSection(p, (const SharemindCodeBlock *) pos, sh->length);
+                    const SharemindVmError r = SharemindProgram_addCodeSection(p, (const SharemindCodeBlock *) pos, sh.length);
                     if (r != SHAREMIND_VM_OK)
                         RETURN_SPLR(r, pos);
 
-                    pos = ((const uint8_t *) pos) + sh->length * sizeof(SharemindCodeBlock);
+                    pos = ((const uint8_t *) pos) + sh.length * sizeof(SharemindCodeBlock);
                 } break;
 
                 LOAD_DATASECTION_CASE(RODATA,rodata,&roDataSpecials)
@@ -214,8 +213,8 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                     if (unlikely(!s))
                         RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos);
 
-                    SHAREMIND_STATIC_ASSERT(sizeof(*s) == sizeof(sh->length));
-                    (*s) = sh->length;
+                    SHAREMIND_STATIC_ASSERT(sizeof(*s) == sizeof(sh.length));
+                    (*s) = sh.length;
 
                 } break;
 
@@ -271,7 +270,7 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
             (*s) = 0u;
         }
     }
-    p->activeLinkingUnit = h->activeLinkingUnit;
+    p->activeLinkingUnit = h.activeLinkingUnit;
 
     return SharemindProgram_endPrepare(p);
 }
