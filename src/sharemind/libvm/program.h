@@ -15,6 +15,7 @@
 #endif
 
 
+#include <sharemind/mutex.h>
 #include <sharemind/refs.h>
 #include "codesectionsvector.h"
 #include "datasectionsvector.h"
@@ -57,6 +58,7 @@ struct SharemindProgram_ {
     SharemindSyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;
 
+    SharemindMutex mutex;
     SHAREMIND_REFS_DECLARE_FIELDS
 
     size_t activeLinkingUnit;
