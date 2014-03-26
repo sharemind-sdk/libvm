@@ -17,6 +17,7 @@
 
 #include "libvm.h"
 
+#include <sharemind/mutex.h>
 #include <sharemind/refs.h>
 
 
@@ -26,9 +27,13 @@ extern "C" {
 
 
 struct SharemindVm_ {
+
+    SharemindMutex mutex;
+
     SharemindVirtualMachineContext * context;
 
     SHAREMIND_REFS_DECLARE_FIELDS
+
 };
 
 #ifdef __GNUC__
