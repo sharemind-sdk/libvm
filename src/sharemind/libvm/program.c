@@ -120,6 +120,11 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
         return r__; \
     } while (0)
 
+#define CONSTVOIDPTR_ADD(ptr,size) ((const void *)(((const char *) (ptr)) + (size)))
+#define CONSTVOIDPTR_ADD_ASSIGN(dst,src,size) \
+    do { (dst) = CONSTVOIDPTR_ADD((src),(size)); } while (0)
+#define CONSTVOIDPTR_INCR(ptr,size) CONSTVOIDPTR_ADD_ASSIGN((ptr),(ptr),(size))
+
 SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                                                           const void * data,
                                                           size_t dataSize)
@@ -138,25 +143,25 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
     if (ch.fileFormatVersion > 0u)
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data); /** \todo new error code? */
 
-    const void * pos = ((const uint8_t *) data) + sizeof(SharemindExecutableCommonHeader);
+    const void * pos = CONSTVOIDPTR_ADD(data, sizeof(SharemindExecutableCommonHeader));
 
     SharemindExecutableHeader0x0 h;
     if (SharemindExecutableHeader0x0_read(pos, &h) != SHAREMIND_EXECUTABLE_READ_OK)
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
-    pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableHeader0x0);
+    CONSTVOIDPTR_INCR(pos, sizeof(SharemindExecutableHeader0x0));
 
     for (unsigned ui = 0; ui <= h.numberOfUnitsMinusOne; ui++) {
         SharemindExecutableUnitHeader0x0 uh;
         if (SharemindExecutableUnitHeader0x0_read(pos, &uh) != SHAREMIND_EXECUTABLE_READ_OK)
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
-        pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableUnitHeader0x0);
+        CONSTVOIDPTR_INCR(pos, sizeof(SharemindExecutableUnitHeader0x0));
         for (unsigned si = 0; si <= uh.sectionsMinusOne; si++) {
             SharemindExecutableSectionHeader0x0 sh;
             if (SharemindExecutableSectionHeader0x0_read(pos, &sh) != SHAREMIND_EXECUTABLE_READ_OK)
                 RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, pos);
 
-            pos = ((const uint8_t *) pos) + sizeof(SharemindExecutableSectionHeader0x0);
+            CONSTVOIDPTR_INCR(pos, sizeof(SharemindExecutableSectionHeader0x0));
 
             SHAREMIND_EXECUTABLE_SECTION_TYPE type = SharemindExecutableSectionHeader0x0_type(&sh);
             assert(type != (SHAREMIND_EXECUTABLE_SECTION_TYPE) -1);
@@ -176,21 +181,21 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
             RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos); \
         } \
         memcpy(s->pData, pos, sh.length); \
-        pos = ((const uint8_t *) pos) + sh.length + extraPadding[sh.length % 8]; \
+        CONSTVOIDPTR_INCR(pos, (sh.length + extraPadding[sh.length % 8])); \
     } break;
 #define LOAD_BINDSECTION_CASE(utype,code) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         if (sh.length <= 0) \
             break; \
-        const char * endPos = ((const char *) pos) + sh.length; \
+        const void * const endPos = CONSTVOIDPTR_ADD(pos, sh.length); \
         /* Check for 0-termination: */ \
-        if (unlikely(*(endPos - 1))) \
+        if (unlikely(*(((const char *)(endPos)) - 1))) \
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, pos); \
         do { \
             code \
-            pos = ((const char *) pos) + strlen((const char *) pos) + 1; \
+            CONSTVOIDPTR_INCR(pos, strlen((const char *) pos) + 1); \
         } while (pos != endPos); \
-        pos = ((const char *) pos) + extraPadding[sh.length % 8]; \
+        CONSTVOIDPTR_INCR(pos, extraPadding[sh.length % 8]); \
     } break;
 
             SHAREMIND_STATIC_ASSERT(sizeof(type) <= sizeof(int));
@@ -201,7 +206,7 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                     if (r != SHAREMIND_VM_OK)
                         RETURN_SPLR(r, pos);
 
-                    pos = ((const uint8_t *) pos) + sh.length * sizeof(SharemindCodeBlock);
+                    CONSTVOIDPTR_INCR(pos, sh.length * sizeof(SharemindCodeBlock));
                 } break;
 
                 LOAD_DATASECTION_CASE(RODATA,rodata,&roDataSpecials)
