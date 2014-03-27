@@ -332,29 +332,24 @@ void SharemindProcess_set_process_internal(SharemindProcess * const process,
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
     assert(p);
-    LOCK(p);
     const SharemindPdpiCache * const cache = &p->pdpiCache;
     size_t i;
     for (i = 0u; i < cache->size; i++) {
         if (!SharemindPdpiCacheItem_start(&cache->data[i])) {
             while (i)
                 SharemindPdpiCacheItem_stop(&cache->data[--i]);
-            UNLOCK(p);
             return false;
         }
     }
-    UNLOCK(p);
     return true;
 }
 
 static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
     assert(p);
-    LOCK(p);
     const SharemindPdpiCache * const cache = &p->pdpiCache;
     size_t i = cache->size;
     while (i)
         SharemindPdpiCacheItem_stop(&cache->data[--i]);
-    UNLOCK(p);
 }
 
 SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
