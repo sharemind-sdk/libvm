@@ -31,8 +31,6 @@ SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmProcessException, SHAREMIND_VM_
  *  Forward declarations:
 ********************************************************************************/
 
-static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProcess * p);
-
 static inline uint64_t SharemindProcess_public_alloc_slot(SharemindProcess * p, SharemindMemorySlot ** memorySlot) __attribute__ ((nonnull(1, 2)));
 
 static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c, uint64_t nBytes) __attribute__ ((nonnull(1)));
@@ -135,7 +133,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     p->memorySlotNext = 1u;
     SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
 
-    /* Set currentCodeSectionIndex before SharemindProcess_reinitialize_static_mem_slots: */
+    /* Set currentCodeSectionIndex before initializing memory slots: */
     p->currentCodeSectionIndex = program->activeLinkingUnit;
     p->currentIp = 0u;
 
@@ -147,10 +145,23 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 1u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
     assert(p->memorySlotNext == 1u);
-    if (unlikely(!SharemindProcess_reinitialize_static_mem_slots(p))) {
-        error = SHAREMIND_VM_OUT_OF_MEMORY;
-        goto SharemindProcess_init_error_1;
-    }
+
+#define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
+    if (1) { \
+        assert((pSection)->size > p->currentCodeSectionIndex); \
+        SharemindDataSection * const restrict staticSlot = SharemindDataSectionsVector_get_pointer((pSection), p->currentCodeSectionIndex); \
+        assert(staticSlot); \
+        SharemindMemorySlot * const restrict slot = SharemindMemoryMap_get_or_insert(&p->memoryMap, (index)); \
+        if (unlikely(!slot)) { \
+            error = SHAREMIND_VM_OUT_OF_MEMORY; \
+            goto errorLabel; \
+        } \
+        (*slot) = *staticSlot; \
+    } else (void) 0
+
+    INIT_STATIC_MEMSLOT(1u,&p->program->rodataSections,SharemindProcess_new_fail_firstmemslot);
+    INIT_STATIC_MEMSLOT(2u,&p->dataSections,SharemindProcess_new_fail_memslots);
+    INIT_STATIC_MEMSLOT(3u,&p->bssSections,SharemindProcess_new_fail_memslots);
 
     p->memorySlotNext += 3;
 
@@ -175,7 +186,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     p->globalFrame = SharemindFrameStack_push(&p->frames);
     if (unlikely(!p->globalFrame)) {
         error = SHAREMIND_VM_OUT_OF_MEMORY;
-        goto SharemindProcess_init_error_1;
+        goto SharemindProcess_new_fail_framestack;
     }
 
     /* Initialize global frame: */
@@ -187,6 +198,12 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
 
     return SHAREMIND_VM_OK;
 
+SharemindProcess_new_fail_framestack:
+SharemindProcess_new_fail_memslots:
+
+    SharemindMemoryMap_destroy_with(&p->memoryMap, &SharemindMemoryMap_destroyer);
+
+SharemindProcess_new_fail_firstmemslot:
 SharemindProcess_new_fail_pdpiCache:
 
     SharemindPdpiCache_destroy_with(&p->pdpiCache, &SharemindPdpiCacheItem_destroy);
@@ -199,11 +216,6 @@ SharemindProcess_new_fail_data_sections:
 
     SharemindDataSectionsVector_destroy_with(&p->dataSections, &SharemindDataSection_destroy);
     SharemindProgram_refs_unref(program);
-    goto SharemindProcess_init_error_0;
-
-SharemindProcess_init_error_1:
-
-    SharemindProcess_destroy(p);
 
 SharemindProcess_init_error_0:
 
@@ -311,27 +323,6 @@ static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
     size_t i = cache->size;
     while (i)
         SharemindPdpiCacheItem_stop(&cache->data[--i]);
-}
-
-static inline bool SharemindProcess_reinitialize_static_mem_slots(SharemindProcess * p) {
-    assert(p);
-
-#define INIT_STATIC_MEMSLOT(index,pSection) \
-    if (1) { \
-        assert((pSection)->size > p->currentCodeSectionIndex); \
-        SharemindDataSection * const restrict staticSlot = SharemindDataSectionsVector_get_pointer((pSection), p->currentCodeSectionIndex); \
-        assert(staticSlot); \
-        SharemindMemorySlot * const restrict slot = SharemindMemoryMap_get_or_insert(&p->memoryMap, (index)); \
-        if (unlikely(!slot)) \
-            return false; \
-        (*slot) = *staticSlot; \
-    } else (void) 0
-
-    INIT_STATIC_MEMSLOT(1u,&p->program->rodataSections);
-    INIT_STATIC_MEMSLOT(2u,&p->dataSections);
-    INIT_STATIC_MEMSLOT(3u,&p->bssSections);
-
-    return true;
 }
 
 SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
