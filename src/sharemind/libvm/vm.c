@@ -26,17 +26,29 @@ SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmError, SHAREMIND_VM_ERROR_ENUM)
  *  SharemindVm
 ********************************************************************************/
 
-SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context) {
+static inline SharemindVmError SharemindVm_init(
+        SharemindVm * vm,
+        SharemindVirtualMachineContext * context)
+{
+    assert(vm);
     assert(context);
-    SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
-    if (!vm)
-        goto SharemindVm_new_error_0;
-
     if (unlikely(SharemindMutex_init(&vm->mutex) != SHAREMIND_MUTEX_OK))
-        goto SharemindVm_new_error_1;
+        return SHAREMIND_VM_LOCK_FAILURE;
 
     vm->context = context;
     SHAREMIND_REFS_INIT(vm);
+    return SHAREMIND_VM_OK;
+}
+
+SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context) {
+    assert(context);
+    SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
+    if (unlikely(!vm))
+        goto SharemindVm_new_error_0;
+
+    if (unlikely(SharemindVm_init(vm, context) != SHAREMIND_VM_OK))
+        goto SharemindVm_new_error_1;
+
     return vm;
 
 SharemindVm_new_error_1:
@@ -48,7 +60,7 @@ SharemindVm_new_error_0:
     return NULL;
 }
 
-void SharemindVm_free(SharemindVm * vm) {
+static inline void SharemindVm_destroy(SharemindVm * vm) {
     assert(vm);
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(vm);
     if (vm->context && vm->context->destructor)
@@ -56,6 +68,10 @@ void SharemindVm_free(SharemindVm * vm) {
 
     if (unlikely(SharemindMutex_destroy(&vm->mutex) != SHAREMIND_MUTEX_OK))
         abort();
+}
+
+void SharemindVm_free(SharemindVm * vm) {
+    SharemindVm_destroy((assert(vm), vm));
     free(vm);
 }
 
