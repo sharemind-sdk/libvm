@@ -289,25 +289,25 @@ SharemindVmError SharemindProcess_pause(SharemindProcess * process) __attribute_
  * \param process pointer to the SharemindProcess instance.
  * \returns the return value of the program.
  */
-int64_t SharemindProcess_get_return_value(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
+int64_t SharemindProcess_get_return_value(const SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \param process pointer to the SharemindProcess instance.
  * \returns the exception value of the program.
  */
-SharemindVmProcessException SharemindProcess_get_exception(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
+SharemindVmProcessException SharemindProcess_get_exception(const SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \param process pointer to the SharemindProcess instance.
  * \returns the current code section of the program.
  */
-size_t SharemindProcess_get_current_code_section(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
+size_t SharemindProcess_get_current_code_section(const SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \param process pointer to the SharemindProcess instance.
  * \returns the current instruction pointer of the program.
  */
-uintptr_t SharemindProcess_get_current_ip(SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
+uintptr_t SharemindProcess_get_current_ip(const SharemindProcess * process) __attribute__ ((nonnull(1), warn_unused_result));
 
 #ifdef __cplusplus
 } /* extern "C" { */

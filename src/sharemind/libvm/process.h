@@ -17,6 +17,7 @@
 #ifdef SHAREMIND_SOFT_FLOAT
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
 #endif
+#include <sharemind/mutex.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "libvm.h"
@@ -34,6 +35,8 @@ extern "C" {
 
 struct SharemindProcess_ {
     SharemindProgram * program;
+
+    SharemindMutex mutex;
 
     SharemindDataSectionsVector dataSections;
     SharemindDataSectionsVector bssSections;
