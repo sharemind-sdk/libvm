@@ -122,8 +122,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
         }
 
         if (!SharemindPdpiCacheItem_init(ci, program->pdBindings.data[i])) {
-            if (!ci->pdpi)
-                SharemindPdpiCache_pop(&p->pdpiCache);
+            SharemindPdpiCache_pop(&p->pdpiCache);
             error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_pdpiCache;
         }
