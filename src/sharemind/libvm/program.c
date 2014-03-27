@@ -60,15 +60,19 @@ static SharemindProgramLoadResult SharemindProgram_endPrepare(SharemindProgram *
  *  SharemindProgram
 ********************************************************************************/
 
-SharemindProgram * SharemindProgram_new(SharemindVm * vm,
-                                        SharemindVirtualMachineContext * overrides)
+static inline SharemindVmError SharemindProgram_init(
+        SharemindProgram * p,
+        SharemindVm * vm,
+        SharemindVirtualMachineContext * overrides)
 {
-    SharemindProgram * const p = (SharemindProgram *) malloc(sizeof(SharemindProgram));
-    if (unlikely(!p))
-        goto SharemindProgram_new_error_0;
+    assert(p);
+    assert(vm);
 
-    if (unlikely(!SharemindVm_refs_ref(vm)))
-        goto SharemindProgram_new_error_1;
+    SharemindVmError error;
+    if (unlikely(!SharemindVm_refs_ref(vm))) {
+        error = SHAREMIND_VM_IMPLEMENTATION_LIMITS_REACHED;
+        goto SharemindProgram_init_error_0;
+    }
 
     SharemindCodeSectionsVector_init(&p->codeSections);
     SharemindDataSectionsVector_init(&p->dataSections);
@@ -77,8 +81,10 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm,
     SharemindSyscallBindingsVector_init(&p->bindings);
     SharemindPdBindings_init(&p->pdBindings);
 
-    if (unlikely(SharemindMutex_init(&p->mutex) != SHAREMIND_MUTEX_OK))
-        goto SharemindProgram_new_error_2;
+    if (unlikely(SharemindMutex_init(&p->mutex) != SHAREMIND_MUTEX_OK)) {
+        error = SHAREMIND_VM_LOCK_FAILURE;
+        goto SharemindProgram_init_error_1;
+    }
 
     SHAREMIND_REFS_INIT(p);
 
@@ -87,11 +93,31 @@ SharemindProgram * SharemindProgram_new(SharemindVm * vm,
     p->ready = false;
     p->overrides = overrides;
 
-    return p;
+    return SHAREMIND_VM_OK;
 
-SharemindProgram_new_error_2:
+SharemindProgram_init_error_1:
 
     SharemindVm_refs_unref(vm);
+
+SharemindProgram_init_error_0:
+
+    return error;
+
+}
+
+SharemindProgram * SharemindProgram_new(SharemindVm * vm,
+                                        SharemindVirtualMachineContext * overrides)
+{
+    assert(vm);
+
+    SharemindProgram * const p = (SharemindProgram *) malloc(sizeof(SharemindProgram));
+    if (unlikely(!p))
+        goto SharemindProgram_new_error_0;
+
+    if (unlikely(SharemindProgram_init(p, vm, overrides) != SHAREMIND_VM_OK))
+        goto SharemindProgram_new_error_1;
+
+    return p;
 
 SharemindProgram_new_error_1:
 
@@ -103,7 +129,7 @@ SharemindProgram_new_error_0:
 
 }
 
-void SharemindProgram_free(SharemindProgram * const p) {
+static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     assert(p);
 
     if (p->overrides && p->overrides->destructor)
@@ -122,7 +148,10 @@ void SharemindProgram_free(SharemindProgram * const p) {
 
     if (unlikely(SharemindMutex_destroy(&p->mutex) != SHAREMIND_MUTEX_OK))
         abort();
+}
 
+void SharemindProgram_free(SharemindProgram * const p) {
+    SharemindProgram_destroy((assert(p), p));
     free(p);
 }
 
