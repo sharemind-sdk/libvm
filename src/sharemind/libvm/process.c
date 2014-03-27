@@ -59,16 +59,17 @@ static inline void SharemindProcess_destroy(SharemindProcess * p);
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p);
 static inline void SharemindProcess_stop_pdpis(SharemindProcess * p);
 
-SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
+static SharemindVmError SharemindProcess_init(SharemindProcess * p,
+                                              SharemindProgram * program)
+{
+    assert(p);
     assert(program);
-    assert(SharemindProgram_is_ready(program));
 
-    SharemindProcess * const p = (SharemindProcess *) malloc(sizeof(SharemindProcess));
-    if (!p)
-        goto SharemindProcess_new_fail_0;
-
-    if (unlikely(!SharemindProgram_refs_ref(program)))
-        goto SharemindProcess_new_fail_1;
+    SharemindVmError error;
+    if (unlikely(!SharemindProgram_refs_ref(program))) {
+        error = SHAREMIND_VM_IMPLEMENTATION_LIMITS_REACHED;
+        goto SharemindProcess_init_error_0;
+    }
 
     p->program = program;
 
@@ -76,11 +77,14 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     SharemindDataSectionsVector_init(&p->dataSections);
     for (size_t i = 0u; i < program->dataSections.size; i++) {
         SharemindDataSection * processSection = SharemindDataSectionsVector_push(&p->dataSections);
-        if (!processSection)
+        if (!processSection) {
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_data_sections;
+        }
         SharemindDataSection * originalSection = &program->dataSections.data[i];
         if (!SharemindDataSection_init(processSection, originalSection->size, &rwDataSpecials)) {
             SharemindDataSectionsVector_pop(&p->dataSections);
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_data_sections;
         }
         assert(processSection->size == originalSection->size);
@@ -92,11 +96,14 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     SharemindDataSectionsVector_init(&p->bssSections);
     for (size_t i = 0u; i < program->bssSectionSizes.size; i++) {
         SharemindDataSection * bssSection = SharemindDataSectionsVector_push(&p->bssSections);
-        if (!bssSection)
+        if (!bssSection) {
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_bss_sections;
+        }
         SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes.data[i]) <= sizeof(size_t));
         if (!SharemindDataSection_init(bssSection, program->bssSectionSizes.data[i], &rwDataSpecials)) {
             SharemindDataSectionsVector_pop(&p->bssSections);
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_bss_sections;
         }
         assert(bssSection->size == program->bssSectionSizes.data[i]);
@@ -109,12 +116,15 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     SharemindPdpiCache_init(&p->pdpiCache);
     for (size_t i = 0u; i < program->pdBindings.size; i++) {
         SharemindPdpiCacheItem * ci = SharemindPdpiCache_push(&p->pdpiCache);
-        if (!ci)
+        if (!ci) {
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_pdpiCache;
+        }
 
         if (!SharemindPdpiCacheItem_init(ci, program->pdBindings.data[i])) {
             if (!ci->pdpi)
                 SharemindPdpiCache_pop(&p->pdpiCache);
+            error = SHAREMIND_VM_OUT_OF_MEMORY;
             goto SharemindProcess_new_fail_pdpiCache;
         }
     }
@@ -138,8 +148,10 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 1u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
     assert(p->memorySlotNext == 1u);
-    if (unlikely(!SharemindProcess_reinitialize_static_mem_slots(p)))
-        goto SharemindProcess_new_fail_2;
+    if (unlikely(!SharemindProcess_reinitialize_static_mem_slots(p))) {
+        error = SHAREMIND_VM_OUT_OF_MEMORY;
+        goto SharemindProcess_init_error_1;
+    }
 
     p->memorySlotNext += 3;
 
@@ -162,8 +174,10 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
 
     p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
     p->globalFrame = SharemindFrameStack_push(&p->frames);
-    if (unlikely(!p->globalFrame))
-        goto SharemindProcess_new_fail_2;
+    if (unlikely(!p->globalFrame)) {
+        error = SHAREMIND_VM_OUT_OF_MEMORY;
+        goto SharemindProcess_init_error_1;
+    }
 
     /* Initialize global frame: */
     SharemindStackFrame_init(p->globalFrame, NULL);
@@ -172,7 +186,7 @@ SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;
 
-    return p;
+    return SHAREMIND_VM_OK;
 
 SharemindProcess_new_fail_pdpiCache:
 
@@ -186,11 +200,29 @@ SharemindProcess_new_fail_data_sections:
 
     SharemindDataSectionsVector_destroy_with(&p->dataSections, &SharemindDataSection_destroy);
     SharemindProgram_refs_unref(program);
-    goto SharemindProcess_new_fail_1;
+    goto SharemindProcess_init_error_0;
 
-SharemindProcess_new_fail_2:
+SharemindProcess_init_error_1:
 
     SharemindProcess_destroy(p);
+
+SharemindProcess_init_error_0:
+
+    return error;
+}
+
+SharemindProcess * SharemindProcess_new(SharemindProgram * program) {
+    assert(program);
+    assert(SharemindProgram_is_ready(program));
+
+    SharemindProcess * const p = (SharemindProcess *) malloc(sizeof(SharemindProcess));
+    if (unlikely(!p))
+        goto SharemindProcess_new_fail_0;
+
+    if (unlikely(SharemindProcess_init(p, program) != SHAREMIND_VM_OK))
+        goto SharemindProcess_new_fail_1;
+
+    return p;
 
 SharemindProcess_new_fail_1:
 
@@ -218,8 +250,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 }
 
 void SharemindProcess_free(SharemindProcess * p) {
-    assert(p);
-    SharemindProcess_destroy(p);
+    SharemindProcess_destroy((assert(p), p));
     free(p);
 }
 
