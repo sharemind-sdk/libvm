@@ -234,16 +234,17 @@ static inline void _SharemindProcess_restoreSignalHandlers(SharemindProcess * pr
             SHAREMIND_DO_EXCEPT; \
         } \
     } else (void) 0
+#define SHAREMIND_SF_E_CAST(dest,destType,immedType,resultType,...) \
+    do { \
+        immedType r__; \
+        SHAREMIND_SF_E(resultType,r__,__VA_ARGS__); \
+        (dest) = (destType) r__; \
+    } while(0)
 #define SHAREMIND_SF_FPU32F(dest,...) SHAREMIND_SF_E(sf_result32f,(dest),,__VA_ARGS__)
 #define SHAREMIND_SF_FPU64F(dest,...) SHAREMIND_SF_E(sf_result64f,(dest),,__VA_ARGS__)
 #define SHAREMIND_SF_FPU32I(dest,...) SHAREMIND_SF_E(sf_result32i,(dest),,__VA_ARGS__)
 #define SHAREMIND_SF_FPU64I(dest,...) SHAREMIND_SF_E(sf_result64i,(dest),,__VA_ARGS__)
-#define SHAREMIND_SF_FPUF(dest,...) \
-    do { \
-        sf_flag r__; \
-        SHAREMIND_SF_E(sf_resultFlag,r__,__VA_ARGS__); \
-        (dest) = (uint64_t) r__; \
-    } while(0)
+#define SHAREMIND_SF_FPUF(dest,...) SHAREMIND_SF_E_CAST(dest,uint64_t,sf_flag,sf_resultFlag,__VA_ARGS__)
 #define SHAREMIND_MI_UNEG_FLOAT32(d) do { (d) = sf_float32_neg(d); } while (0)
 #define SHAREMIND_MI_UNEG_FLOAT64(d) do { (d) = sf_float64_neg(d); } while (0)
 #define SHAREMIND_MI_UINC_FLOAT32(d) SHAREMIND_SF_FPU32F((d),sf_float32_add((d),sf_float32_one,p->fpuState))
