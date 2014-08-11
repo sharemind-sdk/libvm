@@ -25,32 +25,19 @@ ADD_COMPILE_OPTIONS(
   "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"
 )
 
-FUNCTION(SHAREMIND_FIND_TARGETLIB libname)
-  IF(NOT DEFINED SHAREMIND_TARGETLIB_${libname})
-    IF(TARGET "lib${libname}")
-      SET(SHAREMIND_TARGETLIB_${libname} "lib${libname}" PARENT_SCOPE)
-    ELSE()
-      FIND_LIBRARY(libfn "sharemind_${libname}")
-      IF(NOT libfn)
-        IF("${ARGN}" STREQUAL "OPTIONAL")
-          MESSAGE(WARNING "Library \"sharemind_${libname}\" not found!")
-        ELSE()
-          MESSAGE(FATAL_ERROR "Required library \"sharemind_${libname}\" not found!")
-        ENDIF()
-      ELSE()
-        SET(libs)
-        GET_FILENAME_COMPONENT(libpath "${libfn}" PATH)
-        LIST(APPEND libs "-L${libpath}")
-        LIST(APPEND libs "sharemind_${libname}")
-        SET(SHAREMIND_TARGETLIB_${libname} "${libs}" PARENT_SCOPE)
-      ENDIF()
-    ENDIF()
-  ENDIF()
-ENDFUNCTION()
-
-# Find boost - seems to be required since the variables aren't populated otherwise
 FIND_PACKAGE(Boost REQUIRED)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+FIND_PACKAGE(SharemindLibexecutable REQUIRED)
+FIND_PACKAGE(SharemindLibmodapi REQUIRED)
+FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
+FIND_PACKAGE(SharemindLibvmi REQUIRED)
+
+INCLUDE_DIRECTORIES(
+  ${Boost_INCLUDE_DIRS}
+  ${SharemindLibexecutable_INCLUDE_DIRS}
+  ${SharemindLibmodapi_INCLUDE_DIRS}
+  ${SharemindLibsoftfloat_INCLUDE_DIRS}
+  ${SharemindLibvmi_INCLUDE_DIRS}
+)
 
 SET(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wunused-macros")
 
@@ -65,7 +52,13 @@ FLAGS_MAGIC("Weverything")
 FLAGS_MAGIC("Wlogical-op")
 
 SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS" "-D_XOPEN_SOURCE=700")
-ADD_DEFINITIONS(${LIBVM_INSTALL_DEFINITIONS})
+ADD_DEFINITIONS(
+  ${SharemindLibexecutable_DEFINITIONS}
+  ${SharemindLibmodapi_DEFINITIONS}
+  ${SharemindLibsoftfloat_DEFINITIONS}
+  ${SharemindLibvmi_DEFINITIONS}
+  ${LIBVM_INSTALL_DEFINITIONS}
+)
 
 ################################################################################
 # libvm
@@ -96,16 +89,11 @@ SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
                       COMPILE_DEFINITIONS "${SHAREMIND_LIBVM_DEFINES}")
 
-SHAREMIND_FIND_TARGETLIB(executable)
-SHAREMIND_FIND_TARGETLIB(modapi)
-SHAREMIND_FIND_TARGETLIB(softfloat)
-SHAREMIND_FIND_TARGETLIB(vmi)
-
 TARGET_LINK_LIBRARIES("libvm"
-                      ${SHAREMIND_TARGETLIB_executable}
-                      ${SHAREMIND_TARGETLIB_modapi}
-                      ${SHAREMIND_TARGETLIB_softfloat}
-                      ${SHAREMIND_TARGETLIB_vmi}
+                      ${SharemindLibexecutable_LIBRARIES}
+                      ${SharemindLibmodapi_LIBRARIES}
+                      ${SharemindLibsoftfloat_LIBRARIES}
+                      ${SharemindLibvmi_LIBRARIES}
                       "m")
 
 FIND_PROGRAM(LIBVM_STRIP strip)
