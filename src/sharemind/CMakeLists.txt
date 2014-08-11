@@ -19,7 +19,7 @@ ENDFOREACH()
 INCLUDE_DIRECTORIES(BEFORE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../")
 
 ADD_COMPILE_OPTIONS(
-  "-O2"
+  "-O2" "-Wall" "-Wextra"
   "-pthread"
   "$<$<STREQUAL:$<CONFIGURATION>,Release>:-DNDEBUG>"
   "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"
