@@ -14,16 +14,9 @@ INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
 FOREACH(dir IN LISTS CMAKE_PREFIX_PATH)
-  INCLUDE_DIRECTORIES(BEFORE SYSTEM "${dir}/include")
+    INCLUDE_DIRECTORIES(BEFORE SYSTEM "${dir}/include")
 ENDFOREACH()
 INCLUDE_DIRECTORIES(BEFORE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../")
-
-ADD_COMPILE_OPTIONS(
-  "-O2" "-Wall" "-Wextra"
-  "-pthread"
-  "$<$<STREQUAL:$<CONFIGURATION>,Release>:-DNDEBUG>"
-  "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"
-)
 
 FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
@@ -32,32 +25,39 @@ FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibvmi REQUIRED)
 
 INCLUDE_DIRECTORIES(
-  ${Boost_INCLUDE_DIRS}
-  ${SharemindLibexecutable_INCLUDE_DIRS}
-  ${SharemindLibmodapi_INCLUDE_DIRS}
-  ${SharemindLibsoftfloat_INCLUDE_DIRS}
-  ${SharemindLibvmi_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${SharemindLibexecutable_INCLUDE_DIRS}
+    ${SharemindLibmodapi_INCLUDE_DIRS}
+    ${SharemindLibsoftfloat_INCLUDE_DIRS}
+    ${SharemindLibvmi_INCLUDE_DIRS}
 )
 
-SET(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -fstrict-aliasing -Wstrict-aliasing=1 -fwrapv -Wabi -Wbad-function-cast -Wformat -Wswitch-default -Wunused -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wconversion -Wsign-conversion -Wunused-macros")
+ADD_COMPILE_OPTIONS(
+    "-std=c99" "-O2" "-fwrapv" "-pthread" "-Wall" "-Wextra" "-Wunused" "-Wabi"
+    "-Wstrict-aliasing=1" "-Wbad-function-cast" "-Wformat" "-Wswitch-default"
+    "-Wfloat-equal" "-Wshadow" "-Wpointer-arith" "-Wcast-qual"
+    "-Wstrict-prototypes" "-Wconversion" "-Wsign-conversion" "-Wunused-macros"
+    "$<$<STREQUAL:$<CONFIGURATION>,Release>:-DNDEBUG>"
+    "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"
+)
 
 INCLUDE(CheckCCompilerFlag)
-MACRO(FLAGS_MAGIC flags)
-    CHECK_C_COMPILER_FLAG("-${flags}" SHAREMIND_HAS_CFLAGS__${flags})
-    IF(SHAREMIND_HAS_CFLAGS__${flags})
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -${flags}")
-    ENDIF(SHAREMIND_HAS_CFLAGS__${flags})
-ENDMACRO(FLAGS_MAGIC)
-FLAGS_MAGIC("Weverything")
-FLAGS_MAGIC("Wlogical-op")
+FUNCTION(CHECK_ADD_COMPILER_FLAG flag)
+    CHECK_C_COMPILER_FLAG("${flag}" HAS_FLAG)
+    IF(HAS_FLAG)
+        ADD_COMPILE_OPTIONS("${flag}")
+    ENDIF()
+ENDFUNCTION()
+CHECK_ADD_COMPILER_FLAG("-Weverything")
+CHECK_ADD_COMPILER_FLAG("-Wlogical-op")
 
 SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS" "-D_XOPEN_SOURCE=700")
 ADD_DEFINITIONS(
-  ${SharemindLibexecutable_DEFINITIONS}
-  ${SharemindLibmodapi_DEFINITIONS}
-  ${SharemindLibsoftfloat_DEFINITIONS}
-  ${SharemindLibvmi_DEFINITIONS}
-  ${LIBVM_INSTALL_DEFINITIONS}
+    ${SharemindLibexecutable_DEFINITIONS}
+    ${SharemindLibmodapi_DEFINITIONS}
+    ${SharemindLibsoftfloat_DEFINITIONS}
+    ${SharemindLibvmi_DEFINITIONS}
+    ${LIBVM_INSTALL_DEFINITIONS}
 )
 
 ################################################################################
@@ -66,26 +66,30 @@ ADD_DEFINITIONS(
 
 SET(LIBVM_DEFINES "SHAREMIND_NO_THREADS")
 IF(NOT SHAREMIND_RELEASE_BUILD)
-  SET(SHAREMIND_LIBVM_DEFINES "${SHAREMIND_LIBVM_DEFINES};SHAREMIND_FAST_BUILD")
+    ADD_DEFINITIONS("-DSHAREMIND_FAST_BUILD")
 ENDIF(NOT SHAREMIND_RELEASE_BUILD)
-FILE(GLOB_RECURSE SHAREMIND_LIBVM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/libvm/*.c")
-FILE(GLOB_RECURSE SHAREMIND_LIBVM_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/libvm/*.h")
-ADD_CUSTOM_TARGET("include_libvm_headers_in_IDE" SOURCES ${SHAREMIND_LIBVM_HEADERS})
+FILE(GLOB_RECURSE SHAREMIND_LIBVM_SOURCES
+     "${CMAKE_CURRENT_SOURCE_DIR}/libvm/*.c")
+FILE(GLOB_RECURSE SHAREMIND_LIBVM_HEADERS
+     "${CMAKE_CURRENT_SOURCE_DIR}/libvm/*.h")
+ADD_CUSTOM_TARGET("include_libvm_headers_in_IDE"
+                  SOURCES ${SHAREMIND_LIBVM_HEADERS})
 
 IF(NOT SHAREMIND_LIBVM_LINKING_MODE)
     SET(SHAREMIND_LIBVM_LINKING_MODE SHARED)
 ENDIF()
 
 ADD_LIBRARY("libvm" ${SHAREMIND_LIBVM_LINKING_MODE} ${SHAREMIND_LIBVM_SOURCES})
-ADD_DEPENDENCIES("libvm" m4_preprocess_pass2_functions_h m4_static_label_structs_h m4_dispatches_h)
+ADD_DEPENDENCIES("libvm"
+                 m4_preprocess_pass2_functions_h
+                 m4_static_label_structs_h
+                 m4_dispatches_h)
 
 SET(LIBVM_VERSION "0.1.0.0")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       OUTPUT_NAME "sharemind_vm"
                       VERSION "${LIBVM_VERSION}"
-                      SOVERSION "0.1"
-                      COMPILE_FLAGS "-frounding-math -ftrapping-math -fsignaling-nans"
-                      COMPILE_DEFINITIONS "${SHAREMIND_LIBVM_DEFINES}")
+                      SOVERSION "0.1")
 
 TARGET_LINK_LIBRARIES("libvm"
                       ${SharemindLibexecutable_LIBRARIES}
@@ -112,14 +116,17 @@ INSTALL(FILES "libvm/libvm.h"
 
 # Install cmake files:
 FILE(GLOB_RECURSE sharemind_libvm_in_files "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
-ADD_CUSTOM_TARGET("include_sharemind_libvm_in_files_in_IDE" SOURCES ${sharemind_libvm_in_files})
-SET(LIBVM_INSTALL_LINK_LIBRARIES "-L${CMAKE_INSTALL_PREFIX}/lib" "-lsharemind_vm")
+ADD_CUSTOM_TARGET("include_sharemind_libvm_in_files_in_IDE"
+                  SOURCES ${sharemind_libvm_in_files})
+SET(LIBVM_INSTALL_LINK_LIBRARIES
+    "-L${CMAKE_INSTALL_PREFIX}/lib" "-lsharemind_vm")
 SET(LIBVM_INSTALL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake" @ONLY)
-CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfigVersion.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake" @ONLY)
+CONFIGURE_FILE(
+    "${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfigVersion.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake" @ONLY)
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake"
         DESTINATION "lib/SharemindLibvm")
