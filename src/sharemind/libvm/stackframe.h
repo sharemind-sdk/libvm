@@ -15,6 +15,7 @@
 #endif
 
 
+#include <assert.h>
 #include <sharemind/codeblock.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>

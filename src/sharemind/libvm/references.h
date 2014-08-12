@@ -15,6 +15,7 @@
 #endif
 
 
+#include <assert.h>
 #include <sharemind/libmodapi/api_0x1.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
@@ -30,11 +31,13 @@ typedef SharemindModuleApi0x1Reference SharemindReference;
 typedef SharemindModuleApi0x1CReference SharemindCReference;
 
 inline void SharemindReference_destroy(SharemindReference * r) {
+    assert(r);
     if (r->internal)
         ((SharemindMemorySlot *) r->internal)->nrefs--;
 }
 
 inline void SharemindCReference_destroy(SharemindCReference * r) {
+    assert(r);
     if (r->internal)
         ((SharemindMemorySlot *) r->internal)->nrefs--;
 }

@@ -53,6 +53,8 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(const SharemindMemoryM
 static inline void SharemindMemoryMap_destroyer(const uint64_t * key,
                                                 SharemindMemorySlot * value)
 {
+    assert(key);
+    assert(value);
     (void) key;
     SharemindMemorySlot_destroy(value);
 }

@@ -17,6 +17,7 @@
 
 #include "libvm.h"
 
+#include <assert.h>
 #include <sharemind/mutex.h>
 #include <sharemind/refs.h>
 

@@ -28,8 +28,9 @@ extern "C" {
 
 static inline void SharemindPrivateMemoryMap_destroyer(void * const * key, size_t * value);
 static inline void SharemindPrivateMemoryMap_destroyer(void * const * key, size_t * value) {
-    (void) value;
     assert(key);
+    assert(value);
+    (void) value;
     assert(*key);
     free(*key);
 }

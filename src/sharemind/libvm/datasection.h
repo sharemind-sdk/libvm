@@ -15,6 +15,7 @@
 #endif
 
 
+#include <assert.h>
 #include <stdbool.h>
 #include "memoryslot.h"
 

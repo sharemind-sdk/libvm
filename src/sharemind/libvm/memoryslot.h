@@ -15,6 +15,7 @@
 #endif
 
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -52,6 +53,7 @@ static inline void SharemindMemorySlot_init(SharemindMemorySlot * m,
                                             size_t size,
                                             SharemindMemorySlotSpecials * specials)
 {
+    assert(m);
     m->pData = pData;
     m->size = size;
     m->nrefs = 0u;
@@ -60,6 +62,7 @@ static inline void SharemindMemorySlot_init(SharemindMemorySlot * m,
 
 static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * m) __attribute__ ((nonnull(1)));
 static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * m) {
+    assert(m);
     if (m->specials) {
         if (m->specials->free)
             m->specials->free(m);

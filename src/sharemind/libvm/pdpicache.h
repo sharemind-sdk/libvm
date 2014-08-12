@@ -14,6 +14,8 @@
 #error including an internal header!
 #endif
 
+
+#include <assert.h>
 #include <sharemind/libmodapi/api_0x1.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/vector.h>
@@ -58,6 +60,7 @@ static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
 static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci)
         __attribute__ ((nonnull(1), warn_unused_result));
 static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci) {
+    assert(ci);
     assert(!ci->info.pdpiHandle);
     bool r = SharemindPdpi_start(ci->pdpi);
     if (r)
@@ -68,6 +71,7 @@ static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci) {
 static inline void SharemindPdpiCacheItem_stop(SharemindPdpiCacheItem * ci)
         __attribute__ ((nonnull(1)));
 static inline void SharemindPdpiCacheItem_stop(SharemindPdpiCacheItem * ci) {
+    assert(ci);
     assert(ci->info.pdpiHandle);
     SharemindPdpi_stop(ci->pdpi);
     ci->info.pdpiHandle = NULL;

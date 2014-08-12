@@ -15,6 +15,7 @@
 #endif
 
 
+#include <assert.h>
 #include <sharemind/codeblock.h>
 #include <stddef.h>
 #include <string.h>
@@ -43,6 +44,7 @@ static inline int SharemindCodeSection_init(SharemindCodeSection * s,
                                             const size_t codeSize)
 {
     assert(s);
+    assert(code || codeSize == 0u);
 
     /* Add space for an exception pointer: */
     size_t realCodeSize = codeSize + 1;
