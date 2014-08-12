@@ -13,11 +13,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
-#ifdef SHAREMIND_SOFT_FLOAT
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
-#endif
-typedef sf_float32 SharemindFloat32;
-typedef sf_float64 SharemindFloat64;
 #ifdef SHAREMIND_DEBUG
 #include <stdio.h>
 #endif
@@ -27,6 +23,9 @@ typedef sf_float64 SharemindFloat64;
 #include "program.h"
 #include "registervector.h"
 
+
+typedef sf_float32 SharemindFloat32;
+typedef sf_float64 SharemindFloat64;
 
 #ifdef SHAREMIND_DEBUG
 #define SHAREMIND_DEBUG_PRINTSTATE \
@@ -39,210 +38,6 @@ typedef sf_float64 SharemindFloat64;
 #define SHAREMIND_DEBUG_PRINTSTATE (void) 0
 #endif
 
-#ifndef SHAREMIND_SOFT_FLOAT
-SHAREMIND_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t));
-SHAREMIND_STATIC_ASSERT(sizeof(double) == sizeof(uint64_t));
-
-#ifndef SHAREMIND_NO_THREADS
-#error The Sharemind VM does not yet fully support threads without softfloat.
-#else
-/**
-  Thread-local pointer to the program being executed.
-*/
-static SharemindProcess * _SharemindProcess_SIGFPE_handler_p = NULL;
-#endif
-
-#ifdef __USE_POSIX
-static void _SharemindProcess_SIGFPE_handler(int signalNumber,
-                                             siginfo_t * signalInfo,
-                                             void * context)
-    __attribute__ ((__noreturn__, __nothrow__));
-static void _SharemindProcess_SIGFPE_handler(int signalNumber,
-                                             siginfo_t * signalInfo,
-                                             void * context)
-{
-    (void) signalNumber;
-    (void) context;
-
-    SharemindHardwareExceptionType e;
-    switch (signalInfo->si_code) {
-        case FPE_INTDIV: e = SHAREMIND_HET_FPE_INTDIV; break;
-        case FPE_INTOVF: e = SHAREMIND_HET_FPE_INTOVF; break;
-        case FPE_FLTDIV: e = SHAREMIND_HET_FPE_FLTDIV; break;
-        case FPE_FLTOVF: e = SHAREMIND_HET_FPE_FLTOVF; break;
-        case FPE_FLTUND: e = SHAREMIND_HET_FPE_FLTUND; break;
-        case FPE_FLTRES: e = SHAREMIND_HET_FPE_FLTRES; break;
-        case FPE_FLTINV: e = SHAREMIND_HET_FPE_FLTINV; break;
-        default: e = SHAREMIND_HET_FPE_UNKNOWN; break;
-    }
-
-    assert(_SharemindProcess_SIGFPE_handler_p);
-    siglongjmp(_SharemindProcess_SIGFPE_handler_p->safeJmpBuf[e], 1);
-}
-#else /* __USE_POSIX */
-static void _SharemindProcess_SIGFPE_handler(int signalNumber)
-    __attribute__ ((__noreturn__, __nothrow__));
-static void _SharemindProcess_SIGFPE_handler(int signalNumber) {
-    signal(SIGFPE, _SharemindProcess_SIGFPE_handler);
-    (void) signalNumber;
-    assert(_SharemindProcess_SIGFPE_handler_p);
-    longjmp(_SharemindProcess_SIGFPE_handler_p
-                    ->safeJmpBuf[SHAREMIND_HET_FPE_UNKNOWN],
-            1);
-}
-#endif /* __USE_POSIX */
-
-static inline void _SharemindProcess_setupSignalHandlers(
-        SharemindProcess * const program)
-{
-    /* Register SIGFPE handler: */
-    _SharemindProcess_SIGFPE_handler_p = program;
-#ifdef __USE_POSIX
-    struct sigaction newFpeAction;
-    memset(&newFpeAction, '\0', sizeof(struct sigaction));
-    newFpeAction.sa_sigaction = _SharemindProcess_SIGFPE_handler;
-    newFpeAction.sa_flags = SA_RESTART | SA_SIGINFO;
-    if (sigaction(SIGFPE, &newFpeAction, &program->oldFpeAction) != 0) {
-#ifdef SHAREMIND_DEBUG
-        fprintf(program->debugFileHandle,
-                "Failed to set SIGFPE signal handler!");
-#endif
-    }
-#else /* __USE_POSIX */
-    program->oldFpeAction = signal(SIGFPE, _SharemindProcess_SIGFPE_handler);
-#endif /* __USE_POSIX */
-}
-
-static inline void _SharemindProcess_restoreSignalHandlers(
-        SharemindProcess * const program)
-{
-    /* Restore old SIGFPE handler: */
-#ifdef __USE_POSIX
-    if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0)
-#else /* __USE_POSIX */
-    if (signal(SIGFPE, program->oldFpeAction) == SIG_ERR)
-#endif /* __USE_POSIX */
-    {
-#ifdef SHAREMIND_DEBUG
-        fprintf(program->debugFileHandle,
-                "Failed to restore previous SIGFPE signal handler!");
-#endif
-#ifdef __USE_POSIX
-        memset(&program->oldFpeAction, '\0', sizeof(struct sigaction));
-        program->oldFpeAction.sa_handler = SIG_DFL;
-        if (sigaction(SIGFPE, &program->oldFpeAction, NULL) != 0) {
-#else /* __USE_POSIX */
-        if (signal(SIGFPE, SIG_DFL) == SIG_ERR) {
-#endif /* __USE_POSIX */
-#ifdef SHAREMIND_DEBUG
-            fprintf(program->debugFileHandle,
-                    "Failed reset SIGFPE signal handler to default!");
-#endif
-        }
-    }
-    _SharemindProcess_SIGFPE_handler_p = NULL;
-}
-
-#define SHAREMIND_NO_SF_ENCLOSE(op) \
-    if(1) { \
-        feclearexcept(FE_ALL_EXCEPT); \
-        op; \
-        int exceptions = fetestexcept(FE_ALL_EXCEPT); \
-        if (unlikely(exceptions)) { \
-            if (exceptions & FE_DIVBYZERO) { \
-                p->exceptionValue = \
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_DIVIDE_BY_ZERO; \
-            } else if (exceptions & FE_OVERFLOW) { \
-                p->exceptionValue = \
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_OVERFLOW; \
-            } else if (exceptions & FE_UNDERFLOW) { \
-                p->exceptionValue = \
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_UNDERFLOW; \
-            } else if (exceptions & FE_INEXACT) { \
-                p->exceptionValue = \
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_INEXACT_RESULT; \
-            } else if (exceptions & FE_INVALID) { \
-                p->exceptionValue = \
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_INVALID_OPERATION; \
-            } else { \
-                p->exceptionValue = SHAREMIND_E_UNKNOWN_FPE; \
-            } \
-            SHAREMIND_DO_EXCEPT; \
-        } \
-    } else (void) 0
-#define SHAREMIND_MI_UNEG_FLOAT32(d) SHAREMIND_NO_SF_ENCLOSE((d) = -(d))
-#define SHAREMIND_MI_UNEG_FLOAT64(d) SHAREMIND_NO_SF_ENCLOSE((d) = -(d))
-#define SHAREMIND_MI_UINC_FLOAT32(d) SHAREMIND_NO_SF_ENCLOSE((d) = (d) + 1.0)
-#define SHAREMIND_MI_UINC_FLOAT64(d) SHAREMIND_NO_SF_ENCLOSE((d) = (d) + 1.0)
-#define SHAREMIND_MI_UDEC_FLOAT32(d) SHAREMIND_NO_SF_ENCLOSE((d) = (d) - 1.0)
-#define SHAREMIND_MI_UDEC_FLOAT64(d) SHAREMIND_NO_SF_ENCLOSE((d) = (d) - 1.0)
-#define SHAREMIND_MI_BNEG_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = -(s))
-#define SHAREMIND_MI_BNEG_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = -(s))
-#define SHAREMIND_MI_BINC_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) + 1.0)
-#define SHAREMIND_MI_BINC_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) + 1.0)
-#define SHAREMIND_MI_BDEC_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) - 1.0)
-#define SHAREMIND_MI_BDEC_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) - 1.0)
-#define SHAREMIND_MI_BADD_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) += (s))
-#define SHAREMIND_MI_BADD_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) += (s))
-#define SHAREMIND_MI_BSUB_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) -= (s))
-#define SHAREMIND_MI_BSUB_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) -= (s))
-#define SHAREMIND_MI_BSUB2_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) - (d))
-#define SHAREMIND_MI_BSUB2_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) - (d))
-#define SHAREMIND_MI_BMUL_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) *= (s))
-#define SHAREMIND_MI_BMUL_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) *= (s))
-#define SHAREMIND_MI_BDIV_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) /= (s))
-#define SHAREMIND_MI_BDIV_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) /= (s))
-#define SHAREMIND_MI_BDIV2_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) / (d))
-#define SHAREMIND_MI_BDIV2_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) / (d))
-#define SHAREMIND_MI_BMOD_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) %= (s))
-#define SHAREMIND_MI_BMOD_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) %= (s))
-#define SHAREMIND_MI_BMOD2_FLOAT32(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) % (d))
-#define SHAREMIND_MI_BMOD2_FLOAT64(d,s) SHAREMIND_NO_SF_ENCLOSE((d) = (s) % (d))
-#define SHAREMIND_MI_TADD_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) + (s2))
-#define SHAREMIND_MI_TADD_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) + (s2))
-#define SHAREMIND_MI_TSUB_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) - (s2))
-#define SHAREMIND_MI_TSUB_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) - (s2))
-#define SHAREMIND_MI_TMUL_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) * (s2))
-#define SHAREMIND_MI_TMUL_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) * (s2))
-#define SHAREMIND_MI_TDIV_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) / (s2))
-#define SHAREMIND_MI_TDIV_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) / (s2))
-#define SHAREMIND_MI_TMOD_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) % (s2))
-#define SHAREMIND_MI_TMOD_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) % (s2))
-#define SHAREMIND_MI_TEQ_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) == (s2))
-#define SHAREMIND_MI_TEQ_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) == (s2))
-#define SHAREMIND_MI_TNE_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) != (s2))
-#define SHAREMIND_MI_TNE_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) != (s2))
-#define SHAREMIND_MI_TLT_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) < (s2))
-#define SHAREMIND_MI_TLT_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) < (s2))
-#define SHAREMIND_MI_TLE_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) <= (s2))
-#define SHAREMIND_MI_TLE_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) <= (s2))
-#define SHAREMIND_MI_TGT_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) > (s2))
-#define SHAREMIND_MI_TGT_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) > (s2))
-#define SHAREMIND_MI_TGE_FLOAT32(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) >= (s2))
-#define SHAREMIND_MI_TGE_FLOAT64(d,s1,s2) \
-    SHAREMIND_NO_SF_ENCLOSE((d) = (s1) >= (s2))
-#else /* #ifndef SHAREMIND_SOFT_FLOAT */
 #define SHAREMIND_MI_FPU_STATE (p->fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
     do { p->fpuState = (sf_fpu_state) (v); } while(0)
@@ -389,7 +184,6 @@ static inline void _SharemindProcess_restoreSignalHandlers(
     SHAREMIND_SF_FPUF((d),,sf_float32_le((s2),(s1),p->fpuState))
 #define SHAREMIND_MI_TGE_FLOAT64(d,s1,s2) \
     SHAREMIND_SF_FPUF((d),,sf_float64_le((s2),(s1),p->fpuState))
-#endif /* #ifndef SHAREMIND_SOFT_FLOAT */
 
 #ifndef SHAREMIND_FAST_BUILD
 #define SHAREMIND_DO_EXCEPT if (1) { goto except; } else (void) 0
@@ -789,42 +583,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_ARG_AS(n,t) \
     (SHAREMIND_MI_BLOCK_AS(SHAREMIND_MI_ARG_P(n),t))
 
-#ifndef SHAREMIND_SOFT_FLOAT
-#define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_float32_TO_int16(a,b) a = (int16_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_int32(a,b) a = (int32_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_int64(a,b) a = (int64_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_int8(a,b) a = (int8_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_uint16(a,b) a = (uint16_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_uint32(a,b) a = (uint32_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_uint64(a,b) a = (uint64_t) b
-#define SHAREMIND_MI_CONVERT_float32_TO_uint8(a,b) a = (uint8_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_float64_TO_int16(a,b) a = (int16_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_int32(a,b) a = (int32_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_int64(a,b) a = (int64_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_int8(a,b) a = (int8_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_uint16(a,b) a = (uint16_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_uint32(a,b) a = (uint32_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_uint64(a,b) a = (uint64_t) b
-#define SHAREMIND_MI_CONVERT_float64_TO_uint8(a,b) a = (uint8_t) b
-#define SHAREMIND_MI_CONVERT_int16_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_int16_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_int32_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_int32_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_int64_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_int64_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_int8_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_int8_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_uint16_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_uint16_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_uint32_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_uint32_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_uint64_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) a = (double) b
-#define SHAREMIND_MI_CONVERT_uint8_TO_float32(a,b) a = (float) b
-#define SHAREMIND_MI_CONVERT_uint8_TO_float64(a,b) a = (double) b
-#else
 #define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) \
     SHAREMIND_SF_FPU64F((a),sf_float32_to_float64((b),p->fpuState))
 #define SHAREMIND_MI_CONVERT_float32_TO_int8(a,b) \
@@ -949,7 +707,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     SHAREMIND_SF_FPU32F((a),sf_int64_to_float32((b),p->fpuState))
 #define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) \
     SHAREMIND_SF_FPU64F((a),sf_int64_to_float64((b),p->fpuState))
-#endif
 
 #define SHAREMIND_MI_MEM_CAN_READ(slot) \
     ((slot)->specials == NULL || (slot)->specials->readable)
@@ -1075,53 +832,6 @@ SharemindVmError sharemind_vm_run(
 #pragma STDC FENV_ACCESS ON
 #endif
 
-#ifndef SHAREMIND_SOFT_FLOAT
-        p->hasSavedFpeEnv = (fegetenv(&p->savedFpeEnv) == 0);
-
-        /**
-          \warning Note that the variable "ip" is not valid after one of the
-                   following sigsetjmp's returns non-zero unless we declare it
-                   volatile. However, declaring "ip" as volatile has a negative
-                   performance impact. A remedy would be to update p->currentIp
-                   before every instruction which could generate such signals.
-        */
-#ifdef __USE_POSIX
-    #define _SHAREMIND_DECLARE_SIGJMP(h,e) \
-            if (sigsetjmp(p->safeJmpBuf[(h)], 1)) { \
-                p->exceptionValue = (e); \
-                SHAREMIND_DO_EXCEPT; \
-            } else (void) 0
-#else
-    #define _SHAREMIND_DECLARE_SIGJMP(h,e) \
-            if (setjmp(p->safeJmpBuf[(h)])) { \
-                p->exceptionValue = (e); \
-                SHAREMIND_DO_EXCEPT; \
-            } else (void) 0
-#endif
-        _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_UNKNOWN,
-                                  SHAREMIND_VM_PROCESS_UNKNOWN_FPE);
-        _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_INTDIV,
-                                  SHAREMIND_VM_PROCESS_INTEGER_DIVIDE_BY_ZERO);
-        _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_INTOVF,
-                                  SHAREMIND_VM_PROCESS_INTEGER_OVERFLOW);
-        _SHAREMIND_DECLARE_SIGJMP(
-                    SHAREMIND_HET_FPE_FLTDIV,
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_DIVIDE_BY_ZERO);
-        _SHAREMIND_DECLARE_SIGJMP(SHAREMIND_HET_FPE_FLTOVF,
-                                  SHAREMIND_VM_PROCESS_FLOATING_POINT_OVERFLOW);
-        _SHAREMIND_DECLARE_SIGJMP(
-                    SHAREMIND_HET_FPE_FLTUND,
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_UNDERFLOW);
-        _SHAREMIND_DECLARE_SIGJMP(
-                    SHAREMIND_HET_FPE_FLTRES,
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_INEXACT_RESULT);
-        _SHAREMIND_DECLARE_SIGJMP(
-                    SHAREMIND_HET_FPE_FLTINV,
-                    SHAREMIND_VM_PROCESS_FLOATING_POINT_INVALID_OPERATION);
-
-        _SharemindProcess_setupSignalHandlers(p);
-#endif /* #ifndef SHAREMIND_SOFT_FLOAT */
-
         const SharemindCodeBlock * const codeStart =
                 p->program->codeSections.data[p->currentCodeSectionIndex].data;
 
@@ -1166,12 +876,6 @@ SharemindVmError sharemind_vm_run(
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString(
                        (SharemindVmProcessException) p->exceptionValue) != 0);
-#ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProcess_restoreSignalHandlers(p);
-            /** \todo Check for errors */
-            if (p->hasSavedFpeEnv)
-                fesetenv(&p->savedFpeEnv);
-#endif
             p->state = SHAREMIND_VM_PROCESS_CRASHED;
 #ifndef SHAREMIND_FAST_BUILD
             SHAREMIND_UPDATESTATE;
@@ -1180,12 +884,6 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
-#ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProcess_restoreSignalHandlers(p);
-            /** \todo Check for errors */
-            if (p->hasSavedFpeEnv)
-                fesetenv(&p->savedFpeEnv);
-#endif
 #ifndef SHAREMIND_FAST_BUILD
             SHAREMIND_UPDATESTATE;
 #endif
@@ -1193,12 +891,6 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_OK;
 
         trap:
-#ifndef SHAREMIND_SOFT_FLOAT
-            _SharemindProcess_restoreSignalHandlers(p);
-            /** \todo Check for errors */
-            if (p->hasSavedFpeEnv)
-                fesetenv(&p->savedFpeEnv);
-#endif
             p->state = SHAREMIND_VM_PROCESS_TRAPPED;
 #ifndef SHAREMIND_FAST_BUILD
             SHAREMIND_UPDATESTATE;

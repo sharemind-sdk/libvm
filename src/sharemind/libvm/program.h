@@ -35,21 +35,6 @@ extern "C" {
  *  SharemindProgram
 *******************************************************************************/
 
-#ifndef SHAREMIND_SOFT_FLOAT
-typedef enum {
-    SHAREMIND_HET_FPE_UNKNOWN = 0x00, /* Unknown arithmetic or FP error */
-    SHAREMIND_HET_FPE_INTDIV  = 0x01, /* integer divide by zero */
-    SHAREMIND_HET_FPE_INTOVF  = 0x02, /* integer overflow */
-    SHAREMIND_HET_FPE_FLTDIV  = 0x03, /* floating-point divide by zero */
-    SHAREMIND_HET_FPE_FLTOVF  = 0x04, /* floating-point overflow */
-    SHAREMIND_HET_FPE_FLTUND  = 0x05, /* floating-point underflow */
-    SHAREMIND_HET_FPE_FLTRES  = 0x06, /* floating-point inexact result */
-    SHAREMIND_HET_FPE_FLTINV  = 0x07, /* floating-point invalid operation */
-    SHAREMIND_HET_COUNT
-} SharemindHardwareExceptionType;
-#endif
-
-
 struct SharemindProgram_ {
     SharemindCodeSectionsVector codeSections;
     SharemindDataSectionsVector rodataSections;
