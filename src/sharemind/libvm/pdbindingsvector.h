@@ -26,7 +26,12 @@ extern "C" {
 
 
 SHAREMIND_VECTOR_DECLARE(SharemindPdBindings,SharemindPd *,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,SharemindPd *,malloc,free,realloc,static inline)
+SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,
+                        SharemindPd *,
+                        malloc,
+                        free,
+                        realloc,
+                        static inline)
 
 
 #ifdef __cplusplus

@@ -25,8 +25,15 @@ extern "C" {
 #endif
 
 
-SHAREMIND_VECTOR_DECLARE(SharemindSyscallBindingsVector,SharemindSyscallBinding,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindingsVector,SharemindSyscallBinding,malloc,free,realloc,static inline)
+SHAREMIND_VECTOR_DECLARE(SharemindSyscallBindingsVector,
+                         SharemindSyscallBinding,,
+                         static inline)
+SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindingsVector,
+                        SharemindSyscallBinding,
+                        malloc,
+                        free,
+                        realloc,
+                        static inline)
 
 
 #ifdef __cplusplus

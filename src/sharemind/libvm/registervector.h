@@ -24,10 +24,15 @@
 extern "C" {
 #endif
 
-
-SHAREMIND_VECTOR_DECLARE(SharemindRegisterVector,SharemindCodeBlock,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindRegisterVector,SharemindCodeBlock,malloc,free,realloc,static inline)
-
+SHAREMIND_VECTOR_DECLARE(SharemindRegisterVector,
+                         SharemindCodeBlock,,
+                         static inline)
+SHAREMIND_VECTOR_DEFINE(SharemindRegisterVector,
+                        SharemindCodeBlock,
+                        malloc,
+                        free,
+                        realloc,
+                        static inline)
 
 #ifdef __cplusplus
 } /* extern "C" { */

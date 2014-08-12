@@ -25,8 +25,24 @@ extern "C" {
 #endif
 
 
-SHAREMIND_MAP_DECLARE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,static inline)
-SHAREMIND_MAP_DEFINE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,(uint16_t)(key),SHAREMIND_MAP_KEY_EQUALS_uint64_t,SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,SHAREMIND_MAP_KEYINIT_REGULAR,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,static inline)
+SHAREMIND_MAP_DECLARE(SharemindMemoryMap,
+                      uint64_t,
+                      const uint64_t,
+                      SharemindMemorySlot,
+                      static inline)
+SHAREMIND_MAP_DEFINE(SharemindMemoryMap,
+                     uint64_t,
+                     const uint64_t,
+                     SharemindMemorySlot,
+                     (uint16_t)(key),
+                     SHAREMIND_MAP_KEY_EQUALS_uint64_t,
+                     SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,
+                     SHAREMIND_MAP_KEYINIT_REGULAR,
+                     SHAREMIND_MAP_KEYCOPY_REGULAR,
+                     SHAREMIND_MAP_KEYFREE_REGULAR,
+                     malloc,
+                     free,
+                     static inline)
 
 static inline uint64_t SharemindMemoryMap_find_unused_ptr(
         const SharemindMemoryMap * const m,

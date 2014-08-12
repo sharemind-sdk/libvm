@@ -25,8 +25,14 @@ extern "C" {
 #endif
 
 
-SHAREMIND_STACK_DECLARE(SharemindFrameStack,SharemindStackFrame,,static inline)
-SHAREMIND_STACK_DEFINE(SharemindFrameStack,SharemindStackFrame,malloc,free,static inline)
+SHAREMIND_STACK_DECLARE(SharemindFrameStack,
+                        SharemindStackFrame,,
+                        static inline)
+SHAREMIND_STACK_DEFINE(SharemindFrameStack,
+                       SharemindStackFrame,
+                       malloc,
+                       free,
+                       static inline)
 
 
 #ifdef __cplusplus

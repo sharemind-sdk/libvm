@@ -25,8 +25,15 @@ extern "C" {
 #endif
 
 
-SHAREMIND_VECTOR_DECLARE(SharemindDataSectionsVector,SharemindDataSection,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindDataSectionsVector,SharemindDataSection,malloc,free,realloc,static inline)
+SHAREMIND_VECTOR_DECLARE(SharemindDataSectionsVector,
+                         SharemindDataSection,,
+                         static inline)
+SHAREMIND_VECTOR_DEFINE(SharemindDataSectionsVector,
+                        SharemindDataSection,
+                        malloc,
+                        free,
+                        realloc,
+                        static inline)
 
 
 #ifdef __cplusplus

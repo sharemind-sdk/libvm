@@ -81,7 +81,9 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
 SharemindVmProcessException SharemindProcess_public_free(
         SharemindProcess * const p,
         const uint64_t ptr)
-        __attribute__ ((visibility("internal"), nonnull(1), warn_unused_result));
+        __attribute__ ((visibility("internal"),
+                        nonnull(1),
+                        warn_unused_result));
 
 
 #ifdef __cplusplus

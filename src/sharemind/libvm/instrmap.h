@@ -30,11 +30,43 @@ typedef struct SharemindInstrMapValue_ {
     const SharemindVmInstruction * description;
 } SharemindInstrMapValue;
 
-SHAREMIND_MAP_DECLARE(SharemindInstrMap,size_t,const size_t,SharemindInstrMapValue,static inline)
-SHAREMIND_MAP_DEFINE(SharemindInstrMap,size_t,const size_t,SharemindInstrMapValue,key,SHAREMIND_MAP_KEY_EQUALS_size_t,SHAREMIND_MAP_KEY_LESS_THAN_size_t,SHAREMIND_MAP_KEYINIT_REGULAR,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,static inline)
+SHAREMIND_MAP_DECLARE(SharemindInstrMap,
+                      size_t,
+                      const size_t,
+                      SharemindInstrMapValue,
+                      static inline)
+SHAREMIND_MAP_DEFINE(SharemindInstrMap,
+                     size_t,
+                     const size_t,
+                     SharemindInstrMapValue,
+                     key,
+                     SHAREMIND_MAP_KEY_EQUALS_size_t,
+                     SHAREMIND_MAP_KEY_LESS_THAN_size_t,
+                     SHAREMIND_MAP_KEYINIT_REGULAR,
+                     SHAREMIND_MAP_KEYCOPY_REGULAR,
+                     SHAREMIND_MAP_KEYFREE_REGULAR,
+                     malloc,
+                     free,
+                     static inline)
 
-SHAREMIND_MAP_DECLARE(SharemindInstrMapP,size_t,const size_t,SharemindInstrMapValue *,static inline)
-SHAREMIND_MAP_DEFINE(SharemindInstrMapP,size_t,const size_t,SharemindInstrMapValue *,key,SHAREMIND_MAP_KEY_EQUALS_size_t,SHAREMIND_MAP_KEY_LESS_THAN_size_t,SHAREMIND_MAP_KEYINIT_REGULAR,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,static inline)
+SHAREMIND_MAP_DECLARE(SharemindInstrMapP,
+                      size_t,
+                      const size_t,
+                      SharemindInstrMapValue *,
+                      static inline)
+SHAREMIND_MAP_DEFINE(SharemindInstrMapP,
+                     size_t,
+                     const size_t,
+                     SharemindInstrMapValue *,
+                     key,
+                     SHAREMIND_MAP_KEY_EQUALS_size_t,
+                     SHAREMIND_MAP_KEY_LESS_THAN_size_t,
+                     SHAREMIND_MAP_KEYINIT_REGULAR,
+                     SHAREMIND_MAP_KEYCOPY_REGULAR,
+                     SHAREMIND_MAP_KEYFREE_REGULAR,
+                     malloc,
+                     free,
+                     static inline)
 
 #ifdef __cplusplus
 } /* extern "C" { */

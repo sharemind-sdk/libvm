@@ -22,9 +22,8 @@
 extern "C" {
 #endif
 
-
-static SharemindMemorySlotSpecials rwDataSpecials = { .writeable = 1, .readable = 1, .free = NULL };
-
+static SharemindMemorySlotSpecials rwDataSpecials =
+        { .writeable = 1, .readable = 1, .free = NULL };
 
 #ifdef __cplusplus
 } /* extern "C" { */

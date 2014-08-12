@@ -95,8 +95,15 @@ static inline void SharemindPdpiCacheItem_destroy(
     SharemindPdpi_free(ci->pdpi);
 }
 
-SHAREMIND_VECTOR_DECLARE(SharemindPdpiCache,SharemindPdpiCacheItem,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindPdpiCache,SharemindPdpiCacheItem,malloc,free,realloc,static inline)
+SHAREMIND_VECTOR_DECLARE(SharemindPdpiCache,
+                         SharemindPdpiCacheItem,,
+                         static inline)
+SHAREMIND_VECTOR_DEFINE(SharemindPdpiCache,
+                        SharemindPdpiCacheItem,
+                        malloc,
+                        free,
+                        realloc,
+                        static inline)
 
 
 #ifdef __cplusplus

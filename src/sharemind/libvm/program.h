@@ -33,11 +33,11 @@ extern "C" {
 
 /*******************************************************************************
  *  SharemindProgram
-********************************************************************************/
+*******************************************************************************/
 
 #ifndef SHAREMIND_SOFT_FLOAT
 typedef enum {
-    SHAREMIND_HET_FPE_UNKNOWN = 0x00, /* Unknown arithmetic or floating-point error */
+    SHAREMIND_HET_FPE_UNKNOWN = 0x00, /* Unknown arithmetic or FP error */
     SHAREMIND_HET_FPE_INTDIV  = 0x01, /* integer divide by zero */
     SHAREMIND_HET_FPE_INTOVF  = 0x02, /* integer overflow */
     SHAREMIND_HET_FPE_FLTDIV  = 0x03, /* floating-point divide by zero */
@@ -101,8 +101,13 @@ static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
     return SharemindVm_find_syscall(p->vm, signature);
 }
 
-static inline SharemindPd * SharemindProgram_find_pd(SharemindProgram * p, const char * pdName) __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindPd * SharemindProgram_find_pd(SharemindProgram * p, const char * pdName) {
+static inline SharemindPd * SharemindProgram_find_pd(
+        SharemindProgram * p,
+        const char * pdName) __attribute__ ((nonnull(1, 2),
+                                             warn_unused_result));
+static inline SharemindPd * SharemindProgram_find_pd(SharemindProgram * const p,
+                                                     const char * const pdName)
+{
     assert(p);
     assert(pdName);
     assert(pdName[0u]);

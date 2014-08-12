@@ -43,9 +43,19 @@ inline void SharemindCReference_destroy(SharemindCReference * const r) {
 }
 
 SHAREMIND_VECTOR_DECLARE(SharemindReferenceVector,SharemindReference,,inline)
-SHAREMIND_VECTOR_DEFINE(SharemindReferenceVector,SharemindReference,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DEFINE(SharemindReferenceVector,
+                        SharemindReference,
+                        malloc,
+                        free,
+                        realloc,
+                        inline)
 SHAREMIND_VECTOR_DECLARE(SharemindCReferenceVector,SharemindCReference,,inline)
-SHAREMIND_VECTOR_DEFINE(SharemindCReferenceVector,SharemindCReference,malloc,free,realloc,inline)
+SHAREMIND_VECTOR_DEFINE(SharemindCReferenceVector,
+                        SharemindCReference,
+                        malloc,
+                        free,
+                        realloc,
+                        inline)
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -39,8 +39,24 @@ static inline void SharemindPrivateMemoryMap_destroyer(
     free(*key);
 }
 
-SHAREMIND_MAP_DECLARE(SharemindPrivateMemoryMap,void*,void * const,size_t,static inline)
-SHAREMIND_MAP_DEFINE(SharemindPrivateMemoryMap,void*,void * const,size_t,fnv_16a_buf(key,sizeof(void *)),SHAREMIND_MAP_KEY_EQUALS_voidptr,SHAREMIND_MAP_KEY_LESS_THAN_voidptr,SHAREMIND_MAP_KEYINIT_REGULAR,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,static inline)
+SHAREMIND_MAP_DECLARE(SharemindPrivateMemoryMap,
+                      void *,
+                      void * const,
+                      size_t,
+                      static inline)
+SHAREMIND_MAP_DEFINE(SharemindPrivateMemoryMap,
+                     void *,
+                     void * const,
+                     size_t,
+                     fnv_16a_buf(key,sizeof(void *)),
+                     SHAREMIND_MAP_KEY_EQUALS_voidptr,
+                     SHAREMIND_MAP_KEY_LESS_THAN_voidptr,
+                     SHAREMIND_MAP_KEYINIT_REGULAR,
+                     SHAREMIND_MAP_KEYCOPY_REGULAR,
+                     SHAREMIND_MAP_KEYFREE_REGULAR,
+                     malloc,
+                     free,
+                     static inline)
 
 
 #ifdef __cplusplus
