@@ -37,7 +37,7 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(
         const uint64_t startFrom)
 {
     assert(m);
-    assert(startFrom != 0u);
+    assert(startFrom >= 4u);
     assert(m->size < UINT64_MAX);
     assert(m->size < SIZE_MAX);
     uint64_t index = startFrom;
@@ -47,8 +47,7 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(
             break;
         /* Increment index, skip "NULL" and static memory pointers: */
         if (unlikely(!++index))
-            index += 4u;
-        assert(index != 0u);
+            index = 4u;
         /* This shouldn't trigger because (m->size < UINT64_MAX) */
         assert(index != startFrom);
     }

@@ -155,7 +155,6 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     SharemindFrameStack_init(&p->frames);
 
     SharemindMemoryMap_init(&p->memoryMap);
-    p->memorySlotNext = 1u;
     SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
 
     /* Set currentCodeSectionIndex before initializing memory slots: */
@@ -169,7 +168,6 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 0u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 1u));
     assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
-    assert(p->memorySlotNext == 1u);
 
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
     if (1) { \
@@ -188,7 +186,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     INIT_STATIC_MEMSLOT(2u,&p->dataSections,SharemindProcess_init_fail_memslots);
     INIT_STATIC_MEMSLOT(3u,&p->bssSections,SharemindProcess_init_fail_memslots);
 
-    p->memorySlotNext += 3;
+    p->memorySlotNext = 4u;
 
     p->syscallContext.get_pdpi_info = &sharemind_get_pdpi_info;
     p->syscallContext.publicAlloc = &sharemind_public_alloc;
@@ -451,7 +449,7 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
     p->memorySlotNext = index + 1u;
     /* skip "NULL" and static memory pointers: */
     if (unlikely(!p->memorySlotNext))
-        p->memorySlotNext += 4u;
+        p->memorySlotNext = 4u;
 
     (*memorySlot) = slot;
 
@@ -463,7 +461,7 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
                                        SharemindMemorySlot ** const memorySlot)
 {
     assert(p);
-    assert(p->memorySlotNext != 0u);
+    assert(p->memorySlotNext >= 4u);
 
     /* Fail if allocating too little: */
     if (unlikely(nBytes <= 0u))
