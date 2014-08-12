@@ -17,6 +17,7 @@
 
 #include <assert.h>
 #include <sharemind/codeblock.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include "instrmap.h"
@@ -35,13 +36,14 @@ typedef struct {
 } SharemindCodeSection;
 
 
-static inline int SharemindCodeSection_init(SharemindCodeSection * s,
-                                            const SharemindCodeBlock * const code,
-                                            const size_t codeSize)
-    __attribute__ ((nonnull(1), warn_unused_result));
-static inline int SharemindCodeSection_init(SharemindCodeSection * s,
-                                            const SharemindCodeBlock * const code,
-                                            const size_t codeSize)
+static inline bool SharemindCodeSection_init(
+        SharemindCodeSection * s,
+        const SharemindCodeBlock * code,
+        const size_t codeSize) __attribute__ ((nonnull(1), warn_unused_result));
+static inline bool SharemindCodeSection_init(
+        SharemindCodeSection * s,
+        const SharemindCodeBlock * code,
+        const size_t codeSize)
 {
     assert(s);
     assert(code || codeSize == 0u);
@@ -49,16 +51,16 @@ static inline int SharemindCodeSection_init(SharemindCodeSection * s,
     /* Add space for an exception pointer: */
     size_t realCodeSize = codeSize + 1;
     if (unlikely(realCodeSize < codeSize))
-        return 0;
+        return false;
 
     size_t memSize = realCodeSize * sizeof(SharemindCodeBlock);
     if (unlikely(memSize / sizeof(SharemindCodeBlock) != realCodeSize))
-        return 0;
+        return false;
 
 
     s->data = (SharemindCodeBlock *) malloc(memSize);
     if (unlikely(!s->data))
-        return 0;
+        return false;
 
     s->size = codeSize;
     memcpy(s->data, code, memSize);
@@ -66,7 +68,7 @@ static inline int SharemindCodeSection_init(SharemindCodeSection * s,
     SharemindInstrMap_init(&s->instrmap);
     SharemindInstrMapP_init(&s->blockmap);
 
-    return 1;
+    return true;
 }
 
 
