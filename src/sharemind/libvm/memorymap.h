@@ -28,8 +28,14 @@ extern "C" {
 SHAREMIND_MAP_DECLARE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,static inline)
 SHAREMIND_MAP_DEFINE(SharemindMemoryMap,uint64_t,const uint64_t,SharemindMemorySlot,(uint16_t)(key),SHAREMIND_MAP_KEY_EQUALS_uint64_t,SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,SHAREMIND_MAP_KEYINIT_REGULAR,SHAREMIND_MAP_KEYCOPY_REGULAR,SHAREMIND_MAP_KEYFREE_REGULAR,malloc,free,static inline)
 
-static inline uint64_t SharemindMemoryMap_find_unused_ptr(const SharemindMemoryMap * m, uint64_t startFrom);
-static inline uint64_t SharemindMemoryMap_find_unused_ptr(const SharemindMemoryMap * m, uint64_t startFrom) {
+static inline uint64_t SharemindMemoryMap_find_unused_ptr(
+        const SharemindMemoryMap * const m,
+        const uint64_t startFrom)
+        __attribute__ ((nonnull(1), warn_unused_result));
+static inline uint64_t SharemindMemoryMap_find_unused_ptr(
+        const SharemindMemoryMap * const m,
+        const uint64_t startFrom)
+{
     assert(m);
     assert(startFrom != 0u);
     assert(m->size < UINT64_MAX);
@@ -50,8 +56,13 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(const SharemindMemoryM
     return index;
 }
 
-static inline void SharemindMemoryMap_destroyer(const uint64_t * key,
-                                                SharemindMemorySlot * value)
+static inline void SharemindMemoryMap_destroyer(
+        const uint64_t * const key,
+        SharemindMemorySlot * const value) __attribute__ ((nonnull(1, 2)));
+
+static inline void SharemindMemoryMap_destroyer(
+        const uint64_t * const key,
+        SharemindMemorySlot * const value)
 {
     assert(key);
     assert(value);

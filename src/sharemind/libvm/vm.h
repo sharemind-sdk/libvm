@@ -46,8 +46,14 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindVm)
 #endif
 
 
-static inline const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline const SharemindSyscallBinding * SharemindVm_find_syscall(SharemindVm * vm, const char * signature) {
+static inline const SharemindSyscallBinding * SharemindVm_find_syscall(
+        SharemindVm * const vm,
+        const char * const signature)
+        __attribute__ ((nonnull(1, 2), warn_unused_result));
+static inline const SharemindSyscallBinding * SharemindVm_find_syscall(
+        SharemindVm * const vm,
+        const char * const signature)
+{
     assert(vm);
     assert(signature);
     assert(signature[0u]);
@@ -57,8 +63,12 @@ static inline const SharemindSyscallBinding * SharemindVm_find_syscall(Sharemind
     return (*(vm->context->find_syscall))(vm->context, signature);
 }
 
-static inline SharemindPd * SharemindVm_find_pd(SharemindVm * vm, const char * pdName) __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindPd * SharemindVm_find_pd(SharemindVm * vm, const char * pdName) {
+static inline SharemindPd * SharemindVm_find_pd(SharemindVm * const vm,
+                                                const char * const pdName)
+        __attribute__ ((nonnull(1, 2), warn_unused_result));
+static inline SharemindPd * SharemindVm_find_pd(SharemindVm * const vm,
+                                                const char * const pdName)
+{
     assert(vm);
     assert(pdName);
     assert(pdName[0u]);

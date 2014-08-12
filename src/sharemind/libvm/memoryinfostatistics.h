@@ -28,8 +28,11 @@ typedef struct {
     size_t max;
 } SharemindMemoryInfoStatistics;
 
-static inline void SharemindMemoryInfoStatistics_init(SharemindMemoryInfoStatistics * mis) __attribute__ ((nonnull(1)));
-static inline void SharemindMemoryInfoStatistics_init(SharemindMemoryInfoStatistics * mis) {
+static inline void SharemindMemoryInfoStatistics_init(
+        SharemindMemoryInfoStatistics * const mis) __attribute__ ((nonnull(1)));
+static inline void SharemindMemoryInfoStatistics_init(
+        SharemindMemoryInfoStatistics * const mis)
+{
     assert(mis);
     mis->max = 0u;
 }

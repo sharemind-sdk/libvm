@@ -84,8 +84,14 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
 #endif
 
 
-static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(SharemindProgram * p, const char * signature) __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(SharemindProgram * p, const char * signature) {
+static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
+        SharemindProgram * const p,
+        const char * const signature)
+        __attribute__ ((nonnull(1, 2), warn_unused_result));
+static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
+        SharemindProgram * const p,
+        const char * const signature)
+{
     assert(p);
     assert(signature);
     assert(signature[0u]);

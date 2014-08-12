@@ -33,11 +33,13 @@ typedef struct {
     SharemindModuleApi0x1PdpiInfo info;
 } SharemindPdpiCacheItem;
 
-static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
-                                               SharemindPd * pd)
+static inline bool SharemindPdpiCacheItem_init(
+        SharemindPdpiCacheItem * const ci,
+        SharemindPd * const pd)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
-                                               SharemindPd * pd)
+static inline bool SharemindPdpiCacheItem_init(
+        SharemindPdpiCacheItem * const ci,
+        SharemindPd * const pd)
 {
     assert(ci);
     assert(pd);
@@ -57,9 +59,13 @@ static inline bool SharemindPdpiCacheItem_init(SharemindPdpiCacheItem * ci,
     return true;
 }
 
-static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci)
+static inline bool SharemindPdpiCacheItem_start(
+        SharemindPdpiCacheItem * const ci)
         __attribute__ ((nonnull(1), warn_unused_result));
-static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci) {
+static inline bool SharemindPdpiCacheItem_start(
+        SharemindPdpiCacheItem * const ci)
+
+{
     assert(ci);
     assert(!ci->info.pdpiHandle);
     bool r = SharemindPdpi_start(ci->pdpi);
@@ -68,17 +74,22 @@ static inline bool SharemindPdpiCacheItem_start(SharemindPdpiCacheItem * ci) {
     return r;
 }
 
-static inline void SharemindPdpiCacheItem_stop(SharemindPdpiCacheItem * ci)
-        __attribute__ ((nonnull(1)));
-static inline void SharemindPdpiCacheItem_stop(SharemindPdpiCacheItem * ci) {
+static inline void SharemindPdpiCacheItem_stop(
+        SharemindPdpiCacheItem * const ci) __attribute__ ((nonnull(1)));
+static inline void SharemindPdpiCacheItem_stop(
+        SharemindPdpiCacheItem * const ci)
+{
     assert(ci);
     assert(ci->info.pdpiHandle);
     SharemindPdpi_stop(ci->pdpi);
     ci->info.pdpiHandle = NULL;
 }
 
-static inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * ci) __attribute__ ((nonnull(1)));
-static inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * ci) {
+static inline void SharemindPdpiCacheItem_destroy(
+        SharemindPdpiCacheItem * const ci) __attribute__ ((nonnull(1)));
+static inline void SharemindPdpiCacheItem_destroy(
+        SharemindPdpiCacheItem * const ci)
+{
     assert(ci);
     assert(ci->pdpi);
     SharemindPdpi_free(ci->pdpi);

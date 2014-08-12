@@ -43,15 +43,17 @@ struct SharemindMemorySlotSpecials_ {
     bool writeable;
 };
 
-static inline void SharemindMemorySlot_init(SharemindMemorySlot * m,
-                                            void * pData,
-                                            size_t size,
-                                            SharemindMemorySlotSpecials * specials)
+static inline void SharemindMemorySlot_init(
+        SharemindMemorySlot * const m,
+        void * const pData,
+        const size_t size,
+        SharemindMemorySlotSpecials * const specials)
     __attribute__ ((nonnull(1)));
-static inline void SharemindMemorySlot_init(SharemindMemorySlot * m,
-                                            void * pData,
-                                            size_t size,
-                                            SharemindMemorySlotSpecials * specials)
+static inline void SharemindMemorySlot_init(
+        SharemindMemorySlot * const m,
+        void * const pData,
+        const size_t size,
+        SharemindMemorySlotSpecials * const specials)
 {
     assert(m);
     m->pData = pData;
@@ -60,8 +62,9 @@ static inline void SharemindMemorySlot_init(SharemindMemorySlot * m,
     m->specials = specials;
 }
 
-static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * m) __attribute__ ((nonnull(1)));
-static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * m) {
+static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * const m)
+        __attribute__ ((nonnull(1)));
+static inline void SharemindMemorySlot_destroy(SharemindMemorySlot * const m) {
     assert(m);
     if (m->specials) {
         if (m->specials->free)

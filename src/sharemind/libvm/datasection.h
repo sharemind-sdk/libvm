@@ -27,18 +27,20 @@ extern "C" {
 
 typedef SharemindMemorySlot SharemindDataSection;
 
-static inline bool SharemindDataSection_init(SharemindDataSection * ds,
-                                             size_t size,
-                                             SharemindMemorySlotSpecials * specials)
+static inline bool SharemindDataSection_init(
+        SharemindDataSection * const ds,
+        const size_t size,
+        SharemindMemorySlotSpecials * const specials)
         __attribute__ ((nonnull(1), warn_unused_result));
-static inline bool SharemindDataSection_init(SharemindDataSection * ds,
-                                             size_t size,
-                                             SharemindMemorySlotSpecials * specials)
+static inline bool SharemindDataSection_init(
+        SharemindDataSection * const ds,
+        const size_t size,
+        SharemindMemorySlotSpecials * const specials)
 {
     assert(ds);
     assert(specials);
 
-    if (size != 0) {
+    if (size != 0u) {
         ds->pData = malloc(size);
         if (unlikely(!ds->pData))
             return false;
@@ -51,10 +53,10 @@ static inline bool SharemindDataSection_init(SharemindDataSection * ds,
     return true;
 }
 
-static inline void SharemindDataSection_destroy(SharemindDataSection * ds) __attribute__ ((nonnull(1)));
-static inline void SharemindDataSection_destroy(SharemindDataSection * ds) {
-    free(ds->pData);
-}
+static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
+        __attribute__ ((nonnull(1)));
+static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
+{ free(ds->pData); }
 
 
 #ifdef __cplusplus

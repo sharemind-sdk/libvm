@@ -39,8 +39,13 @@ struct SharemindStackFrame_ {
 };
 typedef struct SharemindStackFrame_ SharemindStackFrame;
 
-static inline void SharemindStackFrame_init(SharemindStackFrame * f, SharemindStackFrame * prev) __attribute__ ((nonnull(1)));
-static inline void SharemindStackFrame_init(SharemindStackFrame * f, SharemindStackFrame * prev) {
+static inline void SharemindStackFrame_init(
+        SharemindStackFrame * const f,
+        SharemindStackFrame * const prev) __attribute__ ((nonnull(1)));
+static inline void SharemindStackFrame_init(
+        SharemindStackFrame * const f,
+        SharemindStackFrame * const prev)
+{
     assert(f);
     SharemindRegisterVector_init(&f->stack);
     SharemindReferenceVector_init(&f->refstack);
@@ -48,12 +53,15 @@ static inline void SharemindStackFrame_init(SharemindStackFrame * f, SharemindSt
     f->prev = prev;
 }
 
-static inline void SharemindStackFrame_destroy(SharemindStackFrame * f) __attribute__ ((nonnull(1)));
-static inline void SharemindStackFrame_destroy(SharemindStackFrame * f) {
+static inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
+        __attribute__ ((nonnull(1)));
+static inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
     assert(f);
     SharemindRegisterVector_destroy(&f->stack);
-    SharemindReferenceVector_destroy_with(&f->refstack, &SharemindReference_destroy);
-    SharemindCReferenceVector_destroy_with(&f->crefstack, &SharemindCReference_destroy);
+    SharemindReferenceVector_destroy_with(&f->refstack,
+                                          &SharemindReference_destroy);
+    SharemindCReferenceVector_destroy_with(&f->crefstack,
+                                           &SharemindCReference_destroy);
 }
 
 

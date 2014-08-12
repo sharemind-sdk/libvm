@@ -37,23 +37,23 @@ typedef struct {
 
 
 static inline bool SharemindCodeSection_init(
-        SharemindCodeSection * s,
-        const SharemindCodeBlock * code,
+        SharemindCodeSection * const s,
+        const SharemindCodeBlock * const code,
         const size_t codeSize) __attribute__ ((nonnull(1), warn_unused_result));
 static inline bool SharemindCodeSection_init(
-        SharemindCodeSection * s,
-        const SharemindCodeBlock * code,
+        SharemindCodeSection * const s,
+        const SharemindCodeBlock * const code,
         const size_t codeSize)
 {
     assert(s);
     assert(code || codeSize == 0u);
 
     /* Add space for an exception pointer: */
-    size_t realCodeSize = codeSize + 1;
+    const size_t realCodeSize = codeSize + 1;
     if (unlikely(realCodeSize < codeSize))
         return false;
 
-    size_t memSize = realCodeSize * sizeof(SharemindCodeBlock);
+    const size_t memSize = realCodeSize * sizeof(SharemindCodeBlock);
     if (unlikely(memSize / sizeof(SharemindCodeBlock) != realCodeSize))
         return false;
 
@@ -72,8 +72,10 @@ static inline bool SharemindCodeSection_init(
 }
 
 
-static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s) __attribute__ ((nonnull(1)));
-static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s) {
+static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
+        __attribute__ ((nonnull(1)));
+static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
+{
     assert(s);
     free(s->data);
     SharemindInstrMapP_destroy(&s->blockmap);

@@ -30,13 +30,13 @@ extern "C" {
 typedef SharemindModuleApi0x1Reference SharemindReference;
 typedef SharemindModuleApi0x1CReference SharemindCReference;
 
-inline void SharemindReference_destroy(SharemindReference * r) {
+inline void SharemindReference_destroy(SharemindReference * const r) {
     assert(r);
     if (r->internal)
         ((SharemindMemorySlot *) r->internal)->nrefs--;
 }
 
-inline void SharemindCReference_destroy(SharemindCReference * r) {
+inline void SharemindCReference_destroy(SharemindCReference * const r) {
     assert(r);
     if (r->internal)
         ((SharemindMemorySlot *) r->internal)->nrefs--;
