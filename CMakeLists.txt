@@ -22,6 +22,8 @@ FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi REQUIRED)
 FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibvmi REQUIRED)
+FIND_PACKAGE(SharemindVmGlobals REQUIRED)
+FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
 INCLUDE_DIRECTORIES(
     ${Boost_INCLUDE_DIRS}
@@ -29,6 +31,8 @@ INCLUDE_DIRECTORIES(
     ${SharemindLibmodapi_INCLUDE_DIRS}
     ${SharemindLibsoftfloat_INCLUDE_DIRS}
     ${SharemindLibvmi_INCLUDE_DIRS}
+    ${SharemindVmGlobals_INCLUDE_DIRS}
+    ${SharemindVmM4_INCLUDE_DIRS}
 )
 
 ADD_COMPILE_OPTIONS(
@@ -58,6 +62,8 @@ ADD_DEFINITIONS(
     ${SharemindLibmodapi_DEFINITIONS}
     ${SharemindLibsoftfloat_DEFINITIONS}
     ${SharemindLibvmi_DEFINITIONS}
+    ${SharemindVmGlobals_DEFINITIONS}
+    ${SharemindVmM4_DEFINITIONS}
     ${LIBVM_INSTALL_DEFINITIONS}
 )
 
