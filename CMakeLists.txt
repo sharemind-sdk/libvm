@@ -37,6 +37,7 @@ ADD_COMPILE_OPTIONS(
     "-Wstrict-aliasing=1" "-Wbad-function-cast" "-Wformat" "-Wswitch-default"
     "-Wfloat-equal" "-Wshadow" "-Wpointer-arith" "-Wcast-qual"
     "-Wstrict-prototypes" "-Wconversion" "-Wsign-conversion" "-Wunused-macros"
+    "$<$<NOT:$<STREQUAL:$<CONFIGURATION>,Release>>:-fno-omit-frame-pointer>"
     "$<$<STREQUAL:$<CONFIGURATION>,Release>:-DNDEBUG>"
     "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"
 )
