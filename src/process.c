@@ -368,10 +368,10 @@ bool SharemindProcess_set_pdpi_facility(SharemindProcess * const process,
     LOCK(process);
     const SharemindPdpiCache * const cache = &process->pdpiCache;
     for (size_t i = 0u; i < cache->size; i++)
-        if (!SharemindPdpi_set_facility(cache->data[i].pdpi,
-                                        name,
-                                        facility,
-                                        context))
+        if (SharemindPdpi_setFacility(cache->data[i].pdpi,
+                                      name,
+                                      facility,
+                                      context) != SHAREMIND_MODULE_API_OK)
         {
             UNLOCK(process);
             return false;

@@ -334,7 +334,7 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                             pos,
                             p);
                     for (size_t i = 0; i < p->pdBindings.size; i++)
-                        if (strcmp(SharemindPd_get_name(p->pdBindings.data[i]),
+                        if (strcmp(SharemindPd_name(p->pdBindings.data[i]),
                                    (const char *) pos) == 0)
                             RETURN_SPLR(SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND,
                                         pos,

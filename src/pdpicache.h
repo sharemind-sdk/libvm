@@ -44,18 +44,18 @@ static inline bool SharemindPdpiCacheItem_init(
     assert(ci);
     assert(pd);
 
-    ci->pdpi = SharemindPdpi_new(pd);
+    ci->pdpi = SharemindPd_newPdpi(pd);
     if (!ci->pdpi)
         return false;
 
     ci->info.pdpiHandle = NULL;
-    ci->info.pdHandle = SharemindPd_get_handle(pd);
-    SharemindPdk * pdk = SharemindPd_get_pdk(pd);
+    ci->info.pdHandle = SharemindPd_handle(pd);
+    SharemindPdk * pdk = SharemindPd_pdk(pd);
     assert(pdk);
-    ci->info.pdkIndex = SharemindPdk_get_index(pdk);
-    SharemindModule * module = SharemindPdk_get_module(pdk);
+    ci->info.pdkIndex = SharemindPdk_index(pdk);
+    SharemindModule * module = SharemindPdk_module(pdk);
     assert(module);
-    ci->info.moduleHandle = SharemindModule_get_handle(module);
+    ci->info.moduleHandle = SharemindModule_handle(module);
     return true;
 }
 
@@ -70,7 +70,7 @@ static inline bool SharemindPdpiCacheItem_start(
     assert(!ci->info.pdpiHandle);
     bool r = SharemindPdpi_start(ci->pdpi);
     if (r)
-        ci->info.pdpiHandle = SharemindPdpi_get_handle(ci->pdpi);
+        ci->info.pdpiHandle = SharemindPdpi_handle(ci->pdpi);
     return r;
 }
 
