@@ -176,9 +176,9 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
 
     /* Initialize section pointers: */
 
-    assert(!SharemindMemoryMap_get_const(&p->memoryMap, 0u));
-    assert(!SharemindMemoryMap_get_const(&p->memoryMap, 1u));
-    assert(!SharemindMemoryMap_get_const(&p->memoryMap, 2u));
+    assert(!SharemindMemoryMap_get(&p->memoryMap, 0u));
+    assert(!SharemindMemoryMap_get(&p->memoryMap, 1u));
+    assert(!SharemindMemoryMap_get(&p->memoryMap, 2u));
 
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
     if (1) { \
@@ -629,7 +629,7 @@ static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
     assert(p);
 
     const SharemindMemorySlot * const slot =
-            SharemindMemoryMap_get_const(&p->memoryMap, ptr);
+            SharemindMemoryMap_get(&p->memoryMap, ptr);
     if (!slot)
         return 0u;
 
@@ -646,7 +646,7 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
     assert(p);
 
     const SharemindMemorySlot * const slot =
-            SharemindMemoryMap_get_const(&p->memoryMap, ptr);
+            SharemindMemoryMap_get(&p->memoryMap, ptr);
     if (!slot)
         return NULL;
 
@@ -719,7 +719,7 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
 
     /* Check if pointer is in private memory map: */
     const size_t * const s =
-            SharemindPrivateMemoryMap_get_const(&p->privateMemoryMap, ptr);
+            SharemindPrivateMemoryMap_get(&p->privateMemoryMap, ptr);
     if (unlikely(!s))
         return false;
 

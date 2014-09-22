@@ -59,7 +59,7 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(
     uint64_t index = startFrom;
     for (;;) {
         /* Check if slot is free: */
-        if (likely(!SharemindMemoryMap_get_const(m, index)))
+        if (likely(!SharemindMemoryMap_get(m, index)))
             break;
         /* Increment index, skip "NULL" and static memory pointers: */
         if (unlikely(!++index))
