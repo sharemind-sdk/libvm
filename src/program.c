@@ -85,7 +85,7 @@ static inline SharemindVmError SharemindProgram_init(
     SharemindPdBindings_init(&p->pdBindings);
 
     if (unlikely(SharemindMutex_init(&p->mutex) != SHAREMIND_MUTEX_OK)) {
-        error = SHAREMIND_VM_LOCK_FAILURE;
+        error = SHAREMIND_VM_MUTEX_ERROR;
         goto SharemindProgram_init_error_1;
     }
 

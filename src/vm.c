@@ -33,7 +33,7 @@ static inline SharemindVmError SharemindVm_init(
     assert(vm);
     assert(context);
     if (unlikely(SharemindMutex_init(&vm->mutex) != SHAREMIND_MUTEX_OK))
-        return SHAREMIND_VM_LOCK_FAILURE;
+        return SHAREMIND_VM_MUTEX_ERROR;
 
     vm->context = context;
     SHAREMIND_REFS_INIT(vm);
