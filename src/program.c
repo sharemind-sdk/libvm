@@ -523,11 +523,11 @@ static SharemindProgramLoadResult SharemindProgram_endPrepare(
                         i + instr->numArgs < s->size,
                         SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS);
             SharemindInstrMapValue * const v =
-                    SharemindInstrMap_get_or_insert(&s->instrmap, i);
+                    SharemindInstrMap_insertNew(&s->instrmap, i);
             SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(v != NULL,
                                                    SHAREMIND_VM_OUT_OF_MEMORY);
             SharemindInstrMapValue ** const v2 =
-                    SharemindInstrMapP_get_or_insert(&s->blockmap, numInstrs);
+                    SharemindInstrMapP_insertNew(&s->blockmap, numInstrs);
             if (v2 == NULL) {
                 SharemindInstrMap_remove(&s->instrmap, i);
                 SHAREMIND_PREPARE_ERROR_OUTER(SHAREMIND_VM_OUT_OF_MEMORY);

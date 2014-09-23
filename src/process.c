@@ -189,7 +189,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
                         p->currentCodeSectionIndex); \
         assert(staticSlot); \
         SharemindMemorySlot * const restrict slot = \
-                SharemindMemoryMap_get_or_insert(&p->memoryMap, (index)); \
+                SharemindMemoryMap_insertNew(&p->memoryMap, (index)); \
         if (unlikely(!slot)) { \
             error = SHAREMIND_VM_OUT_OF_MEMORY; \
             goto errorLabel; \
@@ -485,7 +485,7 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
     const size_t oldSize = p->memoryMap.size;
 #endif
     SharemindMemorySlot * const slot =
-            SharemindMemoryMap_get_or_insert(&p->memoryMap, index);
+            SharemindMemoryMap_insertNew(&p->memoryMap, index);
     if (unlikely(!slot))
         return 0u;
     assert(oldSize < p->memoryMap.size);
@@ -682,7 +682,7 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     const size_t oldSize = p->privateMemoryMap.size;
 #endif
     size_t * const s =
-            SharemindPrivateMemoryMap_get_or_insert(&p->privateMemoryMap, ptr);
+            SharemindPrivateMemoryMap_insertNew(&p->privateMemoryMap, ptr);
     if (unlikely(!s)) {
         free(ptr);
         return NULL;
