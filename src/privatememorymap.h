@@ -21,47 +21,64 @@
 #include <stdlib.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-static inline void SharemindPrivateMemoryMap_destroyer(
-        void * const * const key,
-        size_t * const value);
-static inline void SharemindPrivateMemoryMap_destroyer(
-        void * const * const key,
-        size_t * const value) {
-    assert(key);
-    assert(value);
-    (void) value;
-    assert(*key);
-    free(*key);
-}
-
-SHAREMIND_MAP_DECLARE(SharemindPrivateMemoryMap,
-                      void *,
-                      void * const,
-                      size_t,
-                      static inline)
-SHAREMIND_MAP_DEFINE(SharemindPrivateMemoryMap,
-                     void *,
-                     void * const,
-                     size_t,
-                     fnv_16a_buf(key,sizeof(void *)),
-                     SHAREMIND_MAP_KEY_EQUALS_voidptr,
-                     SHAREMIND_MAP_KEY_LESS_THAN_voidptr,
-                     SHAREMIND_MAP_KEYINIT_REGULAR,
-                     SHAREMIND_MAP_KEYCOPY_REGULAR,
-                     SHAREMIND_MAP_KEYFREE_REGULAR,
-                     malloc,
-                     free,
-                     static inline)
-
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_MAP_DECLARE_BODY(SharemindPrivateMemoryMap, void *, size_t)
+SHAREMIND_MAP_DECLARE_init(SharemindPrivateMemoryMap, inline, visibility("internal"))
+SHAREMIND_MAP_DEFINE_init(SharemindPrivateMemoryMap, inline)
+SHAREMIND_MAP_DECLARE_destroy(SharemindPrivateMemoryMap,
+                              inline,,
+                              visibility("internal"))
+SHAREMIND_MAP_DEFINE_destroy(SharemindPrivateMemoryMap,
+                             inline,,
+                             free,
+                             free((assert(v->key), v->key));)
+SHAREMIND_MAP_DECLARE_get(SharemindPrivateMemoryMap,
+                          inline,
+                          void *,
+                          visibility("internal"))
+SHAREMIND_MAP_DEFINE_get(SharemindPrivateMemoryMap,
+                         inline,
+                         void *,
+                         fnv_16a_buf(key, sizeof(void *)),
+                         SHAREMIND_MAP_KEY_EQUALS_voidptr,
+                         SHAREMIND_MAP_KEY_LESS_voidptr)
+SHAREMIND_MAP_DECLARE_insertHint(SharemindPrivateMemoryMap,
+                                 inline,
+                                 void *,
+                                 visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertHint(SharemindPrivateMemoryMap,
+                                inline,
+                                void *,
+                                ((uintptr_t) (key)),
+                                SHAREMIND_MAP_KEY_EQUALS_voidptr,
+                                SHAREMIND_MAP_KEY_LESS_voidptr)
+SHAREMIND_MAP_DECLARE_insertAtHint(SharemindPrivateMemoryMap,
+                                   inline,
+                                   void *,
+                                   visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertAtHint(SharemindPrivateMemoryMap,
+                                  inline,
+                                  void *,
+                                  SHAREMIND_MAP_KEY_COPY_voidptr,
+                                  malloc,
+                                  free)
+SHAREMIND_MAP_DECLARE_insertNew(SharemindPrivateMemoryMap,
+                                inline,
+                                void *,
+                                visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertNew(SharemindPrivateMemoryMap,
+                               inline,
+                               void *)
+SHAREMIND_MAP_DECLARE_remove(SharemindPrivateMemoryMap,
+                             inline,
+                             void *,
+                             visibility("internal"))
+SHAREMIND_MAP_DEFINE_remove(SharemindPrivateMemoryMap,
+                            inline,
+                            void *,
+                            ((uintptr_t) (key)),
+                            SHAREMIND_MAP_KEY_EQUALS_voidptr,
+                            SHAREMIND_MAP_KEY_LESS_voidptr,
+                            free,
+                            free((assert(v->key), v->key));)
 
 #endif /* SHAREMIND_LIBVM_PRIVATEMEMORYMAP_H */

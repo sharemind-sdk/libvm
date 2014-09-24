@@ -522,20 +522,20 @@ static SharemindProgramLoadResult SharemindProgram_endPrepare(
             SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(
                         i + instr->numArgs < s->size,
                         SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS);
-            SharemindInstrMapValue * const v =
+            SharemindInstrMap_value * const v =
                     SharemindInstrMap_insertNew(&s->instrmap, i);
-            SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(v != NULL,
+            SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(v,
                                                    SHAREMIND_VM_OUT_OF_MEMORY);
-            SharemindInstrMapValue ** const v2 =
+            SharemindInstrMapP_value * const v2 =
                     SharemindInstrMapP_insertNew(&s->blockmap, numInstrs);
-            if (v2 == NULL) {
+            if (!v2) {
                 SharemindInstrMap_remove(&s->instrmap, i);
                 SHAREMIND_PREPARE_ERROR_OUTER(SHAREMIND_VM_OUT_OF_MEMORY);
             }
-            v->blockIndex = i;
-            v->instructionBlockIndex = numInstrs;
-            v->description = instr;
-            (*v2) = v;
+            v->value.blockIndex = i;
+            v->value.instructionBlockIndex = numInstrs;
+            v->value.description = instr;
+            v2->value = &v->value;
             i += instr->numArgs;
         }
 
@@ -601,7 +601,7 @@ const SharemindVmInstruction * SharemindProgram_get_instruction(
         goto SharemindProgram_get_instruction_error;
 
     {
-        SharemindInstrMapValue ** const v =
+        SharemindInstrMapP_value * const v =
                 SharemindInstrMapP_get(
                     &p->codeSections.data[codeSection].blockmap,
                     instructionIndex);
@@ -609,7 +609,7 @@ const SharemindVmInstruction * SharemindProgram_get_instruction(
             goto SharemindProgram_get_instruction_error;
 
         UNLOCK_CONST(p);
-        return (*v)->description;
+        return v->value->description;
     }
 
 SharemindProgram_get_instruction_error:

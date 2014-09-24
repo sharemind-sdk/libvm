@@ -190,13 +190,13 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
                         (pSection), \
                         p->currentCodeSectionIndex); \
         assert(staticSlot); \
-        SharemindMemorySlot * const restrict slot = \
+        SharemindMemoryMap_value * const restrict v = \
                 SharemindMemoryMap_insertNew(&p->memoryMap, (index)); \
-        if (unlikely(!slot)) { \
+        if (unlikely(!v)) { \
             error = SHAREMIND_VM_OUT_OF_MEMORY; \
             goto errorLabel; \
         } \
-        (*slot) = *staticSlot; \
+        v->value = *staticSlot; \
     } else (void) 0
 
     INIT_STATIC_MEMSLOT(1u,
@@ -247,8 +247,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
 SharemindProcess_init_fail_framestack:
 SharemindProcess_init_fail_memslots:
 
-    SharemindMemoryMap_destroy_with(&p->memoryMap,
-                                    &SharemindMemoryMap_destroyer);
+    SharemindMemoryMap_destroy(&p->memoryMap);
 
 SharemindProcess_init_fail_firstmemslot:
 SharemindProcess_init_fail_pdpiCache:
@@ -303,11 +302,8 @@ SharemindProcess_new_fail_0:
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
     assert(p);
 
-    SharemindPrivateMemoryMap_destroy_with(
-                &p->privateMemoryMap,
-                &SharemindPrivateMemoryMap_destroyer);
-    SharemindMemoryMap_destroy_with(&p->memoryMap,
-                                    &SharemindMemoryMap_destroyer);
+    SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
+    SharemindMemoryMap_destroy(&p->memoryMap);
     SharemindFrameStack_destroy_with(&p->frames,
                                      &SharemindStackFrame_destroy);
     SharemindPdpiCache_destroy_with(&p->pdpiCache,
@@ -478,17 +474,16 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
 
     /* Find a free memory slot: */
     const uint64_t index =
-            SharemindMemoryMap_find_unused_ptr(&p->memoryMap,
-                                               p->memorySlotNext);
+            SharemindMemoryMap_findUnusedPtr(&p->memoryMap, p->memorySlotNext);
     assert(index != 0u);
 
     /* Fill the slot: */
 #ifndef NDEBUG
     const size_t oldSize = p->memoryMap.size;
 #endif
-    SharemindMemorySlot * const slot =
+    SharemindMemoryMap_value * const v =
             SharemindMemoryMap_insertNew(&p->memoryMap, index);
-    if (unlikely(!slot))
+    if (unlikely(!v))
         return 0u;
     assert(oldSize < p->memoryMap.size);
 
@@ -498,7 +493,7 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
     if (unlikely(!p->memorySlotNext))
         p->memorySlotNext = 4u;
 
-    (*memorySlot) = slot;
+    (*memorySlot) = &v->value;
 
     return index;
 }
@@ -566,11 +561,12 @@ SharemindVmProcessException SharemindProcess_public_free(
 {
     assert(p);
     assert(ptr != 0u);
-    SharemindMemorySlot * const slot =
+    SharemindMemoryMap_value * const v =
             SharemindMemoryMap_get(&p->memoryMap, ptr);
-    if (unlikely(!slot))
+    if (unlikely(!v))
         return SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE;
 
+    SharemindMemorySlot * const slot = &v->value;
     if (unlikely(slot->nrefs != 0u))
         return SHAREMIND_VM_PROCESS_MEMORY_IN_USE;
 
@@ -584,7 +580,6 @@ SharemindVmProcessException SharemindProcess_public_free(
     /** \todo Update any other memory statistics? */
 
     /* Deallocate the memory and release the slot: */
-    SharemindMemorySlot_destroy(slot);
     SharemindMemoryMap_remove(&p->memoryMap, ptr);
 
     return SHAREMIND_VM_PROCESS_OK;
@@ -630,12 +625,12 @@ static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
     const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
-    const SharemindMemorySlot * const slot =
+    const SharemindMemoryMap_value * const v =
             SharemindMemoryMap_get(&p->memoryMap, ptr);
-    if (!slot)
+    if (!v)
         return 0u;
 
-    return slot->size;
+    return v->value.size;
 }
 
 static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
@@ -647,12 +642,12 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
     const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
-    const SharemindMemorySlot * const slot =
+    const SharemindMemoryMap_value * const v =
             SharemindMemoryMap_get(&p->memoryMap, ptr);
-    if (!slot)
+    if (!v)
         return NULL;
 
-    return slot->pData;
+    return v->value.pData;
 }
 
 static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
@@ -683,14 +678,14 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
 #ifndef NDEBUG
     const size_t oldSize = p->privateMemoryMap.size;
 #endif
-    size_t * const s =
+    SharemindPrivateMemoryMap_value * const v =
             SharemindPrivateMemoryMap_insertNew(&p->privateMemoryMap, ptr);
-    if (unlikely(!s)) {
+    if (unlikely(!v)) {
         free(ptr);
         return NULL;
     }
     assert(oldSize < p->privateMemoryMap.size);
-    (*s) = nBytes;
+    v->value = nBytes;
 
     /* Update memory statistics: */
     p->memPrivate.usage += nBytes;
@@ -720,13 +715,13 @@ static int sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
     assert(p);
 
     /* Check if pointer is in private memory map: */
-    const size_t * const s =
+    SharemindPrivateMemoryMap_value * const v =
             SharemindPrivateMemoryMap_get(&p->privateMemoryMap, ptr);
-    if (unlikely(!s))
+    if (unlikely(!v))
         return false;
 
     /* Get allocated size: */
-    const size_t nBytes = (*s);
+    const size_t nBytes = v->value;
 
     /* Free the memory: */
     free(ptr);

@@ -16,41 +16,82 @@
 
 
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/map.h>
 #include "memoryslot.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SHAREMIND_MAP_DECLARE_BODY(SharemindMemoryMap, uint64_t, SharemindMemorySlot)
+SHAREMIND_MAP_DECLARE_init(SharemindMemoryMap, inline, visibility("internal"))
+SHAREMIND_MAP_DEFINE_init(SharemindMemoryMap, inline)
+SHAREMIND_MAP_DECLARE_destroy(SharemindMemoryMap,
+                              inline,,
+                              visibility("internal"))
+SHAREMIND_MAP_DEFINE_destroy(SharemindMemoryMap,
+                             inline,,
+                             free,
+                             SharemindMemorySlot_destroy(&v->value);)
+SHAREMIND_MAP_DECLARE_get(SharemindMemoryMap,
+                          inline,
+                          const uint64_t,
+                          visibility("internal"))
+SHAREMIND_MAP_DEFINE_get(SharemindMemoryMap,
+                         inline,
+                         const uint64_t,
+                         ((uint16_t) (key)),
+                         SHAREMIND_MAP_KEY_EQUALS_uint64_t,
+                         SHAREMIND_MAP_KEY_LESS_uint64_t)
+SHAREMIND_MAP_DECLARE_insertHint(SharemindMemoryMap,
+                                 inline,
+                                 const uint64_t,
+                                 visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertHint(SharemindMemoryMap,
+                                inline,
+                                const uint64_t,
+                                ((uint16_t) (key)),
+                                SHAREMIND_MAP_KEY_EQUALS_uint64_t,
+                                SHAREMIND_MAP_KEY_LESS_uint64_t)
+SHAREMIND_MAP_DECLARE_insertAtHint(SharemindMemoryMap,
+                                   inline,
+                                   const uint64_t,
+                                   visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertAtHint(SharemindMemoryMap,
+                                  inline,
+                                  const uint64_t,
+                                  SHAREMIND_MAP_KEY_COPY_uint64_t,
+                                  malloc,
+                                  free)
+SHAREMIND_MAP_DECLARE_insertNew(SharemindMemoryMap,
+                                inline,
+                                const uint64_t,
+                                visibility("internal"))
+SHAREMIND_MAP_DEFINE_insertNew(SharemindMemoryMap,
+                               inline,
+                               const uint64_t)
+SHAREMIND_MAP_DECLARE_remove(SharemindMemoryMap,
+                             inline,
+                             const uint64_t,
+                             visibility("internal"))
+SHAREMIND_MAP_DEFINE_remove(SharemindMemoryMap,
+                            inline,
+                            const uint64_t,
+                            ((uint16_t) (key)),
+                            SHAREMIND_MAP_KEY_EQUALS_uint64_t,
+                            SHAREMIND_MAP_KEY_LESS_uint64_t,
+                            free,
+                            SharemindMemorySlot_destroy(&v->value);)
 
+SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_MAP_DECLARE(SharemindMemoryMap,
-                      uint64_t,
-                      const uint64_t,
-                      SharemindMemorySlot,
-                      static inline)
-SHAREMIND_MAP_DEFINE(SharemindMemoryMap,
-                     uint64_t,
-                     const uint64_t,
-                     SharemindMemorySlot,
-                     (uint16_t)(key),
-                     SHAREMIND_MAP_KEY_EQUALS_uint64_t,
-                     SHAREMIND_MAP_KEY_LESS_THAN_uint64_t,
-                     SHAREMIND_MAP_KEYINIT_REGULAR,
-                     SHAREMIND_MAP_KEYCOPY_REGULAR,
-                     SHAREMIND_MAP_KEYFREE_REGULAR,
-                     malloc,
-                     free,
-                     static inline)
-
-static inline uint64_t SharemindMemoryMap_find_unused_ptr(
-        const SharemindMemoryMap * const m,
-        const uint64_t startFrom)
-        __attribute__ ((nonnull(1), warn_unused_result));
-static inline uint64_t SharemindMemoryMap_find_unused_ptr(
-        const SharemindMemoryMap * const m,
-        const uint64_t startFrom)
+inline uint64_t SharemindMemoryMap_findUnusedPtr(
+            const SharemindMemoryMap * const m,
+            const uint64_t startFrom)
+        __attribute__ ((nonnull(1),
+                        warn_unused_result,
+                        visibility("internal")));
+inline uint64_t SharemindMemoryMap_findUnusedPtr(
+            const SharemindMemoryMap * const m,
+            const uint64_t startFrom)
 {
     assert(m);
     assert(startFrom >= 4u);
@@ -71,24 +112,6 @@ static inline uint64_t SharemindMemoryMap_find_unused_ptr(
     return index;
 }
 
-static inline void SharemindMemoryMap_destroyer(
-        const uint64_t * const key,
-        SharemindMemorySlot * const value) __attribute__ ((nonnull(1, 2)));
-
-static inline void SharemindMemoryMap_destroyer(
-        const uint64_t * const key,
-        SharemindMemorySlot * const value)
-{
-    assert(key);
-    assert(value);
-    (void) key;
-    SharemindMemorySlot_destroy(value);
-}
-
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_MEMORYMAP_H */
