@@ -91,8 +91,10 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
 
     p->program = program;
 
-    if (unlikely(SharemindMutex_init(&p->mutex) != SHAREMIND_MUTEX_OK))
+    if (unlikely(SharemindMutex_init(&p->mutex) != SHAREMIND_MUTEX_OK)) {
+        error = SHAREMIND_VM_MUTEX_ERROR;
         goto SharemindProcess_init_fail_mutex;
+    }
 
     /* Copy DATA section */
     SharemindDataSectionsVector_init(&p->dataSections);
