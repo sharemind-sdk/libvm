@@ -314,18 +314,18 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                                 SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,
                                 pos,
                                 p);
-                    const SharemindSyscallBinding * const b =
-                            SharemindProgram_find_syscall(p,
+                    const SharemindSyscallWrapper w =
+                            SharemindProgram_findSyscall(p,
                                                           (const char *) pos);
-                    if (!b)
+                    if (!w.callable)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
                                     pos,
                                     p);
-                    SharemindSyscallBinding * const binding =
+                    SharemindSyscallWrapper * const binding =
                             SharemindSyscallBindingsVector_push(&p->bindings);
                     if (!binding)
                         RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos, p);
-                    (*binding) = *b;)
+                    (*binding) = w;)
 
                 LOAD_BINDSECTION_CASE(PDBIND,
                     if (((const char *) pos)[0u] == '\0')
@@ -339,9 +339,9 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                             RETURN_SPLR(SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND,
                                         pos,
                                         p);
-                    SharemindPd * const b =
-                            SharemindProgram_find_pd(p, (const char *) pos);
-                    if (!b)
+                    SharemindPd * const w =
+                            SharemindProgram_findPd(p, (const char *) pos);
+                    if (!w)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND,
                                     pos,
                                     p);
@@ -349,7 +349,7 @@ SharemindProgramLoadResult SharemindProgram_load_from_sme(SharemindProgram * p,
                             SharemindPdBindings_push(&p->pdBindings);
                     if (!pdBinding)
                         RETURN_SPLR(SHAREMIND_VM_OUT_OF_MEMORY, pos, p);
-                    (*pdBinding) = b;)
+                    (*pdBinding) = w;)
 
                 default:
                     /* Ignore other sections */

@@ -32,11 +32,6 @@ extern "C" {
 
 SHAREMIND_STATIC_ASSERT(sizeof(size_t) >= sizeof(uint16_t));
 
-typedef struct {
-    SharemindSyscallWrapper wrapper;
-    void * moduleHandle;
-} SharemindSyscallBinding;
-
 struct SharemindVirtualMachineContext_;
 typedef struct SharemindVirtualMachineContext_ SharemindVirtualMachineContext;
 struct SharemindVirtualMachineContext_ {
@@ -53,7 +48,7 @@ struct SharemindVirtualMachineContext_ {
       \returns a system call with the given signature.
       \retval NULL if no such system call is provided.
     */
-    const SharemindSyscallBinding * (*find_syscall)(
+    SharemindSyscallWrapper (*find_syscall)(
             SharemindVirtualMachineContext * context,
             const char * signature);
 

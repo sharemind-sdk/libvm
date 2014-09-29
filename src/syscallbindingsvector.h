@@ -26,10 +26,10 @@ extern "C" {
 
 
 SHAREMIND_VECTOR_DECLARE(SharemindSyscallBindingsVector,
-                         SharemindSyscallBinding,,
+                         SharemindSyscallWrapper,,
                          static inline)
 SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindingsVector,
-                        SharemindSyscallBinding,
+                        SharemindSyscallWrapper,
                         malloc,
                         free,
                         realloc,

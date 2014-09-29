@@ -419,11 +419,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SharemindStackFrame * nextFrame = p->nextFrame; \
         nextFrame->returnValueAddr = (r); \
         const SharemindSyscallCallable rc = \
-            ((const SharemindSyscallBinding *) sc)->wrapper.callable; \
-        p->syscallContext.syscall_internal = \
-            ((const SharemindSyscallBinding *) sc)->wrapper.internal; \
+            ((const SharemindSyscallWrapper *) sc)->callable; \
         p->syscallContext.moduleHandle = \
-            ((const SharemindSyscallBinding *) sc)->moduleHandle; \
+            ((const SharemindSyscallWrapper *) sc)->internal; \
         SharemindReference * ref; \
         bool hasRefs = (nextFrame->refstack.size > 0u); \
         if (!hasRefs) { \

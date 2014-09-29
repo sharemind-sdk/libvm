@@ -88,11 +88,12 @@ ADD_DEPENDENCIES("libvm"
                  m4_static_label_structs_h
                  m4_dispatches_h)
 
-SET(LIBVM_VERSION "0.1.0.0")
+SET(LIBVM_VERSION "0.2.0.0")
+SET(LIBVM_COMPAT_VERSION "0.2.0.0")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
                       OUTPUT_NAME "sharemind_vm"
                       VERSION "${LIBVM_VERSION}"
-                      SOVERSION "0.1")
+                      SOVERSION "0.2")
 
 TARGET_LINK_LIBRARIES("libvm"
                       ${SharemindLibexecutable_LIBRARIES}

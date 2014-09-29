@@ -69,11 +69,11 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
 #endif
 
 
-static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
+static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
         SharemindProgram * const p,
         const char * const signature)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
+static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
         SharemindProgram * const p,
         const char * const signature)
 {
@@ -83,15 +83,14 @@ static inline const SharemindSyscallBinding * SharemindProgram_find_syscall(
     if (p->overrides && p->overrides->find_syscall)
         return (*(p->overrides->find_syscall))(p->overrides, signature);
 
-    return SharemindVm_find_syscall(p->vm, signature);
+    return SharemindVm_findSyscall(p->vm, signature);
 }
 
-static inline SharemindPd * SharemindProgram_find_pd(
-        SharemindProgram * p,
-        const char * pdName) __attribute__ ((nonnull(1, 2),
-                                             warn_unused_result));
-static inline SharemindPd * SharemindProgram_find_pd(SharemindProgram * const p,
-                                                     const char * const pdName)
+static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * p,
+                                                    const char * pdName)
+        __attribute__ ((nonnull(1, 2), warn_unused_result));
+static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * const p,
+                                                    const char * const pdName)
 {
     assert(p);
     assert(pdName);
@@ -99,7 +98,7 @@ static inline SharemindPd * SharemindProgram_find_pd(SharemindProgram * const p,
     if (p->overrides && p->overrides->find_pd)
         return (*(p->overrides->find_pd))(p->overrides, pdName);
 
-    return SharemindVm_find_pd(p->vm, pdName);
+    return SharemindVm_findPd(p->vm, pdName);
 }
 
 
