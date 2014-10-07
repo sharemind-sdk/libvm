@@ -291,7 +291,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define _SHAREMIND_MI_PUSHREF_BLOCK(prefix,value,b,bOffset,rSize) \
     if (1) { \
-        assert(rSize > 0u); \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
         Sharemind ## prefix ## erence * ref = \
             Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
@@ -320,7 +319,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define _SHAREMIND_MI_PUSHREF_REF(prefix,value,constPerhaps,r,rOffset,rSize) \
     if (1) { \
-        assert(rSize > 0u); \
         if ((r)->internal \
             && ((SharemindMemorySlot *) (r)->internal)->nrefs + 1u == 0u) \
         { SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); } \
@@ -346,7 +344,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define _SHAREMIND_MI_PUSHREF_MEM(prefix,value,slot,mOffset,rSize) \
     if (1) { \
-        assert(rSize > 0u); \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
         Sharemind ## prefix ## erence * ref = \
                 Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\

@@ -15,6 +15,7 @@
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/preprocessor.h>
 #include <sharemind/static_assert.h>
+#include <stdbool.h>
 #include <time.h>
 
 #ifdef __cplusplus
