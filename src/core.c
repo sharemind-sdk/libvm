@@ -348,8 +348,12 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         Sharemind ## prefix ## erence * ref = \
                 Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
         SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
-        ref->pData = ((uint8_t *) (slot)->pData) + (mOffset); \
-        ref->size = (rSize); \
+        if ((ref->size = (rSize)) != 0u) { \
+            ref->pData = ((((uint8_t *) (slot)->pData) + (mOffset))); \
+        } else { \
+            /* Non-NULL invalid pointer so as not to signal end of (c)refs: */ \
+            ref->pData = ((uint8_t *) NULL) + 1u; \
+        } \
         ref->internal = (slot); \
         (slot)->nrefs++; \
     } else (void) 0
@@ -568,9 +572,6 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_REF_CAN_READ(ref) \
     (((SharemindMemorySlot *) ref->internal == NULL \
      || SHAREMIND_MI_MEM_CAN_READ((SharemindMemorySlot *) ref->internal)))
-#define SHAREMIND_MI_REF_CAN_WRITE(ref) \
-    (((SharemindMemorySlot *) ref->internal == NULL \
-    || SHAREMIND_MI_MEM_CAN_WRITE((SharemindMemorySlot *) ref->internal)))
 
 #define SHAREMIND_MI_BLOCK_AS(b,t) (b->t[0])
 #define SHAREMIND_MI_BLOCK_AS_P(b,t) (&b->t[0])
@@ -716,6 +717,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
     if (1) { \
+        SHAREMIND_MI_TRY_EXCEPT(index != 0u, \
+                                SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE); \
         SharemindMemoryMap_value * const v = \
                 SharemindMemoryMap_get(&p->memoryMap, (index)); \
         SHAREMIND_MI_TRY_EXCEPT(v, SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE);\

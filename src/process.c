@@ -56,10 +56,10 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
         __attribute__ ((nonnull(1), warn_unused_result));
 static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
                                    void * ptr) __attribute__ ((nonnull(1)));
-static int sharemind_private_reserve(
+static bool sharemind_private_reserve(
         SharemindModuleApi0x1SyscallContext * c,
         size_t nBytes) __attribute__ ((nonnull(1)));
-static int sharemind_private_release(
+static bool sharemind_private_release(
         SharemindModuleApi0x1SyscallContext * c,
         size_t nBytes) __attribute__ ((nonnull(1), warn_unused_result));
 
@@ -181,6 +181,7 @@ static SharemindVmError SharemindProcess_init(SharemindProcess * p,
     assert(!SharemindMemoryMap_get(&p->memoryMap, 0u));
     assert(!SharemindMemoryMap_get(&p->memoryMap, 1u));
     assert(!SharemindMemoryMap_get(&p->memoryMap, 2u));
+    assert(!SharemindMemoryMap_get(&p->memoryMap, 3u));
 
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
     if (1) { \
@@ -524,15 +525,16 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
 
     /* Allocate the memory: */
     void * const pData = malloc((size_t) nBytes);
-    if (unlikely(!pData))
+    if (unlikely(!pData && (nBytes != 0u)))
         return 0u;
 
     SharemindMemorySlot * slot;
     const uint64_t index = SharemindProcess_public_alloc_slot(p, &slot);
     if (unlikely(index == 0u)) {
         free(pData);
-        return index;
+        return 0u;
     }
+    assert(index >= 4u);
 
     /* Initialize the slot: */
     SharemindMemorySlot_init(slot, pData, (size_t) nBytes, NULL);
@@ -560,11 +562,17 @@ SharemindVmProcessException SharemindProcess_public_free(
         const uint64_t ptr)
 {
     assert(p);
-    assert(ptr != 0u);
+
+    /* If ptr is a special value: */
+    if (ptr <= 3u)
+        return (ptr == 0u)
+               ? SHAREMIND_VM_PROCESS_OK
+               : SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE;
+
     SharemindMemoryMap_value * const v =
             SharemindMemoryMap_get(&p->memoryMap, ptr);
     if (unlikely(!v))
-        return SHAREMIND_VM_PROCESS_OK;
+        return SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE;
 
     SharemindMemorySlot * const slot = &v->value;
     if (unlikely(slot->nrefs != 0u))
@@ -609,7 +617,11 @@ static bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
-    return SharemindProcess_public_free(p, ptr) == SHAREMIND_VM_PROCESS_OK;
+    const SharemindVmProcessException r = SharemindProcess_public_free(p, ptr);
+    assert(r == SHAREMIND_VM_PROCESS_OK
+           || r == SHAREMIND_VM_PROCESS_MEMORY_IN_USE
+           || r == SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE);
+    return r != SHAREMIND_VM_PROCESS_MEMORY_IN_USE;
 }
 
 static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
@@ -617,6 +629,9 @@ static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
 {
     assert(c);
     assert(c->vm_internal);
+
+    if (unlikely(ptr == 0u))
+        return 0u;
 
     const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
@@ -634,6 +649,9 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
 {
     assert(c);
     assert(c->vm_internal);
+
+    if (unlikely(ptr == 0u))
+        return NULL;
 
     const SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
@@ -718,6 +736,7 @@ static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
 
     /* Get allocated size: */
     const size_t nBytes = v->value;
+    assert(nBytes > 0u);
 
     /* Free the memory: */
     free(ptr);
@@ -738,8 +757,8 @@ static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
     /** \todo Update any other memory statistics? */
 }
 
-static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
-                                     size_t nBytes)
+static bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
+                                      size_t nBytes)
 {
     assert(c);
     assert(c->vm_internal);
@@ -773,11 +792,14 @@ static int sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
     return true;
 }
 
-static int sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
-                                     size_t nBytes)
+static bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
+                                      size_t nBytes)
 {
     assert(c);
     assert(c->vm_internal);
+
+    if (unlikely(nBytes == 0u))
+        return true;
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
