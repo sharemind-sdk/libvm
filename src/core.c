@@ -353,6 +353,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         } else { \
             /* Non-NULL invalid pointer so as not to signal end of (c)refs: */ \
             ref->pData = ((uint8_t *) NULL) + 1u; \
+            assert(ref->pData != NULL); \
         } \
         ref->internal = (slot); \
         (slot)->nrefs++; \
