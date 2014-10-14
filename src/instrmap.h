@@ -52,6 +52,11 @@ SHAREMIND_MAP_DEFINE_insertHint(SharemindInstrMap,
                                 ((uintptr_t) (key)),
                                 SHAREMIND_MAP_KEY_EQUALS_size_t,
                                 SHAREMIND_MAP_KEY_LESS_size_t)
+SHAREMIND_MAP_DECLARE_emplaceAtHint(SharemindInstrMap,
+                                    inline,
+                                    visibility("internal"))
+SHAREMIND_MAP_DEFINE_emplaceAtHint(SharemindInstrMap,
+                                   inline)
 SHAREMIND_MAP_DECLARE_insertAtHint(SharemindInstrMap,
                                    inline,
                                    size_t,
@@ -108,6 +113,10 @@ SHAREMIND_MAP_DEFINE_insertHint(SharemindInstrMapP,
                                 ((uintptr_t) (key)),
                                 SHAREMIND_MAP_KEY_EQUALS_size_t,
                                 SHAREMIND_MAP_KEY_LESS_size_t)
+SHAREMIND_MAP_DECLARE_emplaceAtHint(SharemindInstrMapP,
+                                    inline,
+                                    visibility("internal"))
+SHAREMIND_MAP_DEFINE_emplaceAtHint(SharemindInstrMapP, inline)
 SHAREMIND_MAP_DECLARE_insertAtHint(SharemindInstrMapP,
                                    inline,
                                    size_t,

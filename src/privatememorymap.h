@@ -51,6 +51,10 @@ SHAREMIND_MAP_DEFINE_insertHint(SharemindPrivateMemoryMap,
                                 ((uintptr_t) (key)),
                                 SHAREMIND_MAP_KEY_EQUALS_voidptr,
                                 SHAREMIND_MAP_KEY_LESS_voidptr)
+SHAREMIND_MAP_DECLARE_emplaceAtHint(SharemindPrivateMemoryMap,
+                                    inline,
+                                    visibility("internal"))
+SHAREMIND_MAP_DEFINE_emplaceAtHint(SharemindPrivateMemoryMap, inline)
 SHAREMIND_MAP_DECLARE_insertAtHint(SharemindPrivateMemoryMap,
                                    inline,
                                    void *,

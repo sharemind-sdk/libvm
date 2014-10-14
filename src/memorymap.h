@@ -51,6 +51,10 @@ SHAREMIND_MAP_DEFINE_insertHint(SharemindMemoryMap,
                                 ((uint16_t) (key)),
                                 SHAREMIND_MAP_KEY_EQUALS_uint64_t,
                                 SHAREMIND_MAP_KEY_LESS_uint64_t)
+SHAREMIND_MAP_DECLARE_emplaceAtHint(SharemindMemoryMap,
+                                    inline,
+                                    visibility("internal"))
+SHAREMIND_MAP_DEFINE_emplaceAtHint(SharemindMemoryMap, inline)
 SHAREMIND_MAP_DECLARE_insertAtHint(SharemindMemoryMap,
                                    inline,
                                    const uint64_t,
