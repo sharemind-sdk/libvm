@@ -17,6 +17,7 @@
 
 #include <assert.h>
 #include <sharemind/mutex.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/refs.h>
 #include "codesectionsvector.h"
 #include "datasectionsvector.h"
@@ -26,9 +27,7 @@
 #include "vm.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SHAREMIND_EXTERN_C_BEGIN
 
 
 /*******************************************************************************
@@ -102,8 +101,6 @@ static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * const p,
 }
 
 
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_PROGRAM_H */

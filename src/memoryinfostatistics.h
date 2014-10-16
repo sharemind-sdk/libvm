@@ -16,13 +16,11 @@
 
 
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <stddef.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef struct {
     size_t max;
@@ -37,10 +35,6 @@ static inline void SharemindMemoryInfoStatistics_init(
     mis->max = 0u;
 }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_MEMORYINFOSTATISTICS_H */

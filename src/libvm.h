@@ -14,13 +14,12 @@
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/preprocessor.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/static_assert.h>
 #include <stdbool.h>
 #include <time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SHAREMIND_EXTERN_C_BEGIN
 
 #ifdef __MACH__
 #include <mach/clock.h>
@@ -338,9 +337,6 @@ size_t SharemindProcess_get_current_code_section(
 uintptr_t SharemindProcess_get_current_ip(const SharemindProcess * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_H */

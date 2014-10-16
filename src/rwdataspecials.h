@@ -14,20 +14,15 @@
 #error including an internal header!
 #endif
 
-
+#include <sharemind/extern_c.h>
 #include "memoryslot.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SHAREMIND_EXTERN_C_BEGIN
 
 static SharemindMemorySlotSpecials rwDataSpecials =
         { .writeable = 1, .readable = 1, .free = NULL };
 
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_RWDATASPECIALS_H */

@@ -16,16 +16,14 @@
 
 
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindMemorySlotSpecials_;
 typedef struct SharemindMemorySlotSpecials_ SharemindMemorySlotSpecials;
@@ -74,9 +72,6 @@ inline void SharemindMemorySlot_destroy(SharemindMemorySlot * const m) {
     }
 }
 
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_MEMORYSLOT_H */

@@ -14,16 +14,13 @@
 #error including an internal header!
 #endif
 
-
-#include <sharemind/vector.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <sharemind/vector.h>
 #include <stdlib.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 SHAREMIND_VECTOR_DECLARE(SharemindPdBindings,SharemindPd *,,static inline)
 SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,
@@ -33,10 +30,6 @@ SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,
                         realloc,
                         static inline)
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_PDBINDINGSVECTOR_H */

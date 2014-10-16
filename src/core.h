@@ -14,16 +14,13 @@
 #error including an internal header!
 #endif
 
-
+#include <sharemind/extern_c.h>
 #include <stdint.h>
 #include "libvm.h"
 #include "innercommand.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
 #define _SHAREMIND_NOCLONE noclone,
@@ -72,9 +69,6 @@ SharemindVmError sharemind_vm_profile(
          visibility("internal")
     ));
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_CORE_H */

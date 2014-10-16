@@ -17,16 +17,14 @@
 
 #include <assert.h>
 #include <sharemind/codeblock.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
 #include "references.h"
 #include "registervector.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindStackFrame_ {
     SharemindRegisterVector stack;
@@ -64,10 +62,6 @@ static inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
                                            &SharemindCReference_destroy);
 }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_STACKFRAME_H */

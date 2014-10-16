@@ -14,17 +14,13 @@
 #error including an internal header!
 #endif
 
-
+#include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
 #include "codesection.h"
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 SHAREMIND_VECTOR_DECLARE(SharemindCodeSectionsVector,
                          SharemindCodeSection,,
@@ -36,10 +32,6 @@ SHAREMIND_VECTOR_DEFINE(SharemindCodeSectionsVector,
                         realloc,
                         static inline)
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_CODESECTIONSVECTOR_H */

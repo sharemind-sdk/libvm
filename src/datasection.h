@@ -14,16 +14,13 @@
 #error including an internal header!
 #endif
 
-
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <stdbool.h>
 #include "memoryslot.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef SharemindMemorySlot SharemindDataSection;
 
@@ -58,11 +55,7 @@ static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
 static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
 { free(ds->pData); }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_DATASECTION_H */
 

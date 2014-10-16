@@ -14,18 +14,15 @@
 #error including an internal header!
 #endif
 
-
 #include "libvm.h"
 
 #include <assert.h>
 #include <sharemind/mutex.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/refs.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindVm_ {
 
@@ -80,10 +77,6 @@ static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
     return (*(vm->context->find_pd))(vm->context, pdName);
 }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_VM_H */

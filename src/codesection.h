@@ -17,16 +17,14 @@
 
 #include <assert.h>
 #include <sharemind/codeblock.h>
+#include <sharemind/extern_c.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include "instrmap.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef struct {
     SharemindCodeBlock * data;
@@ -82,10 +80,6 @@ static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
     SharemindInstrMap_destroy(&s->instrmap);
 }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_CODESECTION_H */

@@ -16,6 +16,7 @@
 
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
 #include <sharemind/mutex.h>
+#include <sharemind/extern_c.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "libvm.h"
@@ -26,10 +27,7 @@
 #include "stackframe.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindProcess_ {
     SharemindProgram * program;
@@ -81,10 +79,6 @@ SharemindVmProcessException SharemindProcess_public_free(
                         nonnull(1),
                         warn_unused_result));
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_PROCESS_H */

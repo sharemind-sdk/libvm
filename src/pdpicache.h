@@ -16,6 +16,7 @@
 
 
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/libmodapi/api_0x1.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/vector.h>
@@ -23,10 +24,7 @@
 #include <stdlib.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef struct {
     SharemindPdpi * pdpi;
@@ -105,10 +103,6 @@ SHAREMIND_VECTOR_DEFINE(SharemindPdpiCache,
                         realloc,
                         static inline)
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_PDPICACHE_H */

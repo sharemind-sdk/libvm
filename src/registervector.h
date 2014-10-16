@@ -16,13 +16,12 @@
 
 
 #include <sharemind/codeblock.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SHAREMIND_EXTERN_C_BEGIN
 
 SHAREMIND_VECTOR_DECLARE(SharemindRegisterVector,
                          SharemindCodeBlock,,
@@ -34,9 +33,6 @@ SHAREMIND_VECTOR_DEFINE(SharemindRegisterVector,
                         realloc,
                         static inline)
 
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_REGISTERVECTOR_H */

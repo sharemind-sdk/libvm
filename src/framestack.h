@@ -14,16 +14,12 @@
 #error including an internal header!
 #endif
 
-
+#include <sharemind/extern_c.h>
 #include <sharemind/stack.h>
 #include <stdlib.h>
 #include "stackframe.h"
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 SHAREMIND_STACK_DECLARE(SharemindFrameStack,
                         SharemindStackFrame,,
@@ -34,11 +30,7 @@ SHAREMIND_STACK_DEFINE(SharemindFrameStack,
                        free,
                        static inline)
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_FRAMESTACK_H */
 

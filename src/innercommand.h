@@ -14,11 +14,9 @@
 #error including an internal header!
 #endif
 
+#include <sharemind/extern_c.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef enum {
     SHAREMIND_I_GET_IMPL_LABEL,
@@ -26,10 +24,6 @@ typedef enum {
     SHAREMIND_I_CONTINUE
 } SharemindInnerCommand;
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_INNERCOMMAND_H */

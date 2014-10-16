@@ -14,16 +14,13 @@
 #error including an internal header!
 #endif
 
-
 #include <assert.h>
+#include <sharemind/extern_c.h>
 #include <stddef.h>
 #include "memoryinfostatistics.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+SHAREMIND_EXTERN_C_BEGIN
 
 typedef struct {
     size_t usage;
@@ -40,10 +37,6 @@ static inline void SharemindMemoryInfo_init(SharemindMemoryInfo * const mi) {
     SharemindMemoryInfoStatistics_init(&mi->stats);
 }
 
-
-#ifdef __cplusplus
-} /* extern "C" { */
-#endif
-
+SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_MEMORYINFO_H */
