@@ -11,10 +11,10 @@
 #define SHAREMIND_LIBVM_H
 
 #include <sharemind/codeblock.h>
+#include <sharemind/extern_c.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/preprocessor.h>
-#include <sharemind/extern_c.h>
 #include <sharemind/static_assert.h>
 #include <stdbool.h>
 #include <stdio.h>
