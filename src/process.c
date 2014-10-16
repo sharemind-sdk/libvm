@@ -315,6 +315,16 @@ void SharemindProcess_free(SharemindProcess * p) {
     free(p);
 }
 
+SharemindProgram * SharemindProcess_program(const SharemindProcess * const p) {
+    // No locking, program is const after SharemindProcess_new():
+    return p->program;
+}
+
+SharemindVm * SharemindProcess_vm(const SharemindProcess * const p) {
+    // No locking, program is const after SharemindProcess_new():
+    return SharemindProgram_vm(p->program);
+}
+
 size_t SharemindProcess_pdpiCount(const SharemindProcess * process) {
     assert(process);
     SharemindProcess_lockConst(process);

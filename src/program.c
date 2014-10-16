@@ -164,6 +164,9 @@ void SharemindProgram_free(SharemindProgram * const p) {
     free(p);
 }
 
+SharemindVm * SharemindProgram_vm(const SharemindProgram * const p)
+{ return p->vm; /* No locking, vm is const after SharemindProgram_new(). */ }
+
 static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
 #define RETURN_SPLR_OOM(pos,p) \

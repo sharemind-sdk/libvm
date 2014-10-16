@@ -195,6 +195,9 @@ void SharemindProgram_free(SharemindProgram * program)
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProgram,,)
 
+SharemindVm * SharemindProgram_vm(const SharemindProgram * program)
+        __attribute__ ((nonnull(1)));
+
 /**
  * \brief Loads the program sections from the given file.
  * \param program pointer to the SharemindProgram to initialize.
@@ -285,6 +288,12 @@ void SharemindProcess_free(SharemindProcess * process)
 
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProcess)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProcess,,)
+
+SharemindProgram * SharemindProcess_program(const SharemindProcess * process)
+        __attribute__ ((nonnull(1)));
+
+SharemindVm * SharemindProcess_vm(const SharemindProcess * process)
+        __attribute__ ((nonnull(1)));
 
 /**
  * \param[in] process pointer to the SharemindProcess instance.
