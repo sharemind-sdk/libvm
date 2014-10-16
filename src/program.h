@@ -16,12 +16,14 @@
 
 
 #include <assert.h>
-#include <sharemind/mutex.h>
+#include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/recursive_locks.h>
 #include <sharemind/refs.h>
 #include "codesectionsvector.h"
 #include "datasectionsvector.h"
 #include "datasectionsizesvector.h"
+#include "lasterror.h"
 #include "pdbindingsvector.h"
 #include "syscallbindingsvector.h"
 #include "vm.h"
@@ -43,7 +45,8 @@ struct SharemindProgram_ {
     SharemindSyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;
 
-    SharemindMutex mutex;
+    SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
+    SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_REFS_DECLARE_FIELDS
 
     size_t activeLinkingUnit;
@@ -58,6 +61,12 @@ struct SharemindProgram_ {
     bool ready;
 
 };
+
+SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
+        SharemindProgram,
+        inline,
+        SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProgram)
 
 #ifdef __GNUC__
 #pragma GCC visibility push(internal)

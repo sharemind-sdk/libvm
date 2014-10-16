@@ -15,10 +15,11 @@
 #endif
 
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
-#include <sharemind/mutex.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/recursive_locks.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
+#include "lasterror.h"
 #include "libvm.h"
 #include "memoryinfo.h"
 #include "memorymap.h"
@@ -32,7 +33,8 @@ SHAREMIND_EXTERN_C_BEGIN
 struct SharemindProcess_ {
     SharemindProgram * program;
 
-    SharemindMutex mutex;
+    SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
+    SHAREMIND_LIBVM_LASTERROR_FIELDS;
 
     SharemindDataSectionsVector dataSections;
     SharemindDataSectionsVector bssSections;
@@ -65,6 +67,12 @@ struct SharemindProcess_ {
 
     SharemindVmProcessState state;
 };
+
+SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
+        SharemindProcess,
+        inline,
+        SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProcess)
 
 uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
                                        const uint64_t nBytes,

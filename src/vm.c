@@ -26,29 +26,32 @@ SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmError, SHAREMIND_VM_ERROR_ENUM)
  *  SharemindVm
 *******************************************************************************/
 
-static inline SharemindVmError SharemindVm_init(
-        SharemindVm * vm,
-        SharemindVirtualMachineContext * context)
+SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
+                              SharemindVmError * error,
+                              const char ** errorStr)
 {
-    assert(vm);
     assert(context);
-    if (unlikely(SharemindMutex_init(&vm->mutex) != SHAREMIND_MUTEX_OK))
-        return SHAREMIND_VM_MUTEX_ERROR;
 
-    vm->context = context;
-    SHAREMIND_REFS_INIT(vm);
-    return SHAREMIND_VM_OK;
-}
-
-SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context) {
-    assert(context);
     SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
-    if (unlikely(!vm))
+    if (unlikely(!vm)) {
+        if (error)
+            (*error) = SHAREMIND_VM_OUT_OF_MEMORY;
+        if (errorStr)
+            (*errorStr) = "Out of memory!";
         goto SharemindVm_new_error_0;
+    }
 
-    if (unlikely(SharemindVm_init(vm, context) != SHAREMIND_VM_OK))
+    if (!SHAREMIND_RECURSIVE_LOCK_INIT(vm)) {
+        if (error)
+            (*error) = SHAREMIND_VM_MUTEX_ERROR;
+        if (errorStr)
+            (*errorStr) = "Mutex initialization error!";
         goto SharemindVm_new_error_1;
+    }
 
+    SHAREMIND_LIBVM_LASTERROR_INIT(vm);
+    SHAREMIND_REFS_INIT(vm);
+    vm->context = context;
     return vm;
 
 SharemindVm_new_error_1:
@@ -60,19 +63,15 @@ SharemindVm_new_error_0:
     return NULL;
 }
 
-static inline void SharemindVm_destroy(SharemindVm * vm) {
+void SharemindVm_free(SharemindVm * vm) {
     assert(vm);
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(vm);
     if (vm->context && vm->context->destructor)
         (*(vm->context->destructor))(vm->context);
 
-    if (unlikely(SharemindMutex_destroy(&vm->mutex) != SHAREMIND_MUTEX_OK))
-        abort();
-}
-
-void SharemindVm_free(SharemindVm * vm) {
-    SharemindVm_destroy((assert(vm), vm));
+    SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
     free(vm);
 }
 
-SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_MUTEX(SharemindVm)
+SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindVm)
+SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindVm)
