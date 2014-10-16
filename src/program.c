@@ -94,6 +94,7 @@ SharemindProgram * SharemindVm_newProgram(
 
     SHAREMIND_LIBVM_LASTERROR_INIT(p);
     SHAREMIND_REFS_INIT(p);
+    SHAREMIND_TAG_INIT(p);
 
     p->vm = vm;
     p->error = SHAREMIND_VM_OK;
@@ -112,6 +113,7 @@ SharemindProgram * SharemindVm_newProgram(
 
 SharemindProgram_new_error_2:
 
+    SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
 SharemindProgram_new_error_1:
@@ -153,6 +155,7 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);
 
+    SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 }
 
@@ -706,4 +709,5 @@ SharemindProgram_get_instruction_error:
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProgram)
+SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindProgram)

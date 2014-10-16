@@ -16,6 +16,7 @@
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/preprocessor.h>
 #include <sharemind/static_assert.h>
+#include <sharemind/tag.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -165,6 +166,7 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
 void SharemindVm_free(SharemindVm * vm);
 
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindVm)
+SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindVm,,)
 
 /**
  * \brief Allocates and initializes a new SharemindProgram instance.
@@ -191,6 +193,7 @@ void SharemindProgram_free(SharemindProgram * program)
         __attribute__ ((nonnull(1)));
 
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProgram)
+SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProgram,,)
 
 /**
  * \brief Loads the program sections from the given file.
@@ -281,6 +284,7 @@ void SharemindProcess_free(SharemindProcess * process)
         __attribute__ ((nonnull(1)));
 
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProcess)
+SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProcess,,)
 
 /**
  * \param[in] process pointer to the SharemindProcess instance.

@@ -17,6 +17,7 @@
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/recursive_locks.h>
+#include <sharemind/tag.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "lasterror.h"
@@ -35,6 +36,7 @@ struct SharemindProcess_ {
 
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
+    SHAREMIND_TAG_DECLARE_FIELDS;
 
     SharemindDataSectionsVector dataSections;
     SharemindDataSectionsVector bssSections;

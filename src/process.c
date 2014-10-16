@@ -102,6 +102,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     }
 
     SHAREMIND_LIBVM_LASTERROR_INIT(p);
+    SHAREMIND_TAG_INIT(p);
 
     /* Copy DATA section */
     SharemindDataSectionsVector_init(&p->dataSections);
@@ -272,6 +273,7 @@ SharemindProgram_newProcess_fail_data_sections:
 
     SharemindDataSectionsVector_destroy_with(&p->dataSections,
                                              &SharemindDataSection_destroy);
+    SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
 SharemindProgram_newProcess_fail_mutex:
@@ -302,6 +304,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
     SharemindDataSectionsVector_destroy_with(&p->dataSections,
                                              &SharemindDataSection_destroy);
 
+    SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
     SharemindProgram_refs_unref(p->program);
@@ -825,3 +828,4 @@ static const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProcess)
+SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProcess,)

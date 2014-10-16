@@ -21,6 +21,7 @@
 #include <sharemind/extern_c.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/refs.h>
+#include <sharemind/tag.h>
 #include "lasterror.h"
 
 
@@ -31,6 +32,7 @@ struct SharemindVm_ {
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_REFS_DECLARE_FIELDS
+    SHAREMIND_TAG_DECLARE_FIELDS;
 
     SharemindVirtualMachineContext * context;
 
