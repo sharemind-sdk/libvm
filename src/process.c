@@ -814,7 +814,7 @@ static bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
     return true;
 }
 
-const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
+static const SharemindModuleApi0x1PdpiInfo * sharemind_get_pdpi_info(
         SharemindModuleApi0x1SyscallContext * c,
         uint64_t pd_index)
 {
