@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef SHAREMIND_LIBSHAREMIND_VM_H
-#define SHAREMIND_LIBSHAREMIND_VM_H
+#ifndef SHAREMIND_LIBVM_H
+#define SHAREMIND_LIBVM_H
 
 #include <sharemind/codeblock.h>
 #include <sharemind/libmodapi/libmodapi.h>
@@ -343,4 +343,4 @@ uintptr_t SharemindProcess_get_current_ip(const SharemindProcess * process)
 #endif
 
 
-#endif /* SHAREMIND_LIBSHAREMIND_VM_H */
+#endif /* SHAREMIND_LIBVM_H */

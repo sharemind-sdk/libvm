@@ -7,8 +7,8 @@
  * code is subject to the appropriate license agreement.
  */
 
-#ifndef SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H
-#define SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H
+#ifndef SHAREMIND_LIBVM_CORE_H
+#define SHAREMIND_LIBVM_CORE_H
 
 #ifndef SHAREMIND_INTERNAL__
 #error including an internal header!
@@ -77,4 +77,4 @@ SharemindVmError sharemind_vm_profile(
 } /* extern "C" { */
 #endif
 
-#endif /* SHAREMIND_LIBSHAREMIND_VM_INTERNAL_CORE_H */
+#endif /* SHAREMIND_LIBVM_CORE_H */
