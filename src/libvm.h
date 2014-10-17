@@ -401,6 +401,13 @@ size_t SharemindProcess_currentCodeSection(
 uintptr_t SharemindProcess_currentIp(const SharemindProcess * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
+
+/*******************************************************************************
+  Clean up helper macros
+*******************************************************************************/
+
+#undef SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS
+
 SHAREMIND_EXTERN_C_END
 
 #endif /* SHAREMIND_LIBVM_H */
