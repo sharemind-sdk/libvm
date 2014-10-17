@@ -115,7 +115,7 @@ ENDIF()
 INSTALL(TARGETS "libvm"
         LIBRARY DESTINATION "lib")
 
-INSTALL(FILES "src/libvm.h"
+INSTALL(FILES "src/libvm.h" "src/libvmcxx.h"
         DESTINATION "include/sharemind/libvm")
 
 # Install cmake files:
