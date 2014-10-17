@@ -138,10 +138,10 @@ SharemindProgram_new_error_0:
 static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     assert(p);
 
+    SHAREMIND_REFS_ASSERT_IF_REFERENCED(p);
+
     if (p->overrides && p->overrides->destructor)
         (*(p->overrides->destructor))(p->overrides);
-
-    SHAREMIND_REFS_ASSERT_IF_REFERENCED(p);
 
     SharemindVm_refs_unref(p->vm);
 
