@@ -69,10 +69,7 @@ class Process;
                               ::Sharemind ## ClassName ## _lastError(&c)), \
                       ::Sharemind ## ClassName ## _lastErrorString(&c)) \
         {} \
-        template <typename T, \
-                  typename = typename std::enable_if< \
-                      std::is_same<T, ClassName>::value>::type> \
-        inline Exception(const T & c) : Exception(*(c.cPtr())) {} \
+        inline Exception(const ClassName & c) : Exception(*(c.cPtr())) {} \
         inline Exception(const VmError error, const char * const errorStr) \
             : VmException(error, errorStr) \
         {} \
@@ -81,10 +78,7 @@ class Process;
             : VmException(error, \
                           ::Sharemind ## ClassName ## _lastErrorString(&c)) \
         {} \
-        template <typename T, \
-                  typename = typename std::enable_if< \
-                      std::is_same<T, ClassName>::value>::type> \
-        inline Exception(const VmError error, const T & c) \
+        inline Exception(const VmError error, const ClassName & c) \
             : Exception(error, *(c.cPtr())) \
         {} \
     }
