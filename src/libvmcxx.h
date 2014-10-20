@@ -339,6 +339,9 @@ public: /* Methods: */
 
     bool isReady() const noexcept { return ::SharemindProgram_isReady(m_c); }
 
+    const void * lastParsePosition() const noexcept
+    { return SharemindProgram_lastParsePosition(m_c); }
+
     const VmInstruction * instruction(const size_t codeSection,
                                       const size_t instructionIndex)
             const noexcept

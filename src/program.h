@@ -60,6 +60,7 @@ struct SharemindProgram_ {
     SharemindVirtualMachineContext * overrides;
 
     bool ready;
+    const void * lastParsePosition;
 
 };
 

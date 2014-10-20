@@ -98,6 +98,7 @@ SharemindProgram * SharemindVm_newProgram(
 
     p->vm = vm;
     p->ready = false;
+    p->lastParsePosition = NULL;
     p->overrides = overrides;
 
     SharemindVm_lock(vm);
@@ -170,7 +171,7 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
 #define RETURN_SPLR_OOM(pos,p) \
     do { \
-        (void) (pos); \
+        p->lastParsePosition = (pos); \
         SharemindProgram_setErrorOom((p)); \
         SharemindProgram_unlock((p)); \
         return SHAREMIND_VM_OUT_OF_MEMORY; \
@@ -178,7 +179,7 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
 #define RETURN_SPLR_OOR(pos,p) \
     do { \
-        (void) (pos); \
+        p->lastParsePosition = (pos); \
         SharemindProgram_setErrorOor((p)); \
         SharemindProgram_unlock((p)); \
         return SHAREMIND_VM_OUT_OF_MEMORY; \
@@ -186,7 +187,7 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
 #define RETURN_SPLR(e,pos,p) \
     do { \
-        (void) (pos); \
+        p->lastParsePosition = (pos); \
         SharemindProgram_setError((p), (e), NULL); \
         SharemindProgram_unlock((p)); \
         return (e); \
@@ -474,6 +475,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     p->activeLinkingUnit = h.activeLinkingUnit;
 
     const SharemindVmError e = SharemindProgram_endPrepare(p);
+    p->lastParsePosition = NULL;
     SharemindProgram_unlock(p);
     return e;
 }
@@ -679,6 +681,15 @@ bool SharemindProgram_isReady(const SharemindProgram * p) {
     const bool r = p->ready;
     SharemindProgram_unlockConst(p);
     return r;
+}
+
+const void * SharemindProgram_lastParsePosition(const SharemindProgram * p) {
+    assert(p);
+
+    SharemindProgram_lockConst(p);
+    const void * const pos = p->lastParsePosition;
+    SharemindProgram_unlockConst(p);
+    return pos;
 }
 
 const SharemindVmInstruction * SharemindProgram_instruction(
