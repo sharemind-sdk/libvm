@@ -408,8 +408,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                                 pos,
                                 p);
                     const SharemindSyscallWrapper w =
-                            SharemindProgram_findSyscall(p,
-                                                          (const char *) pos);
+                            SharemindProgram_findSyscall(p, (const char *) pos);
                     if (!w.callable)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
                                     pos,
