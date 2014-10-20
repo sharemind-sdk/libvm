@@ -60,10 +60,10 @@ class Process;
     { return m_c; }
 
 #define SHAREMIND_LIBVM_CXX_DEFINE_EXCEPTION(ClassName) \
-    class Exception: public VmException { \
+    class Exception: public VmExceptionBase { \
     public: /* Methods: */ \
         inline Exception(const ::Sharemind ## ClassName & c) \
-            : VmException( \
+            : VmExceptionBase( \
                       SHAREMIND_LIBVM_CXX_EXCEPT_OVERRIDES_TEST( \
                               &c, \
                               ::Sharemind ## ClassName ## _lastError(&c)), \
@@ -71,12 +71,12 @@ class Process;
         {} \
         inline Exception(const ClassName & c) : Exception(*(c.cPtr())) {} \
         inline Exception(const VmError error, const char * const errorStr) \
-            : VmException(error, errorStr) \
+            : VmExceptionBase(error, errorStr) \
         {} \
         inline Exception(const VmError error, \
                          const ::Sharemind ## ClassName & c) \
-            : VmException(error, \
-                          ::Sharemind ## ClassName ## _lastErrorString(&c)) \
+            : VmExceptionBase(error, \
+                              ::Sharemind ## ClassName ## _lastErrorString(&c))\
         {} \
         inline Exception(const VmError error, const ClassName & c) \
             : Exception(error, *(c.cPtr())) \
@@ -132,14 +132,14 @@ inline typename TypeInv<CType>::type * optChild(CType * const ssc) noexcept
 
 
 /*******************************************************************************
-  VmException
+  VmExceptionBase
 *******************************************************************************/
 
-class VmException: public std::exception {
+class VmExceptionBase: public std::exception {
 
 public: /* Methods: */
 
-    inline VmException(const VmError errorCode, const char * const errorStr)
+    inline VmExceptionBase(const VmError errorCode, const char * const errorStr)
         : m_errorCode((assert(errorCode != ::SHAREMIND_VM_OK), errorCode))
         , m_errorStr((assert(errorStr), errorStr))
     {}
@@ -152,7 +152,7 @@ private: /* Fields: */
     const VmError m_errorCode;
     const char * const m_errorStr;
 
-}; /* class VmException { */
+}; /* class VmExceptionBase { */
 
 
 /*******************************************************************************
