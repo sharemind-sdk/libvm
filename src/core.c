@@ -881,6 +881,10 @@ SharemindVmError sharemind_vm_run(
             SHAREMIND_UPDATESTATE;
 #endif
             SHAREMIND_DEBUG_PRINTSTATE;
+            SharemindProcess_setError(
+                        p,
+                        SHAREMIND_VM_RUNTIME_EXCEPTION,
+                        "The process exited with an exception!");
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
@@ -896,6 +900,10 @@ SharemindVmError sharemind_vm_run(
             SHAREMIND_UPDATESTATE;
 #endif
             SHAREMIND_DEBUG_PRINTSTATE;
+            SharemindProcess_setError(
+                        p,
+                        SHAREMIND_VM_RUNTIME_TRAP,
+                        "The process returned due to a runtime trap!");
             return SHAREMIND_VM_RUNTIME_TRAP;
     } else {
         abort();
