@@ -339,7 +339,11 @@ public: /* Methods: */
     const VmInstruction * instruction(const size_t codeSection,
                                       const size_t instructionIndex)
             const noexcept
-    { return ::SharemindProgram_instruction(m_c, codeSection, instructionIndex); }
+    {
+        return ::SharemindProgram_instruction(m_c,
+                                              codeSection,
+                                              instructionIndex);
+    }
 
 private: /* Methods: */
 
