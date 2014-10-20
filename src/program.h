@@ -59,7 +59,6 @@ struct SharemindProgram_ {
     SharemindVm * vm;
     SharemindVirtualMachineContext * overrides;
 
-    SharemindVmError error;
     bool ready;
 
 };

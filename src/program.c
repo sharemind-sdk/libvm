@@ -97,7 +97,6 @@ SharemindProgram * SharemindVm_newProgram(
     SHAREMIND_TAG_INIT(p);
 
     p->vm = vm;
-    p->error = SHAREMIND_VM_OK;
     p->ready = false;
     p->overrides = overrides;
 
