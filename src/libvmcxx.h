@@ -150,7 +150,7 @@ public: /* Methods: */
 
     inline VmExceptionBase(const VmError errorCode, const char * const errorStr)
         : m_errorCode((assert(errorCode != ::SHAREMIND_VM_OK), errorCode))
-        , m_errorStr((assert(errorStr), errorStr))
+        , m_errorStr(errorStr ? errorStr : VmError_toString(errorCode))
     {}
 
     inline VmError code() const noexcept { return m_errorCode; }
