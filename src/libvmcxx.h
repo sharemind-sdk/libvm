@@ -24,8 +24,17 @@ namespace sharemind {
 *******************************************************************************/
 
 using VmContext = ::SharemindVirtualMachineContext;
-using VmError = ::SharemindVmError;
 using VmInstruction = ::SharemindVmInstruction;
+
+
+/*******************************************************************************
+  VmError
+*******************************************************************************/
+
+using VmError = ::SharemindVmError;
+inline const char * VmError_toString(const VmError e) noexcept
+{ return ::SharemindVmError_toString(e); }
+
 
 /*******************************************************************************
   Forward declarations:
