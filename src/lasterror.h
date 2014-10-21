@@ -41,10 +41,6 @@
     SHAREMIND_LASTERROR_PRIVATE_SHORTCUT_DECLARE( \
             ClassName, \
             Mie,, \
-            SHAREMIND_COMMA visibility("internal")) \
-    SHAREMIND_LASTERROR_PRIVATE_SHORTCUT_DECLARE( \
-            ClassName, \
-            Io,, \
             SHAREMIND_COMMA visibility("internal"))
 
 #define SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(ClassName) \
@@ -70,12 +66,7 @@
             ClassName, \
             Mie,, \
             SHAREMIND_VM_MUTEX_ERROR, \
-            "Mutex initialization error!") \
-    SHAREMIND_LASTERROR_PRIVATE_SHORTCUT_DEFINE( \
-            ClassName, \
-            Io,, \
-            SHAREMIND_VM_IO_ERROR, \
-            "I/O error!")
+            "Mutex initialization error!")
 
 #endif /* SHAREMIND_LIBVM_LASTERROR_H */
 
