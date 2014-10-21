@@ -19,7 +19,6 @@
 #include <sharemind/likely.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "core.h"
@@ -208,7 +207,9 @@ SharemindVmError SharemindProgram_loadFromFile(SharemindProgram * program,
     /* Open input file: */
     const int fd = open(filename, O_RDONLY | O_CLOEXEC | O_NOCTTY);
     if (fd < 0) {
-        SharemindProgram_setErrorIo(program);
+        SharemindProgram_setError(program,
+                                  SHAREMIND_VM_IO_ERROR,
+                                  "Unable to open() file!");
         return SHAREMIND_VM_IO_ERROR;
     }
     const SharemindVmError r =
@@ -224,7 +225,9 @@ SharemindVmError SharemindProgram_loadFromCFile(SharemindProgram * program,
     assert(file);
     const int fd = fileno(file);
     if (fd == -1) {
-        SharemindProgram_setErrorIo(program);
+        SharemindProgram_setError(program,
+                                  SHAREMIND_VM_IO_ERROR,
+                                  "Failed fileno()!");
         return SHAREMIND_VM_IO_ERROR;
     }
     assert(fd >= 0);
@@ -240,47 +243,38 @@ SharemindVmError SharemindProgram_loadFromFileDescriptor(
 
     /* Determine input file size: */
     struct stat inFileStat;
-    if (fstat(fd, &inFileStat) != 0)
-        goto SharemindProgram_loadFromFileDescriptor_ioError;
-
-    if (inFileStat.st_size <= 0)
-        goto SharemindProgram_loadFromFileDescriptor_ioError;
-
+    if (fstat(fd, &inFileStat) != 0) {
+        SharemindProgram_setError(program,
+                                  SHAREMIND_VM_IO_ERROR,
+                                  "Failed fstat()!");
+        return SHAREMIND_VM_IO_ERROR;
+    }
+    if (inFileStat.st_size <= 0) /* Parse empty data block: */
+        return SharemindProgram_loadFromMemory(program, &inFileStat, 0u);
     const size_t fileSize = (size_t) inFileStat.st_size;
     if (fileSize > SIZE_MAX) {
         SharemindProgram_setErrorOor(program);
         return SHAREMIND_VM_IMPLEMENTATION_LIMITS_REACHED;
     }
 
-    /* Memory map input file: */
-    void * map = mmap(0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
-    const bool haveMmap = (map != MAP_FAILED);
-    if (!haveMmap) {
-        /* Fallback to malloc: */
-        map = malloc(fileSize);
-        if (!map) {
-            SharemindProgram_setErrorOom(program);
-            return SHAREMIND_VM_OUT_OF_MEMORY;
-        }
-        if (read(fd, map, fileSize) != inFileStat.st_size) {
-            free(map);
-            goto SharemindProgram_loadFromFileDescriptor_ioError;
-        }
+    /* Read file to memory: */
+    void * const fileData = malloc(fileSize);
+    if (!fileData) {
+        SharemindProgram_setErrorOom(program);
+        return SHAREMIND_VM_OUT_OF_MEMORY;
+    }
+    if (read(fd, fileData, fileSize) != inFileStat.st_size) {
+        free(fileData);
+        SharemindProgram_setError(program,
+                                  SHAREMIND_VM_IO_ERROR,
+                                  "Failed to read() all data from file!");
+        return SHAREMIND_VM_IO_ERROR;
     }
 
     const SharemindVmError r =
-            SharemindProgram_loadFromMemory(program, map, fileSize);
-    if (haveMmap) {
-        (void) munmap(map, fileSize);
-    } else {
-        free(map);
-    }
+            SharemindProgram_loadFromMemory(program, fileData, fileSize);
+    free(fileData);
     return r;
-
-SharemindProgram_loadFromFileDescriptor_ioError:
-
-    SharemindProgram_setErrorIo(program);
-    return SHAREMIND_VM_IO_ERROR;
 }
 
 
