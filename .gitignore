@@ -7,14 +7,5 @@
 /CTestTestfile.cmake
 Makefile
 /qtcreator-build/
-!/doc/Makefile
-/Testing/
-/tests/*.sb
-.help/
-.moc/
-.obj/
-.rcc/
-.ui/
 *~
 *.kate-swp
-/doc/deps.png
