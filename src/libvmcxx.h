@@ -140,6 +140,124 @@ template <typename CType>
 inline typename TypeInv<CType>::type * optChild(CType * const ssc) noexcept
 { return ssc ? mustTag(ssc) : nullptr; }
 
+template <typename T>
+using FindSyscallT =
+        decltype(std::declval<T &>()(std::declval<const char *>()));
+
+template <typename T>
+using FindPdT =
+        decltype(std::declval<T &>()(std::declval<const char *>()));
+
+template <typename T, typename = void>
+struct IsFindSyscall: std::false_type {};
+
+template <typename T>
+struct IsFindSyscall<T, VoidT<FindSyscallT<T> > >
+        : std::is_same<typename FunctionTraits<
+                           decltype(std::declval<VmContext *>()
+                                        ->find_syscall)>::return_type,
+                       FindSyscallT<T> >
+{};
+
+template <typename T, typename = void>
+struct IsFindPd: std::false_type {};
+
+template <typename T>
+struct IsFindPd<T, VoidT<FindSyscallT<T> > >
+        : std::is_same<typename FunctionTraits<
+                           decltype(std::declval<VmContext *>()
+                                        ->find_pd)>::return_type,
+                       FindPdT<T> >
+{};
+
+template <typename F,
+          unsigned =
+              std::conditional<
+                  IsFindSyscall<F>::type::value,
+                  std::integral_constant<unsigned, 1u>::type,
+                  typename std::conditional<
+                      IsFindPd<F>::type::value,
+                      std::integral_constant<unsigned, 2u>::type,
+                      std::integral_constant<unsigned, 0u>::type
+                  >::type
+              >::type::value>
+struct CustomContext1;
+
+template <typename F>
+struct CustomContext1<F, 1u>: VmContext {
+
+    /* Types: */
+
+    struct Inner { F f; };
+
+    /* Methods: */
+
+    template <typename F_>
+    inline CustomContext1(F_ && f)
+        : VmContext{[](VmContext * c) noexcept {
+                        delete static_cast<Inner *>(c->internal);
+                        delete static_cast<CustomContext1<F> *>(c);
+                    },
+                    [](VmContext * c, const char * name) noexcept
+                    { return static_cast<Inner *>(c->internal)->f(name); },
+                    nullptr,
+                    new Inner{std::forward<F_>(f)}}
+    {}
+};
+
+template <typename F>
+struct CustomContext1<F, 2u>: VmContext {
+
+    /* Types: */
+
+    struct Inner { F f; };
+
+    /* Methods: */
+
+    template <typename F_>
+    inline CustomContext1(F_ && f)
+        : VmContext{[](VmContext * c) noexcept {
+                        delete static_cast<Inner *>(c->internal);
+                        delete static_cast<CustomContext1<F> *>(c);
+                    },
+                    nullptr,
+                    [](VmContext * c, const char * name) noexcept
+                    { return static_cast<Inner *>(c->internal)->f(name); },
+                    new Inner{std::forward<F_>(f)}}
+    {}
+};
+
+template <typename FindSyscall, typename FindPd>
+struct CustomContext2: VmContext {
+
+/* Types: */
+
+    struct Inner {
+        FindSyscall findSyscall;
+        FindPd findPd;
+    };
+
+/* Methods: */
+
+    template <typename FindSyscall_, typename FindPd_>
+    inline CustomContext2(FindSyscall_ && findSyscall, FindPd_ && findPd)
+        : VmContext{[](VmContext * c) noexcept {
+                        delete static_cast<Inner *>(c->internal);
+                        delete static_cast<CustomContext2<FindSyscall,
+                                                          FindPd> *>(c);
+                    },
+                    [](VmContext * c, const char * n) {
+                        return static_cast<Inner *>(c->internal)->findSyscall(
+                                      n);
+                    },
+                    [](VmContext * c, const char * n)
+                    { return static_cast<Inner *>(c->internal)->findPd(n); },
+                    new Inner{std::forward<FindSyscall_>(findSyscall),
+                              std::forward<FindPd_>(findPd)}}
+    {}
+
+};
+
 } /* namespace libvm { */
 } /* namespace Detail { */
 
@@ -300,7 +418,27 @@ public: /* Methods: */
     Program & operator=(Program &&) = delete;
     Program & operator=(const Program &) = delete;
 
-    inline Program(Vm & vm, Overrides * const overrides = nullptr);
+    inline Program(Vm & vm)
+        : Program(vm, static_cast<Overrides *>(nullptr))
+    {}
+
+    inline Program(Vm & vm, Overrides & overrides) : Program(vm, &overrides) {}
+
+    template <typename F>
+    inline Program(Vm & vm, F && f)
+        : Program(vm,
+                  static_cast<Overrides *>(
+                      new Detail::libvm::CustomContext1<F>{std::forward<F>(f)}))
+    {}
+
+    template <typename FindSyscall, typename FindPd>
+    inline Program(Vm & vm, FindSyscall && findSyscall, FindPd && findPd)
+        : Program(vm,
+                  static_cast<Overrides *>(
+                      new Detail::libvm::CustomContext2<FindSyscall, FindPd>{
+                            std::forward<FindSyscall>(findSyscall),
+                            std::forward<FindPd>(findPd)}))
+    {}
 
     virtual inline ~Program() noexcept {
         if (m_c) {
@@ -357,7 +495,9 @@ public: /* Methods: */
 
 private: /* Methods: */
 
-    ::SharemindProcess & newProcess() {
+    inline Program(Vm & vm, Overrides * const overrides);
+
+    inline ::SharemindProcess & newProcess() {
         ::SharemindProcess * const p = ::SharemindProgram_newProcess(m_c);
         if (p)
             return *p;
@@ -377,135 +517,13 @@ private: /* Fields: */
 
 class Vm {
 
-    friend Program::Program(Vm & vm, Program::Overrides * const overrides);
+    friend class Program;
 
 public: /* Types: */
 
     using Context = VmContext;
 
     SHAREMIND_LIBVM_CXX_DEFINE_EXCEPTION(Vm);
-
-private: /* Types: */
-
-    template <typename T>
-    using FindSyscallT =
-            decltype(std::declval<T &>()(std::declval<const char *>()));
-
-    template <typename T>
-    using FindPdT =
-            decltype(std::declval<T &>()(std::declval<const char *>()));
-
-    template <typename T, typename = void>
-    struct IsFindSyscall: std::false_type {};
-
-    template <typename T>
-    struct IsFindSyscall<T, VoidT<FindSyscallT<T> > >
-            : std::is_same<typename FunctionTraits<
-                               decltype(std::declval<Context *>()
-                                            ->find_syscall)>::return_type,
-                           FindSyscallT<T> >
-    {};
-
-    template <typename T, typename = void>
-    struct IsFindPd: std::false_type {};
-
-    template <typename T>
-    struct IsFindPd<T, VoidT<FindSyscallT<T> > >
-            : std::is_same<typename FunctionTraits<
-                               decltype(std::declval<Context *>()
-                                            ->find_pd)>::return_type,
-                           FindPdT<T> >
-    {};
-
-    template <typename F,
-              unsigned =
-                  std::conditional<
-                      IsFindSyscall<F>::type::value,
-                      std::integral_constant<unsigned, 1u>::type,
-                      typename std::conditional<
-                          IsFindPd<F>::type::value,
-                          std::integral_constant<unsigned, 2u>::type,
-                          std::integral_constant<unsigned, 0u>::type
-                      >::type
-                  >::type::value>
-    struct CustomContext1;
-
-    template <typename F>
-    struct CustomContext1<F, 1u>: Context {
-
-        /* Types: */
-
-        struct Inner { F f; };
-
-        /* Methods: */
-
-        template <typename F_>
-        inline CustomContext1(F_ && f)
-            : Context{[](Context * c) noexcept {
-                          delete static_cast<Inner *>(c->internal);
-                          delete static_cast<CustomContext1<F> *>(c);
-                      },
-                      [](Context * c, const char * name) noexcept
-                      { return static_cast<Inner *>(c->internal)->f(name); },
-                      nullptr,
-                      new Inner{std::forward<F_>(f)}
-              }
-        {}
-    };
-
-    template <typename F>
-    struct CustomContext1<F, 2u>: Context {
-
-        /* Types: */
-
-        struct Inner { F f; };
-
-        /* Methods: */
-
-        template <typename F_>
-        inline CustomContext1(F_ && f)
-            : Context{[](Context * c) noexcept {
-                          delete static_cast<Inner *>(c->internal);
-                          delete static_cast<CustomContext1<F> *>(c);
-                      },
-                      nullptr,
-                      [](Context * c, const char * name) noexcept
-                      { return static_cast<Inner *>(c->internal)->f(name); },
-                      new Inner{std::forward<F_>(f)}
-              }
-        {}
-    };
-
-    template <typename FindSyscall, typename FindPd>
-    struct CustomContext2: Context {
-
-    /* Types: */
-
-        struct Inner {
-            FindSyscall findSyscall;
-            FindPd findPd;
-        };
-
-    /* Methods: */
-
-        template <typename FindSyscall_, typename FindPd_>
-        inline CustomContext2(FindSyscall_ && findSyscall, FindPd_ && findPd)
-            : Context{[](Context * c) noexcept {
-                          delete static_cast<Inner *>(c->internal);
-                          delete static_cast<CustomContext2<FindSyscall,
-                                                            FindPd> *>(c);
-                      },
-                      [](Context * c, const char * n) {
-                          return static_cast<Inner *>(c->internal)->findSyscall(
-                                        n);
-                      },
-                      [](Context * c, const char * n)
-                      { return static_cast<Inner *>(c->internal)->findPd(n); },
-                      new Inner{std::forward<FindSyscall_>(findSyscall),
-                                std::forward<FindPd_>(findPd)}}
-        {}
-
-    };
 
 public: /* Methods: */
 
@@ -519,14 +537,16 @@ public: /* Methods: */
 
     template <typename F>
     inline Vm(F && f)
-        : Vm(static_cast<Context *>(new CustomContext1<F>{std::forward<F>(f)}))
+        : Vm(static_cast<Context *>(
+                 new Detail::libvm::CustomContext1<F>{std::forward<F>(f)}))
     {}
 
     template <typename FindSyscall, typename FindPd>
     inline Vm(FindSyscall && findSyscall, FindPd && findPd)
-        : Vm(static_cast<Context *>(new CustomContext2<FindSyscall, FindPd>{
-                                        std::forward<FindSyscall>(findSyscall),
-                                        std::forward<FindPd>(findPd)}))
+        : Vm(static_cast<Context *>(
+                 new Detail::libvm::CustomContext2<FindSyscall, FindPd>{
+                            std::forward<FindSyscall>(findSyscall),
+                            std::forward<FindPd>(findPd)}))
     {}
 
     virtual inline ~Vm() noexcept {
@@ -541,30 +561,30 @@ public: /* Methods: */
 
 private: /* Methods: */
 
-        inline Vm(Context * const context)
-            : m_c([context](){
-                VmError error;
-                const char * errorStr;
-                ::SharemindVm * const vm =
-                        ::SharemindVm_new(context, &error, &errorStr);
-                if (vm)
-                    return vm;
-                throw Exception(
-                        SHAREMIND_LIBVM_CXX_EXCEPT_OVERRIDES_TEST(=,error),
-                        errorStr);
-            }())
-        {
-            ::SharemindVm_setTagWithDestructor(
-                        m_c,
-                        this,
-                        [](void * m) noexcept {
-                            Vm * const vm = static_cast<Vm *>(m);
-                            vm->m_c = nullptr;
-                            delete vm;
-                        });
-        }
+    inline Vm(Context * const context)
+        : m_c([context](){
+            VmError error;
+            const char * errorStr;
+            ::SharemindVm * const vm =
+                    ::SharemindVm_new(context, &error, &errorStr);
+            if (vm)
+                return vm;
+            throw Exception(
+                    SHAREMIND_LIBVM_CXX_EXCEPT_OVERRIDES_TEST(=,error),
+                    errorStr);
+        }())
+    {
+        ::SharemindVm_setTagWithDestructor(
+                    m_c,
+                    this,
+                    [](void * m) noexcept {
+                        Vm * const vm = static_cast<Vm *>(m);
+                        vm->m_c = nullptr;
+                        delete vm;
+                    });
+    }
 
-    ::SharemindProgram & newProgram(Program::Overrides * const overrides) {
+    inline ::SharemindProgram & newProgram(Program::Overrides * const overrides) {
         ::SharemindProgram * const p =
                 ::SharemindVm_newProgram(m_c, overrides);
         if (p)
