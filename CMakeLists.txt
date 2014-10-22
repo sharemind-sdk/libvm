@@ -13,7 +13,6 @@ PROJECT("SHAREMIND_LIBVM" "C")
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
-FIND_PACKAGE(SharemindCxxHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
@@ -52,8 +51,6 @@ CHECK_ADD_COMPILER_FLAG("-Weverything")
 CHECK_ADD_COMPILER_FLAG("-Wlogical-op")
 
 SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS" "-D_XOPEN_SOURCE=700")
-SET(LIBVMCXX_INSTALL_DEFINITIONS ${LIBVM_INSTALL_DEFINITIONS}
-                                 ${SharemindCxxHeaders_DEFINITIONS})
 ADD_DEFINITIONS(
     ${SharemindLibexecutable_DEFINITIONS}
     ${SharemindLibmodapi_DEFINITIONS}
@@ -100,8 +97,6 @@ ADD_DEPENDENCIES("libvm"
 
 SET(LIBVM_VERSION "0.3.0.0")
 SET(LIBVM_COMPAT_VERSION "0.3.0.0")
-SET(LIBVMCXX_VERSION "0.3.0.0")
-SET(LIBVMCXX_COMPAT_VERSION "0.3.0.0")
 STRING(REGEX REPLACE "(([^\\.]+\\.[^\\.]+)\\.).*" "\\2" LIBVM_SOVERSION
                      "${LIBVM_VERSION}")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
@@ -124,7 +119,7 @@ ENDIF()
 INSTALL(TARGETS "libvm"
         LIBRARY DESTINATION "lib")
 
-INSTALL(FILES "src/libvm.h" "src/libvmcxx.h"
+INSTALL(FILES "src/libvm.h"
         DESTINATION "include/sharemind/libvm")
 
 # Install cmake files:
@@ -133,10 +128,7 @@ ADD_CUSTOM_TARGET("include_sharemind_libvm_in_files_in_IDE"
                   SOURCES ${sharemind_libvm_in_files})
 SET(LIBVM_INSTALL_LINK_LIBRARIES
     ${LIBVM_LINK_LIBRARIES} "-L${CMAKE_INSTALL_PREFIX}/lib" "-lsharemind_vm")
-SET(LIBVMCXX_INSTALL_LINK_LIBRARIES ${LIBVM_INSTALL_LINK_LIBRARIES})
 SET(LIBVM_INSTALL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-SET(LIBVMCXX_INSTALL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include"
-                                  ${SharemindCxxHeaders_INCLUDE_DIRS})
 
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake" @ONLY)
@@ -146,13 +138,3 @@ CONFIGURE_FILE(
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake"
         DESTINATION "lib/SharemindLibvm")
-
-CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmCxxConfig.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmCxxConfig.cmake"
-               @ONLY)
-CONFIGURE_FILE(
-    "${CMAKE_CURRENT_SOURCE_DIR}/SharemindLibvmCxxConfigVersion.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmCxxConfigVersion.cmake" @ONLY)
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmCxxConfig.cmake"
-              "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmCxxConfigVersion.cmake"
-        DESTINATION "lib/SharemindLibvmCxx")
