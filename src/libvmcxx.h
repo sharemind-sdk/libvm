@@ -15,6 +15,7 @@
 #include <new>
 #include <sharemind/compiler-support/GccVersion.h>
 #include <sharemind/FunctionTraits.h>
+#include <sharemind/VoidT.h>
 #include <type_traits>
 #include <utility>
 #include "libvm.h"
@@ -386,14 +387,6 @@ public: /* Types: */
 
 private: /* Types: */
 
-    #ifdef SHAREMIND_GCC_VERSION
-    // Workaround CWG 1558 in GCC:
-    template <typename ...> struct Voider { using type = void; };
-    template <typename ... T> using void_t = typename Voider<T ...>::type;
-    #else
-    template <typename ...> using void_t = void;
-    #endif
-
     template <typename T>
     using FindSyscallT =
             decltype(std::declval<T &>()(std::declval<const char *>()));
@@ -406,7 +399,7 @@ private: /* Types: */
     struct IsFindSyscall: std::false_type {};
 
     template <typename T>
-    struct IsFindSyscall<T, void_t<FindSyscallT<T> > >
+    struct IsFindSyscall<T, VoidT<FindSyscallT<T> > >
             : std::is_same<typename FunctionTraits<
                                decltype(std::declval<Context *>()
                                             ->find_syscall)>::return_type,
@@ -417,7 +410,7 @@ private: /* Types: */
     struct IsFindPd: std::false_type {};
 
     template <typename T>
-    struct IsFindPd<T, void_t<FindSyscallT<T> > >
+    struct IsFindPd<T, VoidT<FindSyscallT<T> > >
             : std::is_same<typename FunctionTraits<
                                decltype(std::declval<Context *>()
                                             ->find_pd)>::return_type,
