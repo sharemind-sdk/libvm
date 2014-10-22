@@ -13,7 +13,6 @@ PROJECT("SHAREMIND_LIBVM" "C")
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
-FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
@@ -22,7 +21,6 @@ FIND_PACKAGE(SharemindVmGlobals REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
 INCLUDE_DIRECTORIES(
-    ${Boost_INCLUDE_DIRS}
     ${SharemindLibexecutable_INCLUDE_DIRS}
     ${SharemindLibmodapi_INCLUDE_DIRS}
     ${SharemindLibsoftfloat_INCLUDE_DIRS}
