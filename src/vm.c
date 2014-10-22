@@ -30,8 +30,6 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               SharemindVmError * error,
                               const char ** errorStr)
 {
-    assert(context);
-
     SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
     if (unlikely(!vm)) {
         if (error)
