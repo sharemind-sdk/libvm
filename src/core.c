@@ -774,6 +774,17 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
+static const char * SharemindProcess_exceptionString(const int64_t e) {
+    switch ((SharemindVmProcessException) e) {
+        BOOST_PP_SEQ_FOR_EACH(
+                    SHAREMIND_ENUM_CUSTOM_DEFINE_CUSTOM_TOSTRING_ELEM,
+                    ("Process exited with an ")(" exception!"),
+                    SHAREMIND_VM_PROCESS_EXCEPTION_ENUM)
+        default: return "Process exited with an unknown exception!";
+    }
+}
+
+
 SharemindVmError sharemind_vm_run(
         SharemindProcess * const p,
         const SharemindInnerCommand sharemind_vm_run_command,
@@ -884,7 +895,7 @@ SharemindVmError sharemind_vm_run(
             SharemindProcess_setError(
                         p,
                         SHAREMIND_VM_RUNTIME_EXCEPTION,
-                        "The process exited with an exception!");
+                        SharemindProcess_exceptionString(p->exceptionValue));
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
