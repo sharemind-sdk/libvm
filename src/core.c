@@ -882,8 +882,6 @@ SharemindVmError sharemind_vm_run(
             p->exceptionValue = SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS;
 
         except:
-            assert(p->exceptionValue >= INT_MIN
-                   && p->exceptionValue <= INT_MAX);
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString(
                        (SharemindVmProcessException) p->exceptionValue) != 0);
