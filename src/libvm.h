@@ -125,6 +125,9 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessException);
 
 struct SharemindVirtualMachineContext_ {
 
+    /** Pointer to any SharemindVirtualMachineContext data. Not used by libvm.*/
+    void * internal;
+
     /**
       A destructor (e.g. free) for this SharemindVirtualMachineContext.
       \param[in] context a pointer to this struct.
@@ -149,9 +152,6 @@ struct SharemindVirtualMachineContext_ {
     */
     SharemindPd * (*find_pd)(SharemindVirtualMachineContext * context,
                              const char * pdName);
-
-    /** Pointer to any SharemindVirtualMachineContext data. Not used by libvm.*/
-    void * internal;
 
 };
 
