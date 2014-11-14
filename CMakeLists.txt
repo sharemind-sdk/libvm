@@ -9,6 +9,8 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION "2.8.12")
 PROJECT("SHAREMIND_LIBVM" "C")
+SET(LIBVM_VERSION "0.3.0.0")
+SET(LIBVM_COMPAT_VERSION "0.3.0.0")
 
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
@@ -94,9 +96,6 @@ ADD_DEPENDENCIES("libvm"
                  m4_preprocess_pass2_functions_h
                  m4_static_label_structs_h
                  m4_dispatches_h)
-
-SET(LIBVM_VERSION "0.3.0.0")
-SET(LIBVM_COMPAT_VERSION "0.3.0.0")
 STRING(REGEX REPLACE "(([^\\.]+\\.[^\\.]+)\\.).*" "\\2" LIBVM_SOVERSION
                      "${LIBVM_VERSION}")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
