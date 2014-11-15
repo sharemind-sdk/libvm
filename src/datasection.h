@@ -50,9 +50,9 @@ static inline bool SharemindDataSection_init(
     return true;
 }
 
-static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
-        __attribute__ ((nonnull(1)));
-static inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
+inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
+        __attribute__ ((nonnull(1), visibility("internal")));
+inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
 { free(ds->pData); }
 
 SHAREMIND_EXTERN_C_END

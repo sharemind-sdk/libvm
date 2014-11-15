@@ -373,13 +373,11 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_CLEAR_STACK \
     if (1) { \
-        SharemindRegisterVector_resize(&p->nextFrame->stack, 0u); \
-        SharemindReferenceVector_foreach_void(&p->nextFrame->refstack, \
-                                              &SharemindReference_destroy); \
-        SharemindCReferenceVector_foreach_void(&p->nextFrame->crefstack, \
-                                               &SharemindCReference_destroy); \
-        SharemindReferenceVector_resize(&p->nextFrame->refstack, 0u); \
-        SharemindCReferenceVector_resize(&p->nextFrame->crefstack, 0u); \
+        SharemindRegisterVector_force_resize(&p->nextFrame->stack, 0u); \
+        SharemindReferenceVector_destroy(&p->nextFrame->refstack); \
+        SharemindReferenceVector_init(&p->nextFrame->refstack); \
+        SharemindCReferenceVector_destroy(&p->nextFrame->crefstack); \
+        SharemindCReferenceVector_init(&p->nextFrame->crefstack); \
     } else (void) 0
 
 #define SHAREMIND_MI_HAS_STACK (!!(p->nextFrame))

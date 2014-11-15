@@ -14,6 +14,7 @@
 #error including an internal header!
 #endif
 
+#include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdint.h>
@@ -22,15 +23,30 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DECLARE(SharemindDataSectionSizesVector,
-                         uint32_t,,
-                         static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindDataSectionSizesVector,
-                        uint32_t,
-                        malloc,
-                        free,
-                        realloc,
-                        static inline)
+// static inline
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionSizesVector,uint32_t,)
+SHAREMIND_VECTOR_DECLARE_INIT(SharemindDataSectionSizesVector,
+                              inline,
+                              SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_INIT(SharemindDataSectionSizesVector, inline)
+SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindDataSectionSizesVector,
+                                 inline,
+                                 SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_DESTROY(SharemindDataSectionSizesVector, inline, free)
+SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionSizesVector,
+                                      inline,
+                                      visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindDataSectionSizesVector,
+                                     inline,
+                                     uint32_t,
+                                     realloc)
+SHAREMIND_VECTOR_DECLARE_PUSH(SharemindDataSectionSizesVector,
+                              inline,
+                              uint32_t,
+                              visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionSizesVector,
+                             inline,
+                             uint32_t)
 
 SHAREMIND_EXTERN_C_END
 

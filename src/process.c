@@ -195,10 +195,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     if (1) { \
         assert((pSection)->size > p->currentCodeSectionIndex); \
         SharemindDataSection * const restrict staticSlot = \
-                SharemindDataSectionsVector_get_pointer( \
-                        (pSection), \
-                        p->currentCodeSectionIndex); \
-        assert(staticSlot); \
+                &(pSection)->data[p->currentCodeSectionIndex]; \
         SharemindMemoryMap_value * const restrict v = \
                 SharemindMemoryMap_insertNew(&p->memoryMap, (index)); \
         if (unlikely(!v)) { \
@@ -261,18 +258,15 @@ SharemindProgram_newProcess_fail_memslots:
 SharemindProgram_newProcess_fail_firstmemslot:
 SharemindProgram_newProcess_fail_pdpiCache:
 
-    SharemindPdpiCache_destroy_with(&p->pdpiCache,
-                                    &SharemindPdpiCacheItem_destroy);
+    SharemindPdpiCache_destroy(&p->pdpiCache);
 
 SharemindProgram_newProcess_fail_bss_sections:
 
-    SharemindDataSectionsVector_destroy_with(&p->bssSections,
-                                             &SharemindDataSection_destroy);
+    SharemindDataSectionsVector_destroy(&p->bssSections);
 
 SharemindProgram_newProcess_fail_data_sections:
 
-    SharemindDataSectionsVector_destroy_with(&p->dataSections,
-                                             &SharemindDataSection_destroy);
+    SharemindDataSectionsVector_destroy(&p->dataSections);
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
@@ -295,14 +289,10 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
-    SharemindFrameStack_destroy_with(&p->frames,
-                                     &SharemindStackFrame_destroy);
-    SharemindPdpiCache_destroy_with(&p->pdpiCache,
-                                    &SharemindPdpiCacheItem_destroy);
-    SharemindDataSectionsVector_destroy_with(&p->bssSections,
-                                             &SharemindDataSection_destroy);
-    SharemindDataSectionsVector_destroy_with(&p->dataSections,
-                                             &SharemindDataSection_destroy);
+    SharemindFrameStack_destroy(&p->frames);
+    SharemindPdpiCache_destroy(&p->pdpiCache);
+    SharemindDataSectionsVector_destroy(&p->bssSections);
+    SharemindDataSectionsVector_destroy(&p->dataSections);
 
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);

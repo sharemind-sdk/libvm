@@ -14,6 +14,7 @@
 #error including an internal header!
 #endif
 
+#include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
@@ -22,15 +23,38 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DECLARE(SharemindDataSectionsVector,
-                         SharemindDataSection,,
-                         static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindDataSectionsVector,
-                        SharemindDataSection,
-                        malloc,
-                        free,
-                        realloc,
-                        static inline)
+// static inline
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionsVector, SharemindDataSection,)
+SHAREMIND_VECTOR_DECLARE_INIT(SharemindDataSectionsVector,
+                              inline,
+                              SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_INIT(SharemindDataSectionsVector, inline)
+SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindDataSectionsVector,
+                                 inline,
+                                 SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindDataSectionsVector,
+                                     inline,
+                                     SharemindDataSection,,
+                                     free,
+                                     SharemindDataSection_destroy(value);)
+SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionsVector,
+                                      inline,
+                                      SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindDataSectionsVector,
+                                     inline,
+                                     SharemindDataSection,
+                                     realloc)
+SHAREMIND_VECTOR_DECLARE_PUSH(SharemindDataSectionsVector,
+                              inline,
+                              SharemindDataSection,
+                              SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionsVector,
+                             inline,
+                             SharemindDataSection)
+SHAREMIND_VECTOR_DECLARE_POP(SharemindDataSectionsVector,
+                             inline,
+                             SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_POP(SharemindDataSectionsVector, inline)
 
 SHAREMIND_EXTERN_C_END
 

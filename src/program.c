@@ -120,12 +120,9 @@ SharemindProgram_new_error_1:
     SharemindPdBindings_destroy(&p->pdBindings);
     SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindDataSectionSizesVector_destroy(&p->bssSectionSizes);
-    SharemindDataSectionsVector_destroy_with(&p->rodataSections,
-                                             &SharemindDataSection_destroy);
-    SharemindDataSectionsVector_destroy_with(&p->dataSections,
-                                             &SharemindDataSection_destroy);
-    SharemindCodeSectionsVector_destroy_with(&p->codeSections,
-                                             &SharemindCodeSection_destroy);
+    SharemindDataSectionsVector_destroy(&p->rodataSections);
+    SharemindDataSectionsVector_destroy(&p->dataSections);
+    SharemindCodeSectionsVector_destroy(&p->codeSections);
     free(p);
 
 SharemindProgram_new_error_0:
@@ -144,12 +141,9 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
 
     SharemindVm_refs_unref(p->vm);
 
-    SharemindCodeSectionsVector_destroy_with(&p->codeSections,
-                                             &SharemindCodeSection_destroy);
-    SharemindDataSectionsVector_destroy_with(&p->dataSections,
-                                             &SharemindDataSection_destroy);
-    SharemindDataSectionsVector_destroy_with(&p->rodataSections,
-                                             &SharemindDataSection_destroy);
+    SharemindCodeSectionsVector_destroy(&p->codeSections);
+    SharemindDataSectionsVector_destroy(&p->dataSections);
+    SharemindDataSectionsVector_destroy(&p->rodataSections);
     SharemindDataSectionSizesVector_destroy(&p->bssSectionSizes);
     SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);

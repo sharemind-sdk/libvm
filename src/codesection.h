@@ -70,9 +70,9 @@ static inline bool SharemindCodeSection_init(
 }
 
 
-static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
-        __attribute__ ((nonnull(1)));
-static inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
+inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
+        __attribute__ ((nonnull(1), visibility("internal")));
+inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
 {
     assert(s);
     free(s->data);

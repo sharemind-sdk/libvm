@@ -14,6 +14,7 @@
 #error including an internal header!
 #endif
 
+#include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
@@ -22,15 +23,30 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DECLARE(SharemindSyscallBindingsVector,
-                         SharemindSyscallWrapper,,
-                         static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindSyscallBindingsVector,
-                        SharemindSyscallWrapper,
-                        malloc,
-                        free,
-                        realloc,
-                        static inline)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindSyscallBindingsVector,
+                             SharemindSyscallWrapper,)
+SHAREMIND_VECTOR_DECLARE_INIT(SharemindSyscallBindingsVector,
+                              inline,
+                              SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_INIT(SharemindSyscallBindingsVector, inline)
+SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindSyscallBindingsVector,
+                                 inline,
+                                 SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_DESTROY(SharemindSyscallBindingsVector, inline, free)
+SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindSyscallBindingsVector,
+                                      inline,
+                                      visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindSyscallBindingsVector,
+                                     inline,
+                                     SharemindSyscallWrapper,
+                                     realloc)
+SHAREMIND_VECTOR_DECLARE_PUSH(SharemindSyscallBindingsVector,
+                              inline,
+                              SharemindSyscallWrapper,
+                              visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindSyscallBindingsVector,
+                             inline,
+                             SharemindSyscallWrapper)
 
 SHAREMIND_EXTERN_C_END
 

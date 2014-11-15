@@ -14,6 +14,7 @@
 #error including an internal header!
 #endif
 
+#include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/vector.h>
@@ -22,13 +23,29 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DECLARE(SharemindPdBindings,SharemindPd *,,static inline)
-SHAREMIND_VECTOR_DEFINE(SharemindPdBindings,
-                        SharemindPd *,
-                        malloc,
-                        free,
-                        realloc,
-                        static inline)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdBindings, SharemindPd *,)
+SHAREMIND_VECTOR_DECLARE_INIT(SharemindPdBindings,
+                              inline,
+                              SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_INIT(SharemindPdBindings, inline)
+SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindPdBindings,
+                                 inline,
+                                 SHAREMIND_COMMA visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_DESTROY(SharemindPdBindings, inline, free)
+SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindPdBindings,
+                                      inline,
+                                      visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindPdBindings,
+                                     inline,
+                                     SharemindPd *,
+                                     realloc)
+SHAREMIND_VECTOR_DECLARE_PUSH(SharemindPdBindings,
+                              inline,
+                              SharemindPd *,
+                              visibility("internal"))
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdBindings,
+                             inline,
+                             SharemindPd *)
 
 SHAREMIND_EXTERN_C_END
 

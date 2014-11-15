@@ -51,15 +51,13 @@ static inline void SharemindStackFrame_init(
     f->prev = prev;
 }
 
-static inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
-        __attribute__ ((nonnull(1)));
-static inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
+inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
+        __attribute__ ((nonnull(1), visibility("internal")));
+inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
     assert(f);
     SharemindRegisterVector_destroy(&f->stack);
-    SharemindReferenceVector_destroy_with(&f->refstack,
-                                          &SharemindReference_destroy);
-    SharemindCReferenceVector_destroy_with(&f->crefstack,
-                                           &SharemindCReference_destroy);
+    SharemindReferenceVector_destroy(&f->refstack);
+    SharemindCReferenceVector_destroy(&f->crefstack);
 }
 
 SHAREMIND_EXTERN_C_END
