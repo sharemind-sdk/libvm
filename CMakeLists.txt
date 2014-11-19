@@ -92,10 +92,6 @@ IF(NOT SHAREMIND_LIBVM_LINKING_MODE)
 ENDIF()
 
 ADD_LIBRARY("libvm" ${SHAREMIND_LIBVM_LINKING_MODE} ${SHAREMIND_LIBVM_SOURCES})
-ADD_DEPENDENCIES("libvm"
-                 m4_preprocess_pass2_functions_h
-                 m4_static_label_structs_h
-                 m4_dispatches_h)
 STRING(REGEX REPLACE "(([^\\.]+\\.[^\\.]+)\\.).*" "\\2" LIBVM_SOVERSION
                      "${LIBVM_VERSION}")
 SET_TARGET_PROPERTIES("libvm" PROPERTIES
