@@ -42,10 +42,8 @@ SharemindVmError sharemind_vm_run(
          _SHAREMIND_NOCLONE
          noinline
          warn_unused_result,
-         #ifndef __clang__
-         optimize("O2",
-                  "-fexpensive-optimizations",
-                  "-fno-gcse",
+         #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
+         optimize("-fno-gcse",
                   "-fno-reorder-blocks",
                   "-fno-reorder-blocks-and-partition"),
          #endif
@@ -62,10 +60,8 @@ SharemindVmError sharemind_vm_profile(
          _SHAREMIND_NOCLONE
          noinline
          warn_unused_result,
-         #ifndef __clang__
-         optimize("O2",
-                  "-fexpensive-optimizations",
-                  "-fno-gcse",
+         #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
+         optimize("-fno-gcse",
                   "-fno-reorder-blocks",
                   "-fno-reorder-blocks-and-partition"),
          #endif
