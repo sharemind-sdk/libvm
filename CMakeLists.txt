@@ -36,6 +36,9 @@ ADD_COMPILE_OPTIONS(
     "-Wstrict-aliasing=1" "-Wbad-function-cast" "-Wformat" "-Wswitch-default"
     "-Wfloat-equal" "-Wshadow" "-Wpointer-arith" "-Wcast-qual"
     "-Wstrict-prototypes" "-Wconversion" "-Wsign-conversion" "-Wunused-macros"
+# Uncomment these to benchmark compilation:
+#    "-Q" "-ftime-report" "-fmem-report" "-fmem-report-wpa"
+#    "-fpre-ipa-mem-report" "-fpost-ipa-mem-report" "-fopt-info-optall-all"
     "$<$<NOT:$<STREQUAL:$<CONFIGURATION>,Release>>:-fno-omit-frame-pointer>"
     "$<$<STREQUAL:$<CONFIGURATION>,Release>:-DNDEBUG>"
     "$<$<STREQUAL:$<CONFIGURATION>,Release>:-fomit-frame-pointer>"

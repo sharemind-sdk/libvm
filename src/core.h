@@ -45,7 +45,9 @@ SharemindVmError sharemind_vm_run(
          #ifndef __clang__
          optimize("O2",
                   "-fexpensive-optimizations",
-                  "-fno-gcse"),
+                  "-fno-gcse",
+                  "-fno-reorder-blocks",
+                  "-fno-reorder-blocks-and-partition"),
          #endif
          hot,
          visibility("internal")
@@ -63,7 +65,9 @@ SharemindVmError sharemind_vm_profile(
          #ifndef __clang__
          optimize("O2",
                   "-fexpensive-optimizations",
-                  "-fno-gcse"),
+                  "-fno-gcse",
+                  "-fno-reorder-blocks",
+                  "-fno-reorder-blocks-and-partition"),
          #endif
          hot,
          visibility("internal")
