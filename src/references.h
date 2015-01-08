@@ -44,7 +44,8 @@ inline void SharemindCReference_destroy(SharemindCReference * const r) {
         ((SharemindMemorySlot *) r->internal)->nrefs--;
 }
 
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindReferenceVector,SharemindReference,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindReferenceVector, SharemindReference)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindReferenceVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindReferenceVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -53,37 +54,28 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindReferenceVector,
                                  inline,
                                  SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindReferenceVector,
-                                     inline,
-                                     SharemindReference,,
+                                     inline,,
                                      free,
                                      SharemindReference_destroy(value);)
 SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(SharemindReferenceVector,
                                            inline,
-                                           SharemindReference,
                                            SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindReferenceVector,
-                                          inline,
-                                          SharemindReference)
+SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindReferenceVector, inline)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindReferenceVector,
                                       inline,
                                       SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindReferenceVector,
-                                     inline,
-                                     SharemindReference,
-                                     realloc)
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindReferenceVector, inline, realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindReferenceVector,
                               inline,
-                              SharemindReference,
                               SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindReferenceVector,
-                             inline,
-                             SharemindReference)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindReferenceVector, inline)
 SHAREMIND_VECTOR_DECLARE_POP(SharemindReferenceVector,
                              inline,
                              SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_POP(SharemindReferenceVector, inline)
 
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindCReferenceVector,SharemindCReference,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindCReferenceVector, SharemindCReference)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindCReferenceVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindCReferenceVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -92,32 +84,22 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindCReferenceVector,
                                  inline,
                                  SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindCReferenceVector,
-                                     inline,
-                                     SharemindCReference,,
+                                     inline,,
                                      free,
                                      SharemindCReference_destroy(value);)
 SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(
         SharemindCReferenceVector,
         inline,
-        SharemindCReference,
         SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindCReferenceVector,
-                                          inline,
-                                          SharemindCReference)
+SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindCReferenceVector, inline)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindCReferenceVector,
                                       inline,
                                       SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindCReferenceVector,
-                                     inline,
-                                     SharemindCReference,
-                                     realloc)
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindCReferenceVector, inline, realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindCReferenceVector,
                               inline,
-                              SharemindCReference,
                               SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCReferenceVector,
-                             inline,
-                             SharemindCReference)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCReferenceVector, inline)
 SHAREMIND_VECTOR_DECLARE_POP(SharemindCReferenceVector,
                              inline,
                              SHAREMIND_COMMA visibility("internal"))

@@ -24,7 +24,8 @@
 SHAREMIND_EXTERN_C_BEGIN
 
 // static inline
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionSizesVector,uint32_t,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindDataSectionSizesVector,uint32_t)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionSizesVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindDataSectionSizesVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -38,15 +39,11 @@ SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionSizesVector,
                                       visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindDataSectionSizesVector,
                                      inline,
-                                     uint32_t,
                                      realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindDataSectionSizesVector,
                               inline,
-                              uint32_t,
                               visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionSizesVector,
-                             inline,
-                             uint32_t)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionSizesVector, inline)
 
 SHAREMIND_EXTERN_C_END
 

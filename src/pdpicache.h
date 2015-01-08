@@ -92,7 +92,8 @@ inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * const ci) {
 }
 
 // static inline
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdpiCache, SharemindPdpiCacheItem,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindPdpiCache, SharemindPdpiCacheItem)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdpiCache,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindPdpiCache,
                               inline,
                               visibility("internal"))
@@ -101,31 +102,23 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindPdpiCache,
                                  inline,
                                  visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindPdpiCache,
-                                     inline,
-                                     SharemindPdpiCacheItem,,
+                                     inline,,
                                      free,
                                      SharemindPdpiCacheItem_destroy(value);)
 SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(SharemindPdpiCache,
                                            inline,
-                                           SharemindPdpiCacheItem,
                                            visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindPdpiCache,
-                                          inline,
-                                          SharemindPdpiCacheItem)
+SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindPdpiCache, inline)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindPdpiCache,
                                       inline,
                                       visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindPdpiCache,
                                      inline,
-                                     SharemindPdpiCacheItem,
                                      realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindPdpiCache,
                               inline,
-                              SharemindPdpiCacheItem,
                               visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdpiCache,
-                             inline,
-                             SharemindPdpiCacheItem)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdpiCache, inline)
 SHAREMIND_VECTOR_DECLARE_POP(SharemindPdpiCache,
                              inline,
                              visibility("internal"))

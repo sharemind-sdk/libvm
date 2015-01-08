@@ -23,7 +23,8 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdBindings, SharemindPd *,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindPdBindings, SharemindPd *)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdBindings,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindPdBindings,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -35,17 +36,11 @@ SHAREMIND_VECTOR_DEFINE_DESTROY(SharemindPdBindings, inline, free)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindPdBindings,
                                       inline,
                                       visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindPdBindings,
-                                     inline,
-                                     SharemindPd *,
-                                     realloc)
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindPdBindings, inline, realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindPdBindings,
                               inline,
-                              SharemindPd *,
                               visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdBindings,
-                             inline,
-                             SharemindPd *)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdBindings, inline)
 
 SHAREMIND_EXTERN_C_END
 

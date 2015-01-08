@@ -24,7 +24,8 @@
 SHAREMIND_EXTERN_C_BEGIN
 
 // static inline
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionsVector, SharemindDataSection,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindDataSectionsVector, SharemindDataSection)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionsVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindDataSectionsVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -33,8 +34,7 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindDataSectionsVector,
                                  inline,
                                  SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindDataSectionsVector,
-                                     inline,
-                                     SharemindDataSection,,
+                                     inline,,
                                      free,
                                      SharemindDataSection_destroy(value);)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionsVector,
@@ -42,15 +42,11 @@ SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionsVector,
                                       SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindDataSectionsVector,
                                      inline,
-                                     SharemindDataSection,
                                      realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindDataSectionsVector,
                               inline,
-                              SharemindDataSection,
                               SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionsVector,
-                             inline,
-                             SharemindDataSection)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionsVector, inline)
 SHAREMIND_VECTOR_DECLARE_POP(SharemindDataSectionsVector,
                              inline,
                              SHAREMIND_COMMA visibility("internal"))

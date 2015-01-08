@@ -23,7 +23,8 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindRegisterVector, SharemindCodeBlock,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindRegisterVector, SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindRegisterVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindRegisterVector,
                               inline,
                               visibility("internal"))
@@ -34,32 +35,20 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindRegisterVector,
 SHAREMIND_VECTOR_DEFINE_DESTROY(SharemindRegisterVector, inline, free)
 SHAREMIND_VECTOR_DECLARE_GET_POINTER(SharemindRegisterVector,
                                      inline,
-                                     SharemindCodeBlock,
                                      visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_POINTER(SharemindRegisterVector,
-                                    inline,
-                                    SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_GET_POINTER(SharemindRegisterVector, inline)
 SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(SharemindRegisterVector,
                                            inline,
-                                           SharemindCodeBlock,
                                            visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindRegisterVector,
-                                          inline,
-                                          SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindRegisterVector, inline)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindRegisterVector,
                                       inline,
                                       visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindRegisterVector,
-                                     inline,
-                                     SharemindCodeBlock,
-                                     realloc)
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindRegisterVector, inline, realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindRegisterVector,
                               inline,
-                              SharemindCodeBlock,
                               visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindRegisterVector,
-                             inline,
-                             SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindRegisterVector, inline)
 SHAREMIND_VECTOR_DECLARE_RESIZE_NO_OCHECK(SharemindRegisterVector,
                                           inline,
                                           visibility("internal"))

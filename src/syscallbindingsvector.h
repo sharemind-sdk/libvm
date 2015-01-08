@@ -23,8 +23,9 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindSyscallBindingsVector,
-                             SharemindSyscallWrapper,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindSyscallBindingsVector,
+                             SharemindSyscallWrapper)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindSyscallBindingsVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindSyscallBindingsVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -38,15 +39,11 @@ SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindSyscallBindingsVector,
                                       visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindSyscallBindingsVector,
                                      inline,
-                                     SharemindSyscallWrapper,
                                      realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindSyscallBindingsVector,
                               inline,
-                              SharemindSyscallWrapper,
                               visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindSyscallBindingsVector,
-                             inline,
-                             SharemindSyscallWrapper)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindSyscallBindingsVector, inline)
 
 SHAREMIND_EXTERN_C_END
 

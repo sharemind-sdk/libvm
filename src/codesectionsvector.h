@@ -24,7 +24,8 @@
 SHAREMIND_EXTERN_C_BEGIN
 
 // static inline
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindCodeSectionsVector,SharemindCodeSection,)
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindCodeSectionsVector,SharemindCodeSection)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindCodeSectionsVector,)
 SHAREMIND_VECTOR_DECLARE_INIT(SharemindCodeSectionsVector,
                               inline,
                               SHAREMIND_COMMA visibility("internal"))
@@ -33,8 +34,7 @@ SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindCodeSectionsVector,
                                  inline,
                                  SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindCodeSectionsVector,
-                                     inline,
-                                     SharemindCodeSection,,
+                                     inline,,
                                      free,
                                      SharemindCodeSection_destroy(value);)
 SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindCodeSectionsVector,
@@ -42,15 +42,11 @@ SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindCodeSectionsVector,
                                       SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindCodeSectionsVector,
                                      inline,
-                                     SharemindCodeSection,
                                      realloc)
 SHAREMIND_VECTOR_DECLARE_PUSH(SharemindCodeSectionsVector,
                               inline,
-                              SharemindCodeSection,
                               SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCodeSectionsVector,
-                             inline,
-                             SharemindCodeSection)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCodeSectionsVector, inline)
 SHAREMIND_VECTOR_DECLARE_POP(SharemindCodeSectionsVector,
                              inline,
                              SHAREMIND_COMMA visibility("internal"))
