@@ -63,15 +63,11 @@ SHAREMIND_VECTOR_DEFINE_PUSH(SharemindRegisterVector,
 SHAREMIND_VECTOR_DECLARE_RESIZE_NO_OCHECK(SharemindRegisterVector,
                                           inline,
                                           visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_RESIZE_NO_OCHECK(SharemindRegisterVector,
-                                         inline,
-                                         SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_RESIZE_NO_OCHECK(SharemindRegisterVector, inline)
 SHAREMIND_VECTOR_DECLARE_RESIZE(SharemindRegisterVector,
                                 inline,
                                 visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_RESIZE(SharemindRegisterVector,
-                               inline,
-                               SharemindCodeBlock)
+SHAREMIND_VECTOR_DEFINE_RESIZE(SharemindRegisterVector, inline)
 
 SHAREMIND_EXTERN_C_END
 
