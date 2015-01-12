@@ -15,19 +15,19 @@ SET(LIBVM_COMPAT_VERSION "0.4.0.0")
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
+FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibvmi REQUIRED)
-FIND_PACKAGE(SharemindVmGlobals REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
 INCLUDE_DIRECTORIES(
+    ${SharemindCHeaders_INCLUDE_DIRS}
     ${SharemindLibexecutable_INCLUDE_DIRS}
     ${SharemindLibmodapi_INCLUDE_DIRS}
     ${SharemindLibsoftfloat_INCLUDE_DIRS}
     ${SharemindLibvmi_INCLUDE_DIRS}
-    ${SharemindVmGlobals_INCLUDE_DIRS}
     ${SharemindVmM4_INCLUDE_DIRS}
 )
 
@@ -57,11 +57,11 @@ CHECK_ADD_COMPILER_FLAG("-Wlogical-op")
 
 SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS" "-D_XOPEN_SOURCE=700")
 ADD_DEFINITIONS(
+    ${SharemindCHeaders_DEFINITIONS}
     ${SharemindLibexecutable_DEFINITIONS}
     ${SharemindLibmodapi_DEFINITIONS}
     ${SharemindLibsoftfloat_DEFINITIONS}
     ${SharemindLibvmi_DEFINITIONS}
-    ${SharemindVmGlobals_DEFINITIONS}
     ${SharemindVmM4_DEFINITIONS}
     ${LIBVM_INSTALL_DEFINITIONS}
 )
