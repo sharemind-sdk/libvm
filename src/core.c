@@ -48,6 +48,67 @@ typedef sf_float64 SharemindFloat64;
 #define SHAREMIND_DEBUG_PRINTSTATE (void) 0
 #endif
 
+#define SHAREMIND_MI_BITS_ALL(type) ((type) (((type) 0) | ~((type) 0)))
+#define SHAREMIND_MI_BITS_NONE(type) ((type) ~SHAREMIND_MI_BITS_ALL(type))
+
+#define SHAREMIND_MI_ULOW_BIT_MASK(type,bits,n) \
+    ((type) (SHAREMIND_MI_BITS_ALL(type) >> ((bits) - (n))))
+#define SHAREMIND_MI_UHIGH_BIT_MASK(type,bits,n) \
+    ((type) (SHAREMIND_MI_BITS_ALL(type) << ((bits) - (n))))
+#define SHAREMIND_MI_ULOW_BIT_FILTER(type,bits,v,n) \
+    ((type) (((type) (v)) & SHAREMIND_MI_ULOW_BIT_MASK(type, (bits), (n))))
+#define SHAREMIND_MI_UHIGH_BIT_FILTER(type,bits,v,n) \
+    ((type) (((type) (v)) & SHAREMIND_MI_UHIGH_BIT_MASK(type, (bits), (n))))
+
+#define SHAREMIND_MI_USHIFT_1_LEFT_0(type,v) \
+    ((type) (((type) (v)) << ((type) 1u)))
+#define SHAREMIND_MI_USHIFT_1_RIGHT_0(type,v) \
+    ((type) (((type) (v)) >> ((type) 1u)))
+
+#define SHAREMIND_MI_USHIFT_1_LEFT_1(type,bits,v) \
+    ((type) (SHAREMIND_MI_USHIFT_1_LEFT_0(type, (v)) \
+             | SHAREMIND_MI_ULOW_BIT_MASK(type, (bits), 1u)))
+#define SHAREMIND_MI_USHIFT_1_RIGHT_1(type,bits,v) \
+    ((type) (SHAREMIND_MI_USHIFT_1_RIGHT_0(type, (v)) \
+             | SHAREMIND_MI_UHIGH_BIT_MASK(type, (bits), 1u)))
+
+#define SHAREMIND_MI_USHIFT_1_LEFT_EXTEND(type,bits,v) \
+    ((type) (SHAREMIND_MI_USHIFT_1_LEFT_0(type, (v)) \
+             | SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), 1u)))
+#define SHAREMIND_MI_USHIFT_1_RIGHT_EXTEND(type,bits,v) \
+    ((type) (SHAREMIND_MI_USHIFT_1_RIGHT_0(type, (v)) \
+             | SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), 1u)))
+
+#define SHAREMIND_MI_USHIFT_LEFT_0(type,bits,v,s) \
+    ((type) ((s) >= (bits) \
+             ? SHAREMIND_MI_BITS_NONE(type) \
+             : (type) (((type) (v)) << ((type) (s)))))
+#define SHAREMIND_MI_USHIFT_RIGHT_0(type,bits,v,s) \
+    ((type) ((s) >= (bits) \
+             ? SHAREMIND_MI_BITS_NONE(type) \
+             : (type) (((type) (v)) >> ((type) (s)))))
+
+#define SHAREMIND_MI_USHIFT_LEFT_1(type,bits,v,s) \
+    ((type) ((s) >= (bits) \
+             ? SHAREMIND_MI_BITS_ALL(type) \
+             : (type) (((type) (((type) (v)) << ((type) (s)))) \
+                       | SHAREMIND_MI_ULOW_BIT_MASK(type, (bits), (s)))))
+#define SHAREMIND_MI_USHIFT_RIGHT_1(type,bits,v,s) \
+    ((type) ((s) >= (bits) \
+             ? SHAREMIND_MI_BITS_ALL(type) \
+             : (type) (((type) (((type) (v)) >> ((type) (s)))) \
+                       | SHAREMIND_MI_UHIGH_BIT_MASK(type, (bits), (s)))))
+
+#define SHAREMIND_MI_USHIFT_LEFT_EXTEND(type,bits,v,s) \
+    (SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), 1u) \
+     ? SHAREMIND_MI_USHIFT_LEFT_1(type, (bits), (v), (s)) \
+     : SHAREMIND_MI_USHIFT_LEFT_0(type, (bits), (v), (s)))
+#define SHAREMIND_MI_USHIFT_RIGHT_EXTEND(type,bits,v,s) \
+    (SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), 1u) \
+     ? SHAREMIND_MI_USHIFT_RIGHT_1(type, (bits), (v), (s)) \
+     : SHAREMIND_MI_USHIFT_RIGHT_0(type, (bits), (v), (s)))
+
+
 #define SHAREMIND_MI_FPU_STATE (p->fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
     do { p->fpuState = (sf_fpu_state) (v); } while(0)
