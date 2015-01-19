@@ -108,6 +108,25 @@ typedef sf_float64 SharemindFloat64;
      ? SHAREMIND_MI_USHIFT_RIGHT_1(type, (bits), (v), (s)) \
      : SHAREMIND_MI_USHIFT_RIGHT_0(type, (bits), (v), (s)))
 
+#define SHAREMIND_MI_UROTATE_LEFT(type,bits,v,s) \
+    (((s) % bits) \
+     ? ((type) ((SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), \
+                                               ((s) % (bits))) \
+                 >> ((bits) - ((s) % bits))) \
+                | (SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), \
+                                                ((bits) - ((s) % (bits)))) \
+                   << ((s) % bits)))) \
+     : ((type) (v)))
+#define SHAREMIND_MI_UROTATE_RIGHT(type,bits,v,s) \
+    (((s) % bits) \
+     ? ((type) ((SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), \
+                                               ((bits) - ((s) % (bits)))) \
+                 >> ((s) % bits)) \
+                | (SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), \
+                                                ((s) % (bits))) \
+                   << ((bits) - ((s) % bits))))) \
+     : ((type) (v)))
+
 
 #define SHAREMIND_MI_FPU_STATE (p->fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
