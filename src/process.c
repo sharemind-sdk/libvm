@@ -297,6 +297,8 @@ SharemindProcess_new_fail_0:
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
     assert(p);
     assert(p->state != SHAREMIND_VM_PROCESS_RUNNING);
+    if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
+        SharemindProcess_stop_pdpis(p);
 
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
