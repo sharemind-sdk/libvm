@@ -421,7 +421,8 @@ SharemindVmError SharemindProcess_run(SharemindProcess * p) {
         return SHAREMIND_VM_PDPI_STARTUP_FAILED;
     }
 
-    const SharemindVmError e = sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
+    p->state = SHAREMIND_VM_PROCESS_RUNNING;
+    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
     if (e != SHAREMIND_VM_RUNTIME_TRAP)
         SharemindProcess_stop_pdpis(p);
     SharemindProcess_unlock(p);

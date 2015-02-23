@@ -961,6 +961,7 @@ SharemindVmError sharemind_vm_run(
             return SHAREMIND_VM_RUNTIME_EXCEPTION;
 
         halt:
+            p->state = SHAREMIND_VM_PROCESS_FINISHED;
 #ifndef SHAREMIND_FAST_BUILD
             SHAREMIND_UPDATESTATE;
 #endif
