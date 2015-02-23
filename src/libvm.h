@@ -253,8 +253,8 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * program,
  * \returns a pointer to the position where parsing last failed or NULL if not
  *          applicable.
  */
-const void * SharemindProgram_lastParsePosition(const SharemindProgram * p)
-        __attribute__ ((nonnull(1)));
+const void * SharemindProgram_lastParsePosition(
+        const SharemindProgram * program) __attribute__ ((nonnull(1)));
 
 /**
  * \param[in] program pointer to the SharemindProgram instance.
