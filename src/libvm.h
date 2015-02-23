@@ -373,17 +373,17 @@ SharemindVmError SharemindProcess_continue(SharemindProcess * process)
 /**
  * \brief Pauses the execution of the given program running in the background.
  *
- * Execution is stopped before executing any jump or call instruction.
+ * Execution is stopped immediately after executing any jump, call, return or
+ * system call instruction, or before running any instructions.
  *
  * \pre process->state == SHAREMIND_RUNNING
  * \post process->state == SHAREMIND_TRAPPED
  *       || process->state == SHAREMIND_VM_PROCESS_FINISHED
  *       || process->state == SHAREMIND_VM_PROCESS_CRASHED
  * \param process The process to pause.
- * \returns an SharemindVmError.
  */
-SharemindVmError SharemindProcess_pause(SharemindProcess * process)
-        __attribute__ ((nonnull(1), warn_unused_result));
+void SharemindProcess_pause(SharemindProcess * process)
+        __attribute__ ((nonnull(1)));
 
 /**
  * \param process pointer to the SharemindProcess instance.

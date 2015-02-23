@@ -192,6 +192,8 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->currentCodeSectionIndex = program->activeLinkingUnit;
     p->currentIp = 0u;
 
+    p->trapCond = false;
+
     p->fpuState = sf_fpu_state_default;
 
     /* Initialize section pointers: */
@@ -430,6 +432,30 @@ SharemindVmError SharemindProcess_run(SharemindProcess * p) {
         SharemindProcess_stop_pdpis(p);
     SharemindProcess_unlock(p);
     return e;
+}
+
+SharemindVmError SharemindProcess_continue(SharemindProcess * p) {
+    assert(p);
+    SharemindProcess_lock(p);
+    /** \todo Add support for continue/restart */
+    if (unlikely(p->state != SHAREMIND_VM_PROCESS_TRAPPED)) {
+        SharemindProcess_setError(p,
+                                  SHAREMIND_VM_INVALID_INPUT_STATE,
+                                  "Process not in trapped state!");
+        SharemindProcess_unlock(p);
+        return SHAREMIND_VM_INVALID_INPUT_STATE;
+    }
+
+    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_CONTINUE, NULL);
+    if (e != SHAREMIND_VM_RUNTIME_TRAP)
+        SharemindProcess_stop_pdpis(p);
+    SharemindProcess_unlock(p);
+    return e;
+}
+
+void SharemindProcess_pause(SharemindProcess * p) {
+    assert(p);
+    __atomic_store_n(&p->trapCond, true, __ATOMIC_RELEASE);
 }
 
 int64_t SharemindProcess_returnValue(const SharemindProcess * p) {

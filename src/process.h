@@ -28,6 +28,7 @@
 #include <sharemind/extern_c.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/tag.h>
+#include <stdbool.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "lasterror.h"
@@ -64,6 +65,7 @@ struct SharemindProcess_ {
 
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;
+    bool trapCond;
 
     sf_fpu_state fpuState;
 

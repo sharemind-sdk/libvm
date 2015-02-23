@@ -312,9 +312,19 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     if (1) { (void) (ip); SHAREMIND_UPDATESTATE; return HC_NEXT; } else (void) 0
 #endif
 
+#define SHAREMIND_TRAP_CHECK \
+    (__atomic_exchange_n(&p->trapCond, false, __ATOMIC_ACQUIRE))
+
+#define SHAREMIND_CHECK_TRAP \
+    if (SHAREMIND_TRAP_CHECK) { SHAREMIND_DO_TRAP; } else (void) 0
+
+#define SHAREMIND_CHECK_TRAP_AND_DISPATCH(ip) \
+    if (1) { SHAREMIND_CHECK_TRAP; SHAREMIND_DISPATCH((ip)); } else (void) 0
+
 #define SHAREMIND_MI_JUMP_REL(n) \
     if (1) { \
-        SHAREMIND_MI_DISPATCH(ip += ((n)->int64[0])); \
+        ip += (n)->int64[0]; \
+        SHAREMIND_CHECK_TRAP_AND_DISPATCH(ip); \
     } else (void) 0
 
 #define SHAREMIND_MI_IS_INSTR(i) \
@@ -340,7 +350,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         const SharemindCodeBlock * const tip = ip + (reladdr); \
         SHAREMIND_MI_TRY_EXCEPT(SHAREMIND_MI_IS_INSTR(tip - codeStart), \
                                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
-        SHAREMIND_MI_DISPATCH(ip = tip); \
+        ip = tip; \
+        SHAREMIND_CHECK_TRAP_AND_DISPATCH(ip); \
     } else (void) 0
 
 #define SHAREMIND_MI_DO_EXCEPT(e) \
@@ -478,10 +489,11 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         thisStack = &p->thisFrame->stack; \
         thisRefStack = &p->thisFrame->refstack; \
         thisCRefStack = &p->thisFrame->crefstack; \
-        SHAREMIND_DISPATCH((ip)); \
+        SHAREMIND_CHECK_TRAP_AND_DISPATCH((ip)); \
     } else (void) 0
 #else
-#define SHAREMIND_CALL_RETURN_DISPATCH(ip) SHAREMIND_DISPATCH((ip))
+#define SHAREMIND_CALL_RETURN_DISPATCH(ip) \
+    SHAREMIND_CHECK_TRAP_AND_DISPATCH((ip))
 #endif
 
 #define SHAREMIND_MI_CALL(a,r,nargs) \
@@ -547,6 +559,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             p->syscallException = st; \
             SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SYSCALL_ERROR); \
         } \
+        SHAREMIND_CHECK_TRAP; \
     } else (void) 0
 
 #define SHAREMIND_MI_CHECK_SYSCALL(a,r,nargs) \
@@ -906,6 +919,8 @@ SharemindVmError sharemind_vm_run(
 #ifndef __GNUC__
 #pragma STDC FENV_ACCESS ON
 #endif
+        if (SHAREMIND_TRAP_CHECK)
+            goto trap;
 
         const SharemindCodeBlock * const codeStart =
                 p->program->codeSections.data[p->currentCodeSectionIndex].data;
@@ -921,24 +936,26 @@ SharemindVmError sharemind_vm_run(
 
         #include <sharemind/m4/dispatches.h>
 #else
-        HaltCode haltCode;
-        do {
-            typedef HaltCode (* F)(SharemindProcess * const);
-            haltCode = (*((F) (codeStart[p->currentIp].fp[0])))(p);
-        } while (haltCode == HC_NEXT);
-        SHAREMIND_STATIC_ASSERT(sizeof(haltCode) <= sizeof(int));
-        switch ((int) haltCode) {
-            case HC_EOF:
-                goto eof;
-            case HC_EXCEPT:
-                goto except;
-            case HC_HALT:
-                goto halt;
-            case HC_TRAP:
-                goto trap;
-            default:
-                abort(); /* False positive with -Wunreachable-code.
-                            Used for debugging libvm. */
+        {
+            HaltCode haltCode;
+            do {
+                typedef HaltCode (* F)(SharemindProcess * const);
+                haltCode = (*((F) (codeStart[p->currentIp].fp[0])))(p);
+            } while (haltCode == HC_NEXT);
+            SHAREMIND_STATIC_ASSERT(sizeof(haltCode) <= sizeof(int));
+            switch ((int) haltCode) {
+                case HC_EOF:
+                    goto eof;
+                case HC_EXCEPT:
+                    goto except;
+                case HC_HALT:
+                    goto halt;
+                case HC_TRAP:
+                    goto trap;
+                default:
+                    abort(); /* False positive with -Wunreachable-code.
+                                Used for debugging libvm. */
+            }
         }
 #endif
 
