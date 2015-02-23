@@ -134,10 +134,10 @@ typedef sf_float64 SharemindFloat64;
 #define SHAREMIND_SF_E(type,dest,n,...) \
     if(1) { \
         p->fpuState = p->fpuState & ~sf_fpu_state_exception_mask; \
-        const type r = __VA_ARGS__; \
+        type const r = __VA_ARGS__; \
         (dest) = n r.result; \
         p->fpuState = r.fpu_state; \
-        const sf_fpu_state e = \
+        sf_fpu_state const e = \
                 (r.fpu_state & sf_fpu_state_exception_mask) \
                  & ((r.fpu_state & sf_fpu_state_exception_crash_mask) << 5u); \
         if (unlikely(e)) { \
@@ -324,7 +324,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_CHECK_JUMP_REL(reladdr) \
     if (1) { \
-        uintptr_t unsignedIp = (uintptr_t) (ip - codeStart); \
+        uintptr_t const unsignedIp = (uintptr_t) (ip - codeStart); \
         if ((reladdr) < 0) { \
             SHAREMIND_MI_TRY_EXCEPT( \
                 ((uint64_t) -((reladdr) + 1)) < unsignedIp, \
@@ -337,7 +337,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
                   - unsignedIp - 1u, \
                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } \
-        const SharemindCodeBlock * tip = ip + (reladdr); \
+        const SharemindCodeBlock * const tip = ip + (reladdr); \
         SHAREMIND_MI_TRY_EXCEPT(SHAREMIND_MI_IS_INSTR(tip - codeStart), \
                                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         SHAREMIND_MI_DISPATCH(ip = tip); \
@@ -382,7 +382,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define _SHAREMIND_MI_PUSHREF_BLOCK(prefix,value,b,bOffset,rSize) \
     if (1) { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * ref = \
+        Sharemind ## prefix ## erence * const ref = \
             Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
         SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
         ref->pData = (&(b)->uint8[0] + (bOffset)); \
@@ -413,7 +413,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             && ((SharemindMemorySlot *) (r)->internal)->nrefs + 1u == 0u) \
         { SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); } \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * ref = \
+        Sharemind ## prefix ## erence * const ref = \
                 Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
         SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
         ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
@@ -435,7 +435,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define _SHAREMIND_MI_PUSHREF_MEM(prefix,value,slot,mOffset,rSize) \
     if (1) { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * ref = \
+        Sharemind ## prefix ## erence * const ref = \
                 Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
         SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
         if ((ref->size = (rSize)) != 0u) { \
@@ -816,7 +816,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_MEM_FREE(ptr) \
     if (1) { \
-        SharemindVmProcessException e = \
+        SharemindVmProcessException const e = \
                 SharemindProcess_public_free(p, (ptr)->uint64[0]); \
         if (unlikely(e != SHAREMIND_VM_PROCESS_OK)) { \
             SHAREMIND_MI_DO_EXCEPT(e); \
