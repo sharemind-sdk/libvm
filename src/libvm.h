@@ -95,11 +95,7 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmError);
     ((SHAREMIND_VM_PROCESS_OK, = 0x00)) \
     ((SHAREMIND_VM_PROCESS_OUT_OF_MEMORY, = 0x01)) \
     ((SHAREMIND_VM_PROCESS_INVALID_ARGUMENT, = 0x02)) \
-    ((SHAREMIND_VM_PROCESS_INVALID_SYSCALL_INVOCATION, = 0x03)) \
-    ((SHAREMIND_VM_PROCESS_SHAREMIND_ERROR_IN_SYSCALL, = 0x04)) \
-    ((SHAREMIND_VM_PROCESS_MODULE_ERROR_IN_SYSCALL, = 0x05)) \
-    ((SHAREMIND_VM_PROCESS_GENERAL_SYSCALL_FAILURE, = 0x06)) \
-    ((SHAREMIND_VM_PROCESS_UNKNOWN_SYSCALL_RETURN_CODE, = 0x07)) \
+    ((SHAREMIND_VM_PROCESS_SYSCALL_ERROR, = 0x10)) \
     ((SHAREMIND_VM_PROCESS_INVALID_INDEX_REGISTER, = 0x100)) \
     ((SHAREMIND_VM_PROCESS_INVALID_INDEX_STACK, = 0x101)) \
     ((SHAREMIND_VM_PROCESS_INVALID_INDEX_REFERENCE, = 0x102)) \
@@ -401,6 +397,15 @@ int64_t SharemindProcess_returnValue(const SharemindProcess * process)
  * \returns the exception value of the program.
  */
 SharemindVmProcessException SharemindProcess_exception(
+        const SharemindProcess * process)
+        __attribute__ ((nonnull(1), warn_unused_result));
+
+/**
+ * \param process pointer to the SharemindProcess instance.
+ * \returns a pointer to the exception value of the last failed syscall.
+ * \warning the pointed memory might be undefined if no syscall has failed.
+ */
+void const * SharemindProcess_syscallException(
         const SharemindProcess * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 

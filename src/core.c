@@ -532,10 +532,10 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             cref->pData = NULL; \
             cref = nextFrame->crefstack.data; \
         } \
-        SharemindModuleApi0x1Error st; \
-        st = (*rc)(nextFrame->stack.data, nextFrame->stack.size, \
-                   ref, cref, \
-                   (r), &p->syscallContext); \
+        SharemindModuleApi0x1Error const st = \
+                (*rc)(nextFrame->stack.data, nextFrame->stack.size, \
+                        ref, cref, \
+                        (r), &p->syscallContext); \
         if (hasRefs) \
             SharemindReferenceVector_pop(&nextFrame->refstack); \
         if (hasCRefs) \
@@ -543,33 +543,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SharemindStackFrame_destroy(nextFrame); \
         SharemindFrameStack_pop(&p->frames); \
         p->nextFrame = NULL; \
-        switch (st) { \
-            case SHAREMIND_MODULE_API_0x1_OK: \
-                /* Success! */ \
-                break; \
-            case SHAREMIND_MODULE_API_0x1_OUT_OF_MEMORY: \
-                SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
-                break; \
-            case SHAREMIND_MODULE_API_0x1_SHAREMIND_ERROR: \
-                SHAREMIND_MI_DO_EXCEPT( \
-                        SHAREMIND_VM_PROCESS_SHAREMIND_ERROR_IN_SYSCALL); \
-                break; \
-            case SHAREMIND_MODULE_API_0x1_MODULE_ERROR: \
-                SHAREMIND_MI_DO_EXCEPT( \
-                        SHAREMIND_VM_PROCESS_MODULE_ERROR_IN_SYSCALL); \
-                break; \
-            case SHAREMIND_MODULE_API_0x1_INVALID_CALL: \
-                SHAREMIND_MI_DO_EXCEPT( \
-                        SHAREMIND_VM_PROCESS_INVALID_SYSCALL_INVOCATION); \
-                break; \
-            case SHAREMIND_MODULE_API_0x1_GENERAL_ERROR: \
-                SHAREMIND_MI_DO_EXCEPT( \
-                        SHAREMIND_VM_PROCESS_GENERAL_SYSCALL_FAILURE); \
-                break; \
-            default: \
-                SHAREMIND_MI_DO_EXCEPT( \
-                        SHAREMIND_VM_PROCESS_UNKNOWN_SYSCALL_RETURN_CODE); \
-                break; \
+        if (st != SHAREMIND_MODULE_API_0x1_OK) { \
+            p->syscallException = st; \
+            SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SYSCALL_ERROR); \
         } \
     } else (void) 0
 

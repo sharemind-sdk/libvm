@@ -69,6 +69,7 @@ struct SharemindProcess_ {
 
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;
+    SharemindModuleApi0x1Error syscallException;
 
     SharemindModuleApi0x1SyscallContext syscallContext;
 

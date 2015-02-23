@@ -449,6 +449,11 @@ SharemindVmProcessException SharemindProcess_exception(
     return r;
 }
 
+void const * SharemindProcess_syscallException(const SharemindProcess * p) {
+    assert(p);
+    return &p->syscallException;
+}
+
 size_t SharemindProcess_currentCodeSection(const SharemindProcess * p) {
     assert(p);
     SharemindProcess_lockConst(p);
