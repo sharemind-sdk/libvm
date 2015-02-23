@@ -394,7 +394,7 @@ int64_t SharemindProcess_returnValue(const SharemindProcess * process)
 
 /**
  * \param process pointer to the SharemindProcess instance.
- * \returns the exception value of the program.
+ * \returns the exception value of the process.
  */
 SharemindVmProcessException SharemindProcess_exception(
         const SharemindProcess * process)
