@@ -405,7 +405,7 @@ SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
     assert(p);
     SharemindProcess_lock(p);
     /** \todo Add support for continue/restart */
-    if (unlikely(!p->state == SHAREMIND_VM_PROCESS_INITIALIZED)) {
+    if (unlikely(p->state != SHAREMIND_VM_PROCESS_INITIALIZED)) {
         SharemindProcess_setError(p,
                                   SHAREMIND_VM_INVALID_INPUT_STATE,
                                   "Process already initialized!");
