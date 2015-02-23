@@ -401,7 +401,7 @@ static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
         SharemindPdpiCacheItem_stop(&cache->data[--i]);
 }
 
-SharemindVmError SharemindProcess_run(SharemindProcess * const p) {
+SharemindVmError SharemindProcess_run(SharemindProcess * p) {
     assert(p);
     SharemindProcess_lock(p);
     /** \todo Add support for continue/restart */
