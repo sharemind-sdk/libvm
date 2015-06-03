@@ -180,6 +180,7 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
         return SHAREMIND_VM_OUT_OF_MEMORY; \
     } while (0)
 
+#if SIZE_MAX < UINT32_MAX
 #define RETURN_SPLR_OOR(pos,p) \
     do { \
         p->lastParsePosition = (pos); \
@@ -187,6 +188,7 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
         SharemindProgram_unlock((p)); \
         return SHAREMIND_VM_OUT_OF_MEMORY; \
     } while (0)
+#endif
 
 #define RETURN_SPLR(e,pos,p) \
     do { \

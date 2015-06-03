@@ -172,8 +172,10 @@ typedef sf_float64 SharemindFloat64;
     SHAREMIND_SF_E(sf_result32f,(dest),,__VA_ARGS__)
 #define SHAREMIND_SF_FPU64F(dest,...) \
     SHAREMIND_SF_E(sf_result64f,(dest),,__VA_ARGS__)
+/*
 #define SHAREMIND_SF_FPU32I(dest,...) \
     SHAREMIND_SF_E(sf_result32i,(dest),,__VA_ARGS__)
+*/
 #define SHAREMIND_SF_FPU64I(dest,...) \
     SHAREMIND_SF_E(sf_result64i,(dest),,__VA_ARGS__)
 #define SHAREMIND_SF_FPUF(dest,...) \
