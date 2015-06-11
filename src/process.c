@@ -204,7 +204,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     assert(!SharemindMemoryMap_get(&p->memoryMap, 3u));
 
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
-    if (1) { \
+    do { \
         assert((pSection)->size > p->currentCodeSectionIndex); \
         SharemindDataSection * const restrict staticSlot = \
                 &(pSection)->data[p->currentCodeSectionIndex]; \
@@ -215,7 +215,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
             goto errorLabel; \
         } \
         v->value = *staticSlot; \
-    } else (void) 0
+    } while ((0))
 
     INIT_STATIC_MEMSLOT(1u,
                         &p->program->rodataSections,

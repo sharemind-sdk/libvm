@@ -507,17 +507,17 @@ static SharemindVmError SharemindProgram_addCodeSection(
     SHAREMIND_PREPARE_ERROR_OUTER(\
         SHAREMIND_VM_PREPARE_ERROR_INVALID_INSTRUCTION)
 #define SHAREMIND_PREPARE_ERROR_OUTER(e) \
-    if (1) { \
+    do { \
         returnCode = (e); \
         p->prepareIp = i; \
         goto prepare_codesection_return_error; \
-    } else (void) 0
+    } while ((0))
 #define SHAREMIND_PREPARE_ERROR(e) \
-    if (1) { \
+    do { \
         returnCode = (e); \
         p->prepareIp = *i; \
         return returnCode; \
-    } else (void) 0
+    } while ((0))
 #define SHAREMIND_PREPARE_CHECK_OR_ERROR_OUTER(c,e) \
     if (unlikely(!(c))) { \
         SHAREMIND_PREPARE_ERROR_OUTER(e); \
@@ -527,7 +527,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
         SHAREMIND_PREPARE_ERROR(e); \
     } else (void) 0
 #define SHAREMIND_PREPARE_END_AS(index,numargs) \
-    if (1) { \
+    do { \
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
         SharemindPreparationBlock pb = \
                 { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
@@ -535,7 +535,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
                 != SHAREMIND_VM_OK) \
             abort(); \
         SHAREMIND_PREPARE_CURRENT_I += (numargs); \
-    } else (void) 0
+    } while ((0))
 #define SHAREMIND_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
 #define SHAREMIND_PREPARE_CURRENT_I (*i)
 #define SHAREMIND_PREPARE_CODESIZE (s)->size
@@ -547,13 +547,13 @@ static SharemindVmError SharemindProgram_addCodeSection(
      && SharemindVmProcessException_toString( \
                 (SharemindVmProcessException) (c)) != NULL)
 #define SHAREMIND_PREPARE_SYSCALL(argNum) \
-    if (1) { \
+    do { \
         SHAREMIND_PREPARE_CHECK_OR_ERROR( \
             c[(*i)+(argNum)].uint64[0] < p->bindings.size, \
             SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS); \
         c[(*i)+(argNum)].cp[0] = \
                 &p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
-    } else (void) 0
+    } while ((0))
 
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,code) \
     static SharemindVmError prepare_pass2_ ## name ( \
