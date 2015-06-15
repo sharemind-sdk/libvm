@@ -33,9 +33,9 @@
 SHAREMIND_EXTERN_C_BEGIN
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
-#define _SHAREMIND_NOCLONE noclone,
+#define SHAREMIND_NOCLONE_ noclone,
 #else
-#define _SHAREMIND_NOCLONE
+#define SHAREMIND_NOCLONE_
 #endif
 
 typedef SharemindVmError (*SharemindCoreVmRunner)(
@@ -49,7 +49,7 @@ SharemindVmError sharemind_vm_run(
         void * d)
     __attribute__
     ((
-         _SHAREMIND_NOCLONE
+         SHAREMIND_NOCLONE_
          noinline
          warn_unused_result,
          #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
@@ -67,7 +67,7 @@ SharemindVmError sharemind_vm_profile(
         void * d)
     __attribute__
     ((
-         _SHAREMIND_NOCLONE
+         SHAREMIND_NOCLONE_
          noinline
          warn_unused_result,
          #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)

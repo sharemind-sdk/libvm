@@ -392,7 +392,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         *reg = (v); \
     } while ((0))
 
-#define _SHAREMIND_MI_PUSHREF_BLOCK(prefix,value,b,bOffset,rSize) \
+#define SHAREMIND_MI_PUSHREF_BLOCK_(prefix,value,b,bOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
         Sharemind ## prefix ## erence * const ref = \
@@ -404,23 +404,23 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_BLOCK_ref(b) \
-    _SHAREMIND_MI_PUSHREF_BLOCK(Ref, \
+    SHAREMIND_MI_PUSHREF_BLOCK_(Ref, \
                                 refstack, \
                                 (b), \
                                 0u, \
                                 sizeof(SharemindCodeBlock))
 #define SHAREMIND_MI_PUSHREF_BLOCK_cref(b) \
-    _SHAREMIND_MI_PUSHREF_BLOCK(CRef, \
+    SHAREMIND_MI_PUSHREF_BLOCK_(CRef, \
                                 crefstack, \
                                 (b), \
                                 0u, \
                                 sizeof(SharemindCodeBlock))
 #define SHAREMIND_MI_PUSHREFPART_BLOCK_ref(b,o,s) \
-    _SHAREMIND_MI_PUSHREF_BLOCK(Ref, refstack,  (b), (o), (s))
+    SHAREMIND_MI_PUSHREF_BLOCK_(Ref, refstack,  (b), (o), (s))
 #define SHAREMIND_MI_PUSHREFPART_BLOCK_cref(b,o,s) \
-    _SHAREMIND_MI_PUSHREF_BLOCK(CRef,crefstack, (b), (o), (s))
+    SHAREMIND_MI_PUSHREF_BLOCK_(CRef,crefstack, (b), (o), (s))
 
-#define _SHAREMIND_MI_PUSHREF_REF(prefix,value,constPerhaps,r,rOffset,rSize) \
+#define SHAREMIND_MI_PUSHREF_REF_(prefix,value,constPerhaps,r,rOffset,rSize) \
     do { \
         if ((r)->internal \
             && ((SharemindMemorySlot *) (r)->internal)->nrefs + 1u == 0u) \
@@ -437,15 +437,15 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_REF_ref(r) \
-    _SHAREMIND_MI_PUSHREF_REF(Ref, refstack,,        (r), 0u, (r)->size)
+    SHAREMIND_MI_PUSHREF_REF_(Ref, refstack,,        (r), 0u, (r)->size)
 #define SHAREMIND_MI_PUSHREF_REF_cref(r) \
-    _SHAREMIND_MI_PUSHREF_REF(CRef,crefstack, const, (r), 0u, (r)->size)
+    SHAREMIND_MI_PUSHREF_REF_(CRef,crefstack, const, (r), 0u, (r)->size)
 #define SHAREMIND_MI_PUSHREFPART_REF_ref(r,o,s) \
-    _SHAREMIND_MI_PUSHREF_REF(Ref, refstack,,        (r), (o), (s))
+    SHAREMIND_MI_PUSHREF_REF_(Ref, refstack,,        (r), (o), (s))
 #define SHAREMIND_MI_PUSHREFPART_REF_cref(r,o,s) \
-    _SHAREMIND_MI_PUSHREF_REF(CRef,crefstack, const, (r), (o), (s))
+    SHAREMIND_MI_PUSHREF_REF_(CRef,crefstack, const, (r), (o), (s))
 
-#define _SHAREMIND_MI_PUSHREF_MEM(prefix,value,slot,mOffset,rSize) \
+#define SHAREMIND_MI_PUSHREF_MEM_(prefix,value,slot,mOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
         Sharemind ## prefix ## erence * const ref = \
@@ -463,13 +463,13 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_MEM_ref(slot) \
-    _SHAREMIND_MI_PUSHREF_MEM(Ref, refstack,  (slot), 0u, (slot)->size)
+    SHAREMIND_MI_PUSHREF_MEM_(Ref, refstack,  (slot), 0u, (slot)->size)
 #define SHAREMIND_MI_PUSHREF_MEM_cref(slot) \
-    _SHAREMIND_MI_PUSHREF_MEM(CRef,crefstack, (slot), 0u, (slot)->size)
+    SHAREMIND_MI_PUSHREF_MEM_(CRef,crefstack, (slot), 0u, (slot)->size)
 #define SHAREMIND_MI_PUSHREFPART_MEM_ref(slot,o,s) \
-    _SHAREMIND_MI_PUSHREF_MEM(Ref, refstack,  (slot), (o), (s))
+    SHAREMIND_MI_PUSHREF_MEM_(Ref, refstack,  (slot), (o), (s))
 #define SHAREMIND_MI_PUSHREFPART_MEM_cref(slot,o,s) \
-    _SHAREMIND_MI_PUSHREF_MEM(CRef,crefstack, (slot), (o), (s))
+    SHAREMIND_MI_PUSHREF_MEM_(CRef,crefstack, (slot), (o), (s))
 
 #define SHAREMIND_MI_RESIZE_STACK(size) \
     SHAREMIND_MI_TRY_OOM(SharemindRegisterVector_resize(thisStack, (size)))
@@ -594,7 +594,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         } \
     } while ((0))
 
-#define _SHAREMIND_MI_GET(d,i,source,exception,isconst) \
+#define SHAREMIND_MI_GET_(d,i,source,exception,isconst) \
     do { \
         (d) = SharemindRegisterVector_get_ ## isconst ## pointer((source), \
                                                                  (i)); \
@@ -602,29 +602,29 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_GET_stack(d,i) \
-    _SHAREMIND_MI_GET((d), \
+    SHAREMIND_MI_GET_((d), \
                       (i), \
                       thisStack, \
                       SHAREMIND_VM_PROCESS_INVALID_INDEX_STACK,)
 #define SHAREMIND_MI_GET_reg(d,i) \
-    _SHAREMIND_MI_GET((d), \
+    SHAREMIND_MI_GET_((d), \
                       (i), \
                       globalStack, \
                       SHAREMIND_VM_PROCESS_INVALID_INDEX_REGISTER,)
 #define SHAREMIND_MI_GET_CONST_stack(d,i) \
-    _SHAREMIND_MI_GET((d), \
+    SHAREMIND_MI_GET_((d), \
                       (i), \
                       thisStack, \
                       SHAREMIND_VM_PROCESS_INVALID_INDEX_STACK, \
                       const_)
 #define SHAREMIND_MI_GET_CONST_reg(d,i) \
-    _SHAREMIND_MI_GET((d), \
+    SHAREMIND_MI_GET_((d), \
                       (i), \
                       globalStack, \
                       SHAREMIND_VM_PROCESS_INVALID_INDEX_REGISTER, \
                       const_)
 
-#define _SHAREMIND_MI_GET_REF(r,i,type,exception) \
+#define SHAREMIND_MI_GET_REF_(r,i,type,exception) \
     do { \
         (r) = Sharemind ## type ## erenceVector_get_const_pointer( \
                     this ## type ## Stack, \
@@ -633,12 +633,12 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_GET_ref(r,i) \
-    _SHAREMIND_MI_GET_REF((r), \
+    SHAREMIND_MI_GET_REF_((r), \
                           (i), \
                           Ref, \
                           SHAREMIND_VM_PROCESS_INVALID_INDEX_REFERENCE)
 #define SHAREMIND_MI_GET_cref(r,i) \
-    _SHAREMIND_MI_GET_REF((r), \
+    SHAREMIND_MI_GET_REF_((r), \
                           (i), \
                           CRef, \
                           SHAREMIND_VM_PROCESS_INVALID_INDEX_CONST_REFERENCE)
