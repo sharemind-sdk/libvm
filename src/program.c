@@ -720,6 +720,24 @@ SharemindProgram_get_instruction_error:
     return NULL;
 }
 
+size_t SharemindProgram_pdCount(SharemindProgram const * program) {
+    assert(program);
+    SharemindProgram_lockConst(program);
+    size_t const r = program->pdBindings.size;
+    SharemindProgram_unlockConst(program);
+    return r;
+}
+
+SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
+    assert(program);
+    SharemindProgram_lockConst(program);
+    SharemindPd * const r = i < program->pdBindings.size
+                          ? program->pdBindings.data[i]
+                          : NULL;
+    SharemindProgram_unlockConst(program);
+    return r;
+}
+
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindProgram)

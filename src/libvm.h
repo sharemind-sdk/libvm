@@ -278,6 +278,23 @@ const SharemindVmInstruction * SharemindProgram_instruction(
         size_t instructionIndex) __attribute__ ((nonnull(1)));
 
 /**
+ * \param[in] program pointer to the SharemindProgram instance.
+ * \returns the number of protection domains for this program.
+ */
+size_t SharemindProgram_pdCount(SharemindProgram const * program)
+        __attribute__ ((nonnull(1)));
+
+/**
+ * \param[in] program pointer to the SharemindProgram instance.
+ * \param[in] pdIndex The index of the PD.
+ * \returns a pointer to the protection domain at the given index.
+ * \retval NULL if no such PD exists.
+ */
+SharemindPd * SharemindProgram_pd(SharemindProgram const * program,
+                                  size_t pdIndex)
+        __attribute__ ((nonnull(1)));
+
+/**
  * \brief Allocates and initializes a new SharemindProcess instance.
  * \pre The SharemindProgram instance must be ready.
  * \param program pointer to the SharemindProgram instance to create a process
