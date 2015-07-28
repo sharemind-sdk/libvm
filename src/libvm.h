@@ -148,7 +148,7 @@ struct SharemindVirtualMachineContext_ {
     */
     SharemindSyscallWrapper (*find_syscall)(
             SharemindVirtualMachineContext * context,
-            const char * signature);
+            char const * signature);
 
     /**
       \param[in] context a pointer to this struct.
@@ -157,7 +157,7 @@ struct SharemindVirtualMachineContext_ {
       \retval NULL if no such protection domain is found.
     */
     SharemindPd * (*find_pd)(SharemindVirtualMachineContext * context,
-                             const char * pdName);
+                             char const * pdName);
 
 };
 
@@ -168,7 +168,7 @@ struct SharemindVirtualMachineContext_ {
 
 SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               SharemindVmError * error,
-                              const char ** errorStr);
+                              char const ** errorStr);
 void SharemindVm_free(SharemindVm * vm);
 
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindVm)
@@ -201,7 +201,7 @@ void SharemindProgram_free(SharemindProgram * program)
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProgram,,)
 
-SharemindVm * SharemindProgram_vm(const SharemindProgram * program)
+SharemindVm * SharemindProgram_vm(SharemindProgram const * program)
         __attribute__ ((nonnull(1)));
 
 /**
@@ -211,7 +211,7 @@ SharemindVm * SharemindProgram_vm(const SharemindProgram * program)
  * \returns a SharemindVmError.
  */
 SharemindVmError SharemindProgram_loadFromFile(SharemindProgram * program,
-                                               const char * filename)
+                                               char const * filename)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
@@ -244,7 +244,7 @@ SharemindVmError SharemindProgram_loadFromFileDescriptor(
  * \returns a SharemindVmError.
  */
 SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * program,
-                                                 const void * data,
+                                                 void const * data,
                                                  size_t dataSize)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 
@@ -253,15 +253,15 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * program,
  * \returns a pointer to the position where parsing last failed or NULL if not
  *          applicable.
  */
-const void * SharemindProgram_lastParsePosition(
-        const SharemindProgram * program) __attribute__ ((nonnull(1)));
+void const * SharemindProgram_lastParsePosition(
+        SharemindProgram const * program) __attribute__ ((nonnull(1)));
 
 /**
  * \param[in] program pointer to the SharemindProgram instance.
  * \returns whether the SharemindProgram instance is ready to be loaded by
  *          processes.
  */
-bool SharemindProgram_isReady(const SharemindProgram * program)
+bool SharemindProgram_isReady(SharemindProgram const * program)
         __attribute__ ((nonnull(1)));
 
 /**
@@ -272,8 +272,8 @@ bool SharemindProgram_isReady(const SharemindProgram * program)
  * \returns a pointer to the description of the instruction in the code at the
  *          given position or NULL if unsuccessful.
  */
-const SharemindVmInstruction * SharemindProgram_instruction(
-        const SharemindProgram * program,
+SharemindVmInstruction const * SharemindProgram_instruction(
+        SharemindProgram const * program,
         size_t codeSection,
         size_t instructionIndex) __attribute__ ((nonnull(1)));
 
@@ -320,17 +320,17 @@ void SharemindProcess_free(SharemindProcess * process)
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindProcess)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindProcess,,)
 
-SharemindProgram * SharemindProcess_program(const SharemindProcess * process)
+SharemindProgram * SharemindProcess_program(SharemindProcess const * process)
         __attribute__ ((nonnull(1)));
 
-SharemindVm * SharemindProcess_vm(const SharemindProcess * process)
+SharemindVm * SharemindProcess_vm(SharemindProcess const * process)
         __attribute__ ((nonnull(1)));
 
 /**
  * \param[in] process pointer to the SharemindProcess instance.
  * \returns the number of protection domain process instances for this process.
  */
-size_t SharemindProcess_pdpiCount(const SharemindProcess * process)
+size_t SharemindProcess_pdpiCount(SharemindProcess const * process)
         __attribute__ ((nonnull(1)));
 
 /**
@@ -340,7 +340,7 @@ size_t SharemindProcess_pdpiCount(const SharemindProcess * process)
  * \retval NULL if no such PDPI exists.
  */
 SharemindPdpi * SharemindProcess_pdpi(
-        const SharemindProcess * process,
+        SharemindProcess const * process,
         size_t pdpiIndex) __attribute__ ((nonnull(1)));
 
 /**
@@ -358,7 +358,7 @@ SharemindPdpi * SharemindProcess_pdpi(
  */
 SharemindVmError SharemindProcess_setPdpiFacility(
         SharemindProcess * process,
-        const char * name,
+        char const * name,
         void * facility,
         void * context) __attribute__ ((nonnull(1, 2)));
 
@@ -406,7 +406,7 @@ void SharemindProcess_pause(SharemindProcess * process)
  * \param process pointer to the SharemindProcess instance.
  * \returns the return value of the program.
  */
-int64_t SharemindProcess_returnValue(const SharemindProcess * process)
+int64_t SharemindProcess_returnValue(SharemindProcess const * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
@@ -414,7 +414,7 @@ int64_t SharemindProcess_returnValue(const SharemindProcess * process)
  * \returns the exception value of the process.
  */
 SharemindVmProcessException SharemindProcess_exception(
-        const SharemindProcess * process)
+        SharemindProcess const * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
@@ -423,7 +423,7 @@ SharemindVmProcessException SharemindProcess_exception(
  * \warning the pointed memory might be undefined if no syscall has failed.
  */
 void const * SharemindProcess_syscallException(
-        const SharemindProcess * process)
+        SharemindProcess const * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
@@ -431,14 +431,14 @@ void const * SharemindProcess_syscallException(
  * \returns the current code section of the program.
  */
 size_t SharemindProcess_currentCodeSection(
-        const SharemindProcess * process)
+        SharemindProcess const * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 /**
  * \param process pointer to the SharemindProcess instance.
  * \returns the current instruction pointer of the program.
  */
-uintptr_t SharemindProcess_currentIp(const SharemindProcess * process)
+uintptr_t SharemindProcess_currentIp(SharemindProcess const * process)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 

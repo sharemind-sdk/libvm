@@ -38,7 +38,7 @@ SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmError, SHAREMIND_VM_ERROR_ENUM)
 
 SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               SharemindVmError * error,
-                              const char ** errorStr)
+                              char const ** errorStr)
 {
     SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
     if (unlikely(!vm)) {

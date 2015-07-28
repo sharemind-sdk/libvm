@@ -40,12 +40,12 @@ SHAREMIND_EXTERN_C_BEGIN
 
 typedef SharemindVmError (*SharemindCoreVmRunner)(
         SharemindProcess * p,
-        const SharemindInnerCommand c,
+        SharemindInnerCommand const c,
         void * d);
 
 SharemindVmError sharemind_vm_run(
         SharemindProcess * p,
-        const SharemindInnerCommand c,
+        SharemindInnerCommand const c,
         void * d)
     __attribute__
     ((
@@ -63,7 +63,7 @@ SharemindVmError sharemind_vm_run(
 
 SharemindVmError sharemind_vm_profile(
         SharemindProcess * p,
-        const SharemindInnerCommand c,
+        SharemindInnerCommand const c,
         void * d)
     __attribute__
     ((

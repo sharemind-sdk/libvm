@@ -58,8 +58,8 @@
  */
 static SharemindVmError SharemindProgram_addCodeSection(
         SharemindProgram * const program,
-        const SharemindCodeBlock * const code,
-        const size_t codeSize)
+        SharemindCodeBlock const * const code,
+        size_t const codeSize)
     __attribute__ ((nonnull(1, 2), warn_unused_result));
 
 /**
@@ -167,10 +167,10 @@ void SharemindProgram_free(SharemindProgram * const p) {
     free(p);
 }
 
-SharemindVm * SharemindProgram_vm(const SharemindProgram * const p)
+SharemindVm * SharemindProgram_vm(SharemindProgram const * const p)
 { return p->vm; /* No locking, vm is const after SharemindProgram_new(). */ }
 
-static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
+static size_t const extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
 #define RETURN_SPLR_OOM(pos,p) \
     do { \
@@ -198,27 +198,27 @@ static const size_t extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
         return (e); \
     } while (0)
 
-#define CONSTVOIDPTR_ADD(ptr,size) ((const void *)(((const char *) (ptr)) \
+#define CONSTVOIDPTR_ADD(ptr,size) ((void const *)(((char const *) (ptr)) \
                                                    + (size)))
 #define CONSTVOIDPTR_ADD_ASSIGN(dst,src,size) \
     do { (dst) = CONSTVOIDPTR_ADD((src),(size)); } while (0)
 #define CONSTVOIDPTR_INCR(ptr,size) CONSTVOIDPTR_ADD_ASSIGN((ptr),(ptr),(size))
 
 SharemindVmError SharemindProgram_loadFromFile(SharemindProgram * program,
-                                               const char * filename)
+                                               char const * filename)
 {
     assert(program);
     assert(filename);
 
     /* Open input file: */
-    const int fd = open(filename, O_RDONLY | O_CLOEXEC | O_NOCTTY);
+    int const fd = open(filename, O_RDONLY | O_CLOEXEC | O_NOCTTY);
     if (fd < 0) {
         SharemindProgram_setError(program,
                                   SHAREMIND_VM_IO_ERROR,
                                   "Unable to open() file!");
         return SHAREMIND_VM_IO_ERROR;
     }
-    const SharemindVmError r =
+    SharemindVmError const r =
             SharemindProgram_loadFromFileDescriptor(program, fd);
     close(fd);
     return r;
@@ -229,7 +229,7 @@ SharemindVmError SharemindProgram_loadFromCFile(SharemindProgram * program,
 {
     assert(program);
     assert(file);
-    const int fd = fileno(file);
+    int const fd = fileno(file);
     if (fd == -1) {
         SharemindProgram_setError(program,
                                   SHAREMIND_VM_IO_ERROR,
@@ -257,7 +257,7 @@ SharemindVmError SharemindProgram_loadFromFileDescriptor(
     }
     if (inFileStat.st_size <= 0) /* Parse empty data block: */
         return SharemindProgram_loadFromMemory(program, &inFileStat, 0u);
-    const size_t fileSize = (size_t) inFileStat.st_size;
+    size_t const fileSize = (size_t) inFileStat.st_size;
     if (fileSize > SIZE_MAX) {
         SharemindProgram_setErrorOor(program);
         return SHAREMIND_VM_IMPLEMENTATION_LIMITS_REACHED;
@@ -277,7 +277,7 @@ SharemindVmError SharemindProgram_loadFromFileDescriptor(
         return SHAREMIND_VM_IO_ERROR;
     }
 
-    const SharemindVmError r =
+    SharemindVmError const r =
             SharemindProgram_loadFromMemory(program, fileData, fileSize);
     free(fileData);
     return r;
@@ -285,7 +285,7 @@ SharemindVmError SharemindProgram_loadFromFileDescriptor(
 
 
 SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
-                                                 const void * data,
+                                                 void const * data,
                                                  size_t dataSize)
 {
     assert(p);
@@ -305,7 +305,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     if (ch.fileFormatVersion > 0u) /** \todo new error code? */
         RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER, data, p);
 
-    const void * pos =
+    void const * pos =
             CONSTVOIDPTR_ADD(data, sizeof(SharemindExecutableCommonHeader));
 
     SharemindExecutableHeader0x0 h;
@@ -330,7 +330,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
             CONSTVOIDPTR_INCR(pos, sizeof(SharemindExecutableSectionHeader0x0));
 
-            const SHAREMIND_EXECUTABLE_SECTION_TYPE type =
+            SHAREMIND_EXECUTABLE_SECTION_TYPE const type =
                     SharemindExecutableSectionHeader0x0_type(&sh);
             assert(type != (SHAREMIND_EXECUTABLE_SECTION_TYPE) -1);
 
@@ -356,15 +356,15 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         if (sh.length <= 0) \
             break; \
-        const void * const endPos = CONSTVOIDPTR_ADD(pos, sh.length); \
+        void const * const endPos = CONSTVOIDPTR_ADD(pos, sh.length); \
         /* Check for 0-termination: */ \
-        if (unlikely(*(((const char *)(endPos)) - 1))) \
+        if (unlikely(*(((char const *)(endPos)) - 1))) \
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE, \
                         pos, \
                         p); \
         do { \
             code \
-            CONSTVOIDPTR_INCR(pos, strlen((const char *) pos) + 1); \
+            CONSTVOIDPTR_INCR(pos, strlen((char const *) pos) + 1); \
         } while (pos != endPos); \
         CONSTVOIDPTR_INCR(pos, extraPadding[sh.length % 8]); \
     } break;
@@ -373,10 +373,10 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
             switch ((int) type) {
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
-                    const SharemindVmError r =
+                    SharemindVmError const r =
                             SharemindProgram_addCodeSection(
                                 p,
-                                (const SharemindCodeBlock *) pos,
+                                (SharemindCodeBlock const *) pos,
                                 sh.length);
                     if (r != SHAREMIND_VM_OK)
                         RETURN_SPLR(r, pos, p);
@@ -402,13 +402,13 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                 } break;
 
                 LOAD_BINDSECTION_CASE(BIND,
-                    if (((const char *) pos)[0u] == '\0')
+                    if (((char const *) pos)[0u] == '\0')
                         RETURN_SPLR(
                                 SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,
                                 pos,
                                 p);
-                    const SharemindSyscallWrapper w =
-                            SharemindProgram_findSyscall(p, (const char *) pos);
+                    SharemindSyscallWrapper const w =
+                            SharemindProgram_findSyscall(p, (char const *) pos);
                     if (!w.callable)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
                                     pos,
@@ -420,19 +420,19 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                     (*binding) = w;)
 
                 LOAD_BINDSECTION_CASE(PDBIND,
-                    if (((const char *) pos)[0u] == '\0')
+                    if (((char const *) pos)[0u] == '\0')
                         RETURN_SPLR(
                             SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,
                             pos,
                             p);
                     for (size_t i = 0; i < p->pdBindings.size; i++)
                         if (strcmp(SharemindPd_name(p->pdBindings.data[i]),
-                                   (const char *) pos) == 0)
+                                   (char const *) pos) == 0)
                             RETURN_SPLR(SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND,
                                         pos,
                                         p);
                     SharemindPd * const w =
-                            SharemindProgram_findPd(p, (const char *) pos);
+                            SharemindProgram_findPd(p, (char const *) pos);
                     if (!w)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND,
                                     pos,
@@ -474,7 +474,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     }
     p->activeLinkingUnit = h.activeLinkingUnit;
 
-    const SharemindVmError e = SharemindProgram_endPrepare(p);
+    SharemindVmError const e = SharemindProgram_endPrepare(p);
     p->lastParsePosition = NULL;
     SharemindProgram_unlock(p);
     return e;
@@ -482,8 +482,8 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
 static SharemindVmError SharemindProgram_addCodeSection(
         SharemindProgram * const p,
-        const SharemindCodeBlock * const code,
-        const size_t codeSize)
+        SharemindCodeBlock const * const code,
+        size_t const codeSize)
 {
     assert(p);
     assert(code);
@@ -606,7 +606,7 @@ static SharemindVmError SharemindProgram_endPrepare(
         /* Initialize instructions hashmap: */
         size_t numInstrs = 0u;
         for (size_t i = 0u; i < s->size; i++, numInstrs++) {
-            const SharemindVmInstruction * const instr =
+            SharemindVmInstruction const * const instr =
                     sharemind_vm_instruction_from_code(c[i].uint64[0]);
             if (!instr) {
                 SHAREMIND_PREPARE_INVALID_INSTRUCTION_OUTER;
@@ -633,7 +633,7 @@ static SharemindVmError SharemindProgram_endPrepare(
         }
 
         for (size_t i = 0u; i < s->size; i++) {
-            const SharemindVmInstruction * const instr =
+            SharemindVmInstruction const * const instr =
                     sharemind_vm_instruction_from_code(c[i].uint64[0]);
             if (!instr) {
                 SHAREMIND_PREPARE_INVALID_INSTRUCTION_OUTER;
@@ -674,26 +674,26 @@ static SharemindVmError SharemindProgram_endPrepare(
     return SHAREMIND_VM_OK;
 }
 
-bool SharemindProgram_isReady(const SharemindProgram * p) {
+bool SharemindProgram_isReady(SharemindProgram const * p) {
     assert(p);
 
     SharemindProgram_lockConst(p);
-    const bool r = p->ready;
+    bool const r = p->ready;
     SharemindProgram_unlockConst(p);
     return r;
 }
 
-const void * SharemindProgram_lastParsePosition(const SharemindProgram * p) {
+void const * SharemindProgram_lastParsePosition(SharemindProgram const * p) {
     assert(p);
 
     SharemindProgram_lockConst(p);
-    const void * const pos = p->lastParsePosition;
+    void const * const pos = p->lastParsePosition;
     SharemindProgram_unlockConst(p);
     return pos;
 }
 
-const SharemindVmInstruction * SharemindProgram_instruction(
-        const SharemindProgram * p,
+SharemindVmInstruction const * SharemindProgram_instruction(
+        SharemindProgram const * p,
         size_t codeSection,
         size_t instructionIndex)
 {

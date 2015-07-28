@@ -349,7 +349,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
                   - unsignedIp - 1u, \
                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } \
-        const SharemindCodeBlock * const tip = ip + (reladdr); \
+        SharemindCodeBlock const * const tip = ip + (reladdr); \
         SHAREMIND_MI_TRY_EXCEPT(SHAREMIND_MI_IS_INSTR(tip - codeStart), \
                                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         ip = tip; \
@@ -522,10 +522,10 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
         SharemindStackFrame * nextFrame = p->nextFrame; \
         nextFrame->returnValueAddr = (r); \
-        const SharemindSyscallCallable rc = \
-            ((const SharemindSyscallWrapper *) sc)->callable; \
+        SharemindSyscallCallable const rc = \
+            ((SharemindSyscallWrapper const *) sc)->callable; \
         p->syscallContext.moduleHandle = \
-            ((const SharemindSyscallWrapper *) sc)->internal; \
+            ((SharemindSyscallWrapper const *) sc)->internal; \
         SharemindReference * ref; \
         bool hasRefs = (nextFrame->refstack.size > 0u); \
         if (!hasRefs) { \
@@ -646,7 +646,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_REFERENCE_GET_MEMORY_PTR(r) \
     ((SharemindMemorySlot *) (r)->internal)
 #define SHAREMIND_MI_REFERENCE_GET_PTR(r) ((uint8_t *) (r)->pData)
-#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) ((const uint8_t *) (r)->pData)
+#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) ((uint8_t const *) (r)->pData)
 #define SHAREMIND_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
 #define SHAREMIND_MI_REF_CAN_READ(ref) \
@@ -831,9 +831,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_IMPL_INNER(name,code) \
     static inline HaltCode name (SharemindProcess * const p) \
     { \
-        const SharemindCodeBlock * const codeStart = \
+        SharemindCodeBlock const * const codeStart = \
                 p->program->codeSections.data[p->currentCodeSectionIndex].data;\
-        const SharemindCodeBlock * ip = &codeStart[p->currentIp]; \
+        SharemindCodeBlock const * ip = &codeStart[p->currentIp]; \
         SharemindRegisterVector * const globalStack = &p->globalFrame->stack; \
         SharemindRegisterVector * thisStack = &p->thisFrame->stack; \
         SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack; \
@@ -853,7 +853,7 @@ SHAREMIND_IMPL_INNER(_func_impl_trap,return HC_TRAP;)
 
 #endif
 
-static const char * SharemindProcess_exceptionString(const int64_t e) {
+static char const * SharemindProcess_exceptionString(int64_t const e) {
     switch ((SharemindVmProcessException) e) {
         BOOST_PP_SEQ_FOR_EACH(
                     SHAREMIND_ENUM_CUSTOM_DEFINE_CUSTOM_TOSTRING_ELEM,
@@ -866,7 +866,7 @@ static const char * SharemindProcess_exceptionString(const int64_t e) {
 
 SharemindVmError sharemind_vm_run(
         SharemindProcess * const p,
-        const SharemindInnerCommand sharemind_vm_run_command,
+        SharemindInnerCommand const sharemind_vm_run_command,
         void * const sharemind_vm_run_data)
 {
     if (sharemind_vm_run_command == SHAREMIND_I_GET_IMPL_LABEL) {
@@ -879,7 +879,7 @@ SharemindVmError sharemind_vm_run(
         typedef void * CbPtrType;
 #define SHAREMIND_IMPL_LABEL(name) && label_impl_ ## name ,
 #include <sharemind/m4/static_label_structs.h>
-        static const ImplLabelType system_labels[] =
+        static ImplLabelType const system_labels[] =
                 { && eof, && except, && halt, && trap };
 #else
         typedef HaltCode (* ImplLabelType)(SharemindProcess * const p);
@@ -887,7 +887,7 @@ SharemindVmError sharemind_vm_run(
         typedef void (* CbPtrType)(void);
 #define SHAREMIND_IMPL_LABEL(name) & func_impl_ ## name ,
 #include <sharemind/m4/static_label_structs.h>
-        static const ImplLabelType system_labels[] = {&_func_impl_eof,
+        static ImplLabelType const system_labels[] = {&_func_impl_eof,
                                                       &_func_impl_except,
                                                       &_func_impl_halt,
                                                       &_func_impl_trap};
@@ -924,11 +924,11 @@ SharemindVmError sharemind_vm_run(
         if (SHAREMIND_TRAP_CHECK)
             goto trap;
 
-        const SharemindCodeBlock * const codeStart =
+        SharemindCodeBlock const * const codeStart =
                 p->program->codeSections.data[p->currentCodeSectionIndex].data;
 
 #ifndef SHAREMIND_FAST_BUILD
-        const SharemindCodeBlock * ip = &codeStart[p->currentIp];
+        SharemindCodeBlock const * ip = &codeStart[p->currentIp];
         SharemindRegisterVector * const globalStack = &p->globalFrame->stack;
         SharemindRegisterVector * thisStack = &p->thisFrame->stack;
         SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;

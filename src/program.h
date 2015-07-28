@@ -70,7 +70,7 @@ struct SharemindProgram_ {
     SharemindVirtualMachineContext * overrides;
 
     bool ready;
-    const void * lastParsePosition;
+    void const * lastParsePosition;
 
 };
 
@@ -91,11 +91,11 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
 
 static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
         SharemindProgram * const p,
-        const char * const signature)
+        char const * const signature)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
         SharemindProgram * const p,
-        const char * const signature)
+        char const * const signature)
 {
     assert(p);
     assert(signature);
@@ -107,10 +107,10 @@ static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
 }
 
 static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * p,
-                                                    const char * pdName)
+                                                    char const * pdName)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * const p,
-                                                    const char * const pdName)
+                                                    char const * const pdName)
 {
     assert(p);
     assert(pdName);

@@ -76,7 +76,7 @@ static inline bool SharemindPdpiCacheItem_start(
 {
     assert(ci);
     assert(!ci->info.pdpiHandle);
-    const bool r = (SharemindPdpi_start(ci->pdpi) == SHAREMIND_MODULE_API_OK);
+    bool const r = (SharemindPdpi_start(ci->pdpi) == SHAREMIND_MODULE_API_OK);
     if (r)
         ci->info.pdpiHandle = SharemindPdpi_handle(ci->pdpi);
     return r;

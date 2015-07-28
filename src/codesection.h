@@ -46,22 +46,22 @@ typedef struct {
 
 static inline bool SharemindCodeSection_init(
         SharemindCodeSection * const s,
-        const SharemindCodeBlock * const code,
-        const size_t codeSize) __attribute__ ((nonnull(1), warn_unused_result));
+        SharemindCodeBlock const * const code,
+        size_t const codeSize) __attribute__ ((nonnull(1), warn_unused_result));
 static inline bool SharemindCodeSection_init(
         SharemindCodeSection * const s,
-        const SharemindCodeBlock * const code,
-        const size_t codeSize)
+        SharemindCodeBlock const * const code,
+        size_t const codeSize)
 {
     assert(s);
     assert(code || codeSize == 0u);
 
     /* Add space for an exception pointer: */
-    const size_t realCodeSize = codeSize + 1;
+    size_t const realCodeSize = codeSize + 1;
     if (unlikely(realCodeSize < codeSize))
         return false;
 
-    const size_t memSize = realCodeSize * sizeof(SharemindCodeBlock);
+    size_t const memSize = realCodeSize * sizeof(SharemindCodeBlock);
     if (unlikely(memSize / sizeof(SharemindCodeBlock) != realCodeSize))
         return false;
 

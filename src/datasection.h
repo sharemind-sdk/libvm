@@ -36,12 +36,12 @@ typedef SharemindMemorySlot SharemindDataSection;
 
 static inline bool SharemindDataSection_init(
         SharemindDataSection * const ds,
-        const size_t size,
+        size_t const size,
         SharemindMemorySlotSpecials * const specials)
         __attribute__ ((nonnull(1), warn_unused_result));
 static inline bool SharemindDataSection_init(
         SharemindDataSection * const ds,
-        const size_t size,
+        size_t const size,
         SharemindMemorySlotSpecials * const specials)
 {
     assert(ds);

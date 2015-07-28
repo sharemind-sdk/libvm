@@ -43,21 +43,21 @@ SHAREMIND_MAP_DEFINE_destroy(SharemindMemoryMap,
                              SharemindMemorySlot_destroy(&v->value);)
 SHAREMIND_MAP_DECLARE_get(SharemindMemoryMap,
                           inline,
-                          const uint64_t,
+                          uint64_t const ,
                           visibility("internal"))
 SHAREMIND_MAP_DEFINE_get(SharemindMemoryMap,
                          inline,
-                         const uint64_t,
+                         uint64_t const,
                          ((uint16_t) (key)),
                          SHAREMIND_MAP_KEY_EQUALS_uint64_t,
                          SHAREMIND_MAP_KEY_LESS_uint64_t)
 SHAREMIND_MAP_DECLARE_insertHint(SharemindMemoryMap,
                                  inline,
-                                 const uint64_t,
+                                 uint64_t const,
                                  visibility("internal"))
 SHAREMIND_MAP_DEFINE_insertHint(SharemindMemoryMap,
                                 inline,
-                                const uint64_t,
+                                uint64_t const,
                                 ((uint16_t) (key)),
                                 SHAREMIND_MAP_KEY_EQUALS_uint64_t,
                                 SHAREMIND_MAP_KEY_LESS_uint64_t)
@@ -67,28 +67,28 @@ SHAREMIND_MAP_DECLARE_emplaceAtHint(SharemindMemoryMap,
 SHAREMIND_MAP_DEFINE_emplaceAtHint(SharemindMemoryMap, inline)
 SHAREMIND_MAP_DECLARE_insertAtHint(SharemindMemoryMap,
                                    inline,
-                                   const uint64_t,
+                                   uint64_t const,
                                    visibility("internal"))
 SHAREMIND_MAP_DEFINE_insertAtHint(SharemindMemoryMap,
                                   inline,
-                                  const uint64_t,
+                                  uint64_t const,
                                   SHAREMIND_MAP_KEY_COPY_uint64_t,
                                   malloc,
                                   free)
 SHAREMIND_MAP_DECLARE_insertNew(SharemindMemoryMap,
                                 inline,
-                                const uint64_t,
+                                uint64_t const,
                                 visibility("internal"))
 SHAREMIND_MAP_DEFINE_insertNew(SharemindMemoryMap,
                                inline,
-                               const uint64_t)
+                               uint64_t const)
 SHAREMIND_MAP_DECLARE_remove(SharemindMemoryMap,
                              inline,
-                             const uint64_t,
+                             uint64_t const,
                              visibility("internal"))
 SHAREMIND_MAP_DEFINE_remove(SharemindMemoryMap,
                             inline,
-                            const uint64_t,
+                            uint64_t const,
                             ((uint16_t) (key)),
                             SHAREMIND_MAP_KEY_EQUALS_uint64_t,
                             SHAREMIND_MAP_KEY_LESS_uint64_t,
@@ -98,14 +98,14 @@ SHAREMIND_MAP_DEFINE_remove(SharemindMemoryMap,
 SHAREMIND_EXTERN_C_BEGIN
 
 inline uint64_t SharemindMemoryMap_findUnusedPtr(
-            const SharemindMemoryMap * const m,
-            const uint64_t startFrom)
+            SharemindMemoryMap const * const m,
+            uint64_t const startFrom)
         __attribute__ ((nonnull(1),
                         warn_unused_result,
                         visibility("internal")));
 inline uint64_t SharemindMemoryMap_findUnusedPtr(
-            const SharemindMemoryMap * const m,
-            const uint64_t startFrom)
+            SharemindMemoryMap const * const m,
+            uint64_t const startFrom)
 {
     assert(m);
     assert(startFrom >= 4u);

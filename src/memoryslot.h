@@ -54,13 +54,13 @@ struct SharemindMemorySlotSpecials_ {
 inline void SharemindMemorySlot_init(
         SharemindMemorySlot * const m,
         void * const pData,
-        const size_t size,
+        size_t const size,
         SharemindMemorySlotSpecials * const specials)
     __attribute__ ((nonnull(1), visibility("internal")));
 inline void SharemindMemorySlot_init(
         SharemindMemorySlot * const m,
         void * const pData,
-        const size_t size,
+        size_t const size,
         SharemindMemorySlotSpecials * const specials)
 {
     assert(m);

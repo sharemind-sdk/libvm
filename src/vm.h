@@ -65,17 +65,17 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindVm)
 
 static inline SharemindSyscallWrapper SharemindVm_findSyscall(
         SharemindVm * const vm,
-        const char * const signature)
+        char const * const signature)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline SharemindSyscallWrapper SharemindVm_findSyscall(
         SharemindVm * const vm,
-        const char * const signature)
+        char const * const signature)
 {
     assert(vm);
     assert(signature);
     assert(signature[0u]);
     if (!vm->context || !vm->context->find_syscall) {
-        static const SharemindSyscallWrapper nullWrapper = { NULL, NULL };
+        static SharemindSyscallWrapper const nullWrapper = { NULL, NULL };
         return nullWrapper;
     }
 
@@ -83,10 +83,10 @@ static inline SharemindSyscallWrapper SharemindVm_findSyscall(
 }
 
 static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
-                                               const char * const pdName)
+                                               char const * const pdName)
         __attribute__ ((nonnull(1, 2), warn_unused_result));
 static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
-                                               const char * const pdName)
+                                               char const * const pdName)
 {
     assert(vm);
     assert(pdName);

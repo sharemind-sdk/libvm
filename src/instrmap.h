@@ -32,7 +32,7 @@
 typedef struct SharemindInstrMapValue_ {
     size_t blockIndex;
     size_t instructionBlockIndex;
-    const SharemindVmInstruction * description;
+    SharemindVmInstruction const * description;
 } SharemindInstrMapValue;
 
 SHAREMIND_MAP_DECLARE_BODY(SharemindInstrMap, size_t, SharemindInstrMapValue)
@@ -86,11 +86,11 @@ SHAREMIND_MAP_DEFINE_insertNew(SharemindInstrMap,
                                size_t)
 SHAREMIND_MAP_DECLARE_remove(SharemindInstrMap,
                              inline,
-                             const size_t,
+                             size_t const,
                              visibility("internal"))
 SHAREMIND_MAP_DEFINE_remove(SharemindInstrMap,
                             inline,
-                            const size_t,
+                            size_t const,
                             ((uint16_t) (key)),
                             SHAREMIND_MAP_KEY_EQUALS_size_t,
                             SHAREMIND_MAP_KEY_LESS_size_t,

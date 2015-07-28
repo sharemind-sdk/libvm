@@ -90,14 +90,14 @@ SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
 SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProcess)
 
 uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
-                                       const uint64_t nBytes,
+                                       uint64_t const nBytes,
                                        SharemindMemorySlot ** const memorySlot)
         __attribute__ ((visibility("internal"),
                         nonnull(1),
                         warn_unused_result));
 SharemindVmProcessException SharemindProcess_public_free(
         SharemindProcess * const p,
-        const uint64_t ptr)
+        uint64_t const ptr)
         __attribute__ ((visibility("internal"),
                         nonnull(1),
                         warn_unused_result));

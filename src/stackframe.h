@@ -42,7 +42,7 @@ struct SharemindStackFrame_ {
     SharemindCReferenceVector crefstack;
     struct SharemindStackFrame_ * prev;
 
-    const SharemindCodeBlock * returnAddr;
+    SharemindCodeBlock const * returnAddr;
     SharemindCodeBlock * returnValueAddr;
 };
 typedef struct SharemindStackFrame_ SharemindStackFrame;
