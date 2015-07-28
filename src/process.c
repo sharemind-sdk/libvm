@@ -778,7 +778,7 @@ static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
 
     /* Remove pointer from valid list: */
     #ifndef NDEBUG
-    int const r =
+    bool const r =
     #endif
         SharemindPrivateMemoryMap_remove(&p->privateMemoryMap, ptr);
     assert(r);
