@@ -164,9 +164,9 @@ typedef sf_float64 SharemindFloat64;
     } while ((0))
 #define SHAREMIND_SF_E_CAST(dest,destType,immedType,resultType,...) \
     do { \
-        immedType r__; \
-        SHAREMIND_SF_E(resultType,r__,__VA_ARGS__); \
-        (dest) = (destType) r__; \
+        immedType r_; \
+        SHAREMIND_SF_E(resultType,r_,__VA_ARGS__); \
+        (dest) = (destType) r_; \
     } while(0)
 #define SHAREMIND_SF_FPU32F(dest,...) \
     SHAREMIND_SF_E(sf_result32f,(dest),,__VA_ARGS__)
