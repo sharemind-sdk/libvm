@@ -20,8 +20,8 @@
 #ifndef SHAREMIND_LIBVM_LASTERROR_H
 #define SHAREMIND_LIBVM_LASTERROR_H
 
-#ifndef SHAREMIND_INTERNAL__
-#error SHAREMIND_INTERNAL__
+#ifndef SHAREMIND_INTERNAL_
+#error SHAREMIND_INTERNAL_
 #endif
 
 #include <sharemind/comma.h>

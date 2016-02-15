@@ -17,7 +17,7 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#define SHAREMIND_INTERNAL__
+#define SHAREMIND_INTERNAL_
 
 #include "vm.h"
 

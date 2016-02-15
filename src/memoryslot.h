@@ -20,7 +20,7 @@
 #ifndef SHAREMIND_LIBVM_MEMORYSLOT_H
 #define SHAREMIND_LIBVM_MEMORYSLOT_H
 
-#ifndef SHAREMIND_INTERNAL__
+#ifndef SHAREMIND_INTERNAL_
 #error including an internal header!
 #endif
 
