@@ -17,7 +17,6 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#define SHAREMIND_INTERNAL_
 #include "core.h"
 
 #include <limits.h>
