@@ -384,6 +384,17 @@ SharemindVmError SharemindProcess_setProcessFacility(
         void * facility) __attribute__ ((nonnull(1, 2)));
 
 /**
+ * \brief Unsets a process facility reachable from the system call context.
+ * \param[in] process pointer to the SharemindProcess instance.
+ * \param[in] name The name of the facility to unset.
+ * \retval true if a facility with the given name was deleted.
+ * \retval false if no facility with the given name was found.
+ */
+bool SharemindProcess_unsetProcessFacility(
+        SharemindProcess * process,
+        char const * name) __attribute__ ((nonnull(1, 2)));
+
+/**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SHAREMIND_PREPARED
  * \param process The process to run.

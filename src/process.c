@@ -116,6 +116,12 @@ SHAREMIND_STRINGMAP_DEFINE_insertAtHint(SharemindProcessFacilityMap,
 SHAREMIND_STRINGMAP_DECLARE_insertNew(SharemindProcessFacilityMap,
                                       static inline,,)
 SHAREMIND_STRINGMAP_DEFINE_insertNew(SharemindProcessFacilityMap, static inline)
+SHAREMIND_STRINGMAP_DECLARE_remove(SharemindProcessFacilityMap,
+                                   static inline,,)
+SHAREMIND_STRINGMAP_DEFINE_remove(SharemindProcessFacilityMap,
+                                  static inline,
+                                  void *,
+                                  free)
 
 
 
@@ -448,6 +454,19 @@ SharemindVmError SharemindProcess_setProcessFacility(SharemindProcess * process,
     v->value = facility;
     SharemindProcess_unlock(process);
     return SHAREMIND_VM_OK;
+}
+
+bool SharemindProcess_unsetProcessFacility(SharemindProcess * process,
+                                           char const * name)
+{
+    assert(process);
+    assert(name);
+    SharemindProcess_lock(process);
+    bool const r =
+            SharemindProcessFacilityMap_remove(&process->processFacilityMap,
+                                               name);
+    SharemindProcess_unlock(process);
+    return r;
 }
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
