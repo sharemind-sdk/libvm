@@ -99,6 +99,8 @@ SharemindProgram * SharemindVm_newProgram(
         goto SharemindProgram_new_error_1;
     }
 
+    SharemindProcessFacilityMap_init(&p->processFacilityMap,
+                                     &vm->processFacilityMap);
     SHAREMIND_LIBVM_LASTERROR_INIT(p);
     SHAREMIND_REFS_INIT(p);
     SHAREMIND_TAG_INIT(p);
@@ -120,6 +122,7 @@ SharemindProgram * SharemindVm_newProgram(
 
 SharemindProgram_new_error_2:
 
+    SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
@@ -156,6 +159,7 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);
 
+    SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 }
@@ -739,3 +743,4 @@ SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindProgram)
+SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS(SharemindProgram,process,Process)

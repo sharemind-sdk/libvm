@@ -36,6 +36,7 @@
 #include "datasectionsizesvector.h"
 #include "lasterror.h"
 #include "pdbindingsvector.h"
+#include "processfacilitymap.h"
 #include "syscallbindingsvector.h"
 #include "vm.h"
 
@@ -56,6 +57,7 @@ struct SharemindProgram_ {
     SharemindSyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;
 
+    SharemindProcessFacilityMap processFacilityMap;
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_REFS_DECLARE_FIELDS

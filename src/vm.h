@@ -33,12 +33,14 @@
 #include <sharemind/refs.h>
 #include <sharemind/tag.h>
 #include "lasterror.h"
+#include "processfacilitymap.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindVm_ {
 
+    SharemindProcessFacilityMap processFacilityMap;
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_REFS_DECLARE_FIELDS

@@ -42,6 +42,27 @@ SHAREMIND_EXTERN_C_BEGIN
 #define SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(ClassName) \
     SHAREMIND_LASTERROR_PUBLIC_FUNCTIONS_DECLARE(ClassName,, SharemindVmError,)
 
+#define SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS_(ClassName,fF,FF) \
+    SharemindVmError ClassName ## _set ## FF(ClassName * c, \
+                                             char const * name, \
+                                             void * facility) \
+            __attribute__ ((nonnull(1,2))); \
+    bool ClassName ## _unset ## FF(ClassName * c, char const * name) \
+            __attribute__ ((nonnull(1,2))); \
+    void * ClassName ## _ ## fF(ClassName const * c, char const * name) \
+            __attribute__ ((nonnull(1,2))) \
+
+#define SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(ClassName,fN,FN) \
+    SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS_(ClassName, \
+                                                fN ## Facility, \
+                                                FN ## Facility)
+
+#define SHAREMIND_LIBVM_DECLARE_SELF_FACILITY_FUNCTIONS(ClassName) \
+    SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS_(ClassName, \
+                                                facility, \
+                                                Facility)
+
+
 /*******************************************************************************
   Forward declarations
 *******************************************************************************/
@@ -78,6 +99,7 @@ SHAREMIND_ENUM_DECLARE_TOSTRING(SharemindVmProcessState);
     ((SHAREMIND_VM_MUTEX_ERROR,)) \
     ((SHAREMIND_VM_INVALID_INPUT_STATE,)) \
     ((SHAREMIND_VM_IO_ERROR,)) \
+    ((SHAREMIND_VM_FACILITY_ALREADY_EXISTS,)) \
     ((SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,= 100)) \
     ((SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION,)) \
     ((SHAREMIND_VM_PREPARE_ERROR_INVALID_HEADER,)) \
@@ -160,6 +182,15 @@ struct SharemindVirtualMachineContext_ {
     SharemindPd * (*find_pd)(SharemindVirtualMachineContext * context,
                              char const * pdName);
 
+    /**
+      \param[in] context a pointer to this struct.
+      \param[in] name the name of the facility.
+      \returns a facility with the given name.
+      \retval NULL if no such facility is found.
+    */
+    void * (* processFacility)(SharemindVirtualMachineContext * context,
+                               char const * name);
+
 };
 
 
@@ -167,11 +198,13 @@ struct SharemindVirtualMachineContext_ {
   SharemindVm
 *******************************************************************************/
 
+
 SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               SharemindVmError * error,
                               char const ** errorStr);
 void SharemindVm_free(SharemindVm * vm);
 
+SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(SharemindVm,process,Process);
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindVm)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindVm,,)
 
@@ -191,6 +224,8 @@ SharemindProgram * SharemindVm_newProgram(
 /*******************************************************************************
   SharemindProgram
 *******************************************************************************/
+
+SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(SharemindProgram,process,Process);
 
 /**
  * \brief Deallocates a SharemindProgram instance.
@@ -310,6 +345,8 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program)
 /*******************************************************************************
   SharemindProcess
 *******************************************************************************/
+
+SHAREMIND_LIBVM_DECLARE_SELF_FACILITY_FUNCTIONS(SharemindProcess);
 
 /**
  * \brief Deallocates a SharemindProcess instance.
