@@ -370,6 +370,20 @@ void SharemindProcess_setInternal(SharemindProcess * process,
                                   void * value) __attribute__ ((nonnull(1)));
 
 /**
+ * \brief Sets a process facility reachable from the system call context.
+ * \param[in] process pointer to the SharemindProcess instance.
+ * \param[in] name The name of the facility to set.
+ * \param[in] facility The facility to set.
+ * \warning This destructively overwrites any previously set process facility in
+            the respective SharemindProcess instance.
+ * \returns an error, if any.
+ */
+SharemindVmError SharemindProcess_setProcessFacility(
+        SharemindProcess * process,
+        char const * name,
+        void * facility) __attribute__ ((nonnull(1, 2)));
+
+/**
  * \brief Starts execution of the given program in the background.
  * \pre program->state == SHAREMIND_PREPARED
  * \param process The process to run.

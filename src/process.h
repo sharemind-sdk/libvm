@@ -27,6 +27,7 @@
 #include <sharemind/3rdparty/libsoftfloat/softfloat.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/recursive_locks.h>
+#include <sharemind/stringmap.h>
 #include <sharemind/tag.h>
 #include <stdbool.h>
 #include "datasectionsvector.h"
@@ -41,6 +42,8 @@
 
 
 SHAREMIND_EXTERN_C_BEGIN
+
+SHAREMIND_STRINGMAP_DECLARE_BODY(SharemindProcessFacilityMap,void *)
 
 struct SharemindProcess_ {
     SharemindProgram * program;
@@ -74,6 +77,7 @@ struct SharemindProcess_ {
     SharemindModuleApi0x1Error syscallException;
 
     SharemindModuleApi0x1SyscallContext syscallContext;
+    SharemindProcessFacilityMap processFacilityMap;
 
     SharemindMemoryInfo memPublicHeap;
     SharemindMemoryInfo memPrivate;

@@ -23,6 +23,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <sharemind/comma.h>
 #include <stdio.h>
 #include <string.h>
 #include "core.h"
@@ -76,6 +77,45 @@ static bool sharemind_private_release(
 static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
         SharemindModuleApi0x1SyscallContext * c,
         uint64_t pd_index) __attribute__ ((nonnull(1)));
+
+static void * sharemind_processFacility(
+        SharemindModuleApi0x1SyscallContext const * c,
+        char const * facilityName) __attribute__ ((nonnull(1, 2)));
+
+
+
+/*******************************************************************************
+ *  SharemindProcessFacilityMap:
+*******************************************************************************/
+
+SHAREMIND_STRINGMAP_DECLARE_init(SharemindProcessFacilityMap, static inline,)
+SHAREMIND_STRINGMAP_DEFINE_init(SharemindProcessFacilityMap,static inline)
+SHAREMIND_STRINGMAP_DECLARE_destroy(SharemindProcessFacilityMap,
+                                    static inline,,)
+SHAREMIND_STRINGMAP_DEFINE_destroy(SharemindProcessFacilityMap,
+                                   static inline,
+                                   void *,,
+                                   free,)
+SHAREMIND_STRINGMAP_DECLARE_get(SharemindProcessFacilityMap, static inline,,)
+SHAREMIND_STRINGMAP_DEFINE_get(SharemindProcessFacilityMap, static inline)
+SHAREMIND_STRINGMAP_DECLARE_insertHint(SharemindProcessFacilityMap,
+                                       static inline,)
+SHAREMIND_STRINGMAP_DEFINE_insertHint(SharemindProcessFacilityMap,
+                                      static inline)
+SHAREMIND_STRINGMAP_DECLARE_emplaceAtHint(SharemindProcessFacilityMap,
+                                         static inline,)
+SHAREMIND_STRINGMAP_DEFINE_emplaceAtHint(SharemindProcessFacilityMap,
+                                         static inline)
+SHAREMIND_STRINGMAP_DECLARE_insertAtHint(SharemindProcessFacilityMap,
+                                         static inline,)
+SHAREMIND_STRINGMAP_DEFINE_insertAtHint(SharemindProcessFacilityMap,
+                                        static inline,
+                                        strdup,
+                                        malloc,
+                                        free)
+SHAREMIND_STRINGMAP_DECLARE_insertNew(SharemindProcessFacilityMap,
+                                      static inline,,)
+SHAREMIND_STRINGMAP_DEFINE_insertNew(SharemindProcessFacilityMap, static inline)
 
 
 
@@ -230,6 +270,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->memorySlotNext = 4u;
 
     p->syscallContext.get_pdpi_info = &sharemind_get_pdpi_info;
+    p->syscallContext.processFacility = &sharemind_processFacility;
     p->syscallContext.publicAlloc = &sharemind_public_alloc;
     p->syscallContext.publicFree = &sharemind_public_free;
     p->syscallContext.publicMemPtrSize = &sharemind_public_get_size;
@@ -240,6 +281,8 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->syscallContext.releasePrivate = &sharemind_private_release;
     p->syscallContext.vm_internal = p;
     p->syscallContext.process_internal = NULL;
+
+    SharemindProcessFacilityMap_init(&p->processFacilityMap);
 
     SharemindMemoryInfo_init(&p->memPublicHeap);
     SharemindMemoryInfo_init(&p->memPrivate);
@@ -302,6 +345,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
     if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
         SharemindProcess_stop_pdpis(p);
 
+    SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
     SharemindFrameStack_destroy(&p->frames);
@@ -382,6 +426,28 @@ void SharemindProcess_setInternal(SharemindProcess * const process,
     SharemindProcess_lock(process);
     process->syscallContext.process_internal = value;
     SharemindProcess_unlock(process);
+}
+
+SharemindVmError SharemindProcess_setProcessFacility(SharemindProcess * process,
+                                                     char const * name,
+                                                     void * facility)
+{
+    assert(process);
+    assert(name);
+    SharemindProcess_lock(process);
+    SharemindProcessFacilityMap_value * v =
+            SharemindProcessFacilityMap_get(&process->processFacilityMap, name);
+    if (!v) {
+        v = SharemindProcessFacilityMap_insertNew(&process->processFacilityMap,
+                                                  name);
+        if (!v) {
+            SharemindProcess_unlock(process);
+            return SHAREMIND_VM_OUT_OF_MEMORY;
+        }
+    }
+    v->value = facility;
+    SharemindProcess_unlock(process);
+    return SHAREMIND_VM_OK;
 }
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
@@ -870,6 +936,22 @@ static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
     }
 
     return NULL;
+}
+
+static void * sharemind_processFacility(
+        SharemindModuleApi0x1SyscallContext const * c,
+        char const * facilityName)
+{
+    assert(c);
+    assert(c->vm_internal);
+    assert(facilityName);
+
+    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
+    assert(p);
+    SharemindProcessFacilityMap_value const * const v =
+            SharemindProcessFacilityMap_get(&p->processFacilityMap,
+                                            facilityName);
+    return v ? v->value : NULL;
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProcess)
