@@ -211,13 +211,10 @@ SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindVm,,)
 /**
  * \brief Allocates and initializes a new SharemindProgram instance.
  * \param vm The SharemindVm instance under which to run.
- * \param overrides If not NULL, may provide overrides for SharemindVm context.
  * \returns a pointer to the new SharemindProgram instance.
  * \retval NULL if allocation failed.
  */
-SharemindProgram * SharemindVm_newProgram(
-        SharemindVm * vm,
-        SharemindVirtualMachineContext * overrides)
+SharemindProgram * SharemindVm_newProgram(SharemindVm * vm)
         __attribute__ ((nonnull(1), warn_unused_result));
 
 

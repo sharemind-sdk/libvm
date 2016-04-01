@@ -69,7 +69,6 @@ struct SharemindProgram_ {
     uintptr_t prepareIp;
 
     SharemindVm * vm;
-    SharemindVirtualMachineContext * overrides;
 
     bool ready;
     void const * lastParsePosition;
@@ -89,40 +88,6 @@ SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
 #ifdef __GNUC__
 #pragma GCC visibility pop
 #endif
-
-
-static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
-        SharemindProgram * const p,
-        char const * const signature)
-        __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindSyscallWrapper SharemindProgram_findSyscall(
-        SharemindProgram * const p,
-        char const * const signature)
-{
-    assert(p);
-    assert(signature);
-    assert(signature[0u]);
-    if (p->overrides && p->overrides->find_syscall)
-        return (*(p->overrides->find_syscall))(p->overrides, signature);
-
-    return SharemindVm_findSyscall(p->vm, signature);
-}
-
-static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * p,
-                                                    char const * pdName)
-        __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindPd * SharemindProgram_findPd(SharemindProgram * const p,
-                                                    char const * const pdName)
-{
-    assert(p);
-    assert(pdName);
-    assert(pdName[0u]);
-    if (p->overrides && p->overrides->find_pd)
-        return (*(p->overrides->find_pd))(p->overrides, pdName);
-
-    return SharemindVm_findPd(p->vm, pdName);
-}
-
 
 SHAREMIND_EXTERN_C_END
 

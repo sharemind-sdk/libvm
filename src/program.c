@@ -74,10 +74,7 @@ static SharemindVmError SharemindProgram_endPrepare(
  *  SharemindProgram
 *******************************************************************************/
 
-SharemindProgram * SharemindVm_newProgram(
-        SharemindVm * vm,
-        SharemindVirtualMachineContext * overrides)
-{
+SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
     assert(vm);
 
     SharemindProgram * const p =
@@ -108,7 +105,6 @@ SharemindProgram * SharemindVm_newProgram(
     p->vm = vm;
     p->ready = false;
     p->lastParsePosition = NULL;
-    p->overrides = overrides;
 
     SharemindVm_lock(vm);
     if (unlikely(!SharemindVm_refs_ref(vm))) {
@@ -146,9 +142,6 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     assert(p);
 
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(p);
-
-    if (p->overrides && p->overrides->destructor)
-        (*(p->overrides->destructor))(p->overrides);
 
     SharemindVm_refs_unref(p->vm);
 
@@ -410,7 +403,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                                 pos,
                                 p);
                     SharemindSyscallWrapper const w =
-                            SharemindProgram_findSyscall(p, (char const *) pos);
+                            SharemindVm_findSyscall(p->vm, (char const *) pos);
                     if (!w.callable)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
                                     pos,
@@ -434,7 +427,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                                         pos,
                                         p);
                     SharemindPd * const w =
-                            SharemindProgram_findPd(p, (char const *) pos);
+                            SharemindVm_findPd(p->vm, (char const *) pos);
                     if (!w)
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND,
                                     pos,
