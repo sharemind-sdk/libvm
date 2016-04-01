@@ -22,6 +22,7 @@
 
 #include <sharemind/codeblock.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/lasterror.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/preprocessor.h>
