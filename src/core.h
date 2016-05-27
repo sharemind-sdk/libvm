@@ -50,7 +50,7 @@ SharemindVmError sharemind_vm_run(
     __attribute__
     ((
          SHAREMIND_NOCLONE_
-         noinline
+         noinline,
          warn_unused_result,
          #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
          optimize("-fno-gcse",
@@ -68,7 +68,7 @@ SharemindVmError sharemind_vm_profile(
     __attribute__
     ((
          SHAREMIND_NOCLONE_
-         noinline
+         noinline,
          warn_unused_result,
          #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
          optimize("-fno-gcse",
