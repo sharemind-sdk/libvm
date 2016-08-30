@@ -99,13 +99,13 @@ typedef sf_float64 SharemindFloat64;
                        | SHAREMIND_MI_UHIGH_BIT_MASK(type, (bits), (s)))))
 
 #define SHAREMIND_MI_USHIFT_LEFT_EXTEND(type,bits,v,s) \
-    (SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), 1u) \
-     ? SHAREMIND_MI_USHIFT_LEFT_1(type, (bits), (v), (s)) \
-     : SHAREMIND_MI_USHIFT_LEFT_0(type, (bits), (v), (s)))
+    ((type)(SHAREMIND_MI_ULOW_BIT_FILTER(type, (bits), (v), 1u) \
+            ? SHAREMIND_MI_USHIFT_LEFT_1(type, (bits), (v), (s)) \
+            : SHAREMIND_MI_USHIFT_LEFT_0(type, (bits), (v), (s))))
 #define SHAREMIND_MI_USHIFT_RIGHT_EXTEND(type,bits,v,s) \
-    (SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), 1u) \
-     ? SHAREMIND_MI_USHIFT_RIGHT_1(type, (bits), (v), (s)) \
-     : SHAREMIND_MI_USHIFT_RIGHT_0(type, (bits), (v), (s)))
+    ((type)(SHAREMIND_MI_UHIGH_BIT_FILTER(type, (bits), (v), 1u) \
+            ? SHAREMIND_MI_USHIFT_RIGHT_1(type, (bits), (v), (s)) \
+            : SHAREMIND_MI_USHIFT_RIGHT_0(type, (bits), (v), (s))))
 
 #define SHAREMIND_MI_UROTATE_LEFT(type,bits,v,s) \
     (((s) % bits) \
