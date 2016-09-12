@@ -787,9 +787,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_CONVERT_uint32_TO_float64(a,b) \
     SHAREMIND_SF_FPU64F((a),sf_int64_to_float64((b),p->fpuState))
 #define SHAREMIND_MI_CONVERT_uint64_TO_float32(a,b) \
-    SHAREMIND_SF_FPU32F((a),sf_int64_to_float32((b),p->fpuState))
+    SHAREMIND_SF_FPU32F((a),sf_uint64_to_float32((b),p->fpuState))
 #define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) \
-    SHAREMIND_SF_FPU64F((a),sf_int64_to_float64((b),p->fpuState))
+    SHAREMIND_SF_FPU64F((a),sf_uint64_to_float64((b),p->fpuState))
 
 #define SHAREMIND_MI_MEM_CAN_READ(slot) \
     ((slot)->specials == NULL || (slot)->specials->readable)
