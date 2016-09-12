@@ -197,7 +197,10 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
     p->trapCond = false;
 
-    p->fpuState = sf_fpu_state_default;
+    // This state replicates default AMD64 behaviour.
+    // NB! By default, we ignore any fpu exceptions.
+    p->fpuState = (sf_fpu_state) (sf_float_tininess_after_rounding |
+                                  sf_float_round_nearest_even);
 
     /* Initialize section pointers: */
 
