@@ -31,7 +31,8 @@
 #include <sharemind/recursive_locks.h>
 #include <sharemind/refs.h>
 #include <sharemind/tag.h>
-#include "codesectionsvector.h"
+#include <sharemind/vector.h>
+#include "codesection.h"
 #include "datasectionsvector.h"
 #include "datasectionsizesvector.h"
 #include "lasterror.h"
@@ -42,6 +43,14 @@
 
 
 SHAREMIND_EXTERN_C_BEGIN
+
+
+/*******************************************************************************
+ *  SharemindCodeSectionsVector
+*******************************************************************************/
+
+SHAREMIND_VECTOR_DECLARE_BODY(SharemindCodeSectionsVector,SharemindCodeSection)
+SHAREMIND_VECTOR_DEFINE_BODY(SharemindCodeSectionsVector,)
 
 
 /*******************************************************************************

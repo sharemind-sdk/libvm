@@ -37,6 +37,28 @@
 
 
 /*******************************************************************************
+ *  SharemindCodeSectionsVector
+*******************************************************************************/
+
+SHAREMIND_VECTOR_DECLARE_INIT(SharemindCodeSectionsVector, static inline,)
+SHAREMIND_VECTOR_DEFINE_INIT(SharemindCodeSectionsVector, static inline)
+SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindCodeSectionsVector, static inline,)
+SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindCodeSectionsVector,
+                                     static inline,,
+                                     free,
+                                     SharemindCodeSection_destroy(value);)
+SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindCodeSectionsVector,
+                                      static inline,)
+SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindCodeSectionsVector,
+                                     static inline,
+                                     realloc)
+SHAREMIND_VECTOR_DECLARE_PUSH(SharemindCodeSectionsVector, static inline,)
+SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCodeSectionsVector, static inline)
+SHAREMIND_VECTOR_DECLARE_POP(SharemindCodeSectionsVector, static inline,)
+SHAREMIND_VECTOR_DEFINE_POP(SharemindCodeSectionsVector, static inline)
+
+
+/*******************************************************************************
  *  Forward declarations
 *******************************************************************************/
 
