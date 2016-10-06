@@ -520,6 +520,7 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
 {
     assert(p);
     assert(memorySlot);
+    assert(p->memorySlotNext >= 4u);
     assert(p->memoryMap.size < (UINT64_MAX < SIZE_MAX ? UINT64_MAX : SIZE_MAX));
 
     /* Find a free memory slot: */
@@ -553,7 +554,6 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
                                        SharemindMemorySlot ** const memorySlot)
 {
     assert(p);
-    assert(p->memorySlotNext >= 4u);
 
     /* Fail if allocating too much: */
     if (unlikely(nBytes > SIZE_MAX))
