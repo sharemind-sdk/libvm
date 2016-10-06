@@ -27,15 +27,14 @@
 #include <assert.h>
 #include <sharemind/extern_c.h>
 #include <stddef.h>
-#include "memoryinfostatistics.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN
 
 typedef struct {
     size_t usage;
+    size_t max;
     size_t upperLimit;
-    SharemindMemoryInfoStatistics stats;
 } SharemindMemoryInfo;
 
 static inline void SharemindMemoryInfo_init(SharemindMemoryInfo * const mi)
@@ -43,8 +42,8 @@ static inline void SharemindMemoryInfo_init(SharemindMemoryInfo * const mi)
 static inline void SharemindMemoryInfo_init(SharemindMemoryInfo * const mi) {
     assert(mi);
     mi->usage = 0u;
+    mi->max = 0u;
     mi->upperLimit = SIZE_MAX;
-    SharemindMemoryInfoStatistics_init(&mi->stats);
 }
 
 SHAREMIND_EXTERN_C_END

@@ -592,11 +592,11 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
     p->memPublicHeap.usage += nBytes;
     p->memTotal.usage += nBytes;
 
-    if (p->memPublicHeap.usage > p->memPublicHeap.stats.max)
-        p->memPublicHeap.stats.max = p->memPublicHeap.usage;
+    if (p->memPublicHeap.usage > p->memPublicHeap.max)
+        p->memPublicHeap.max = p->memPublicHeap.usage;
 
-    if (p->memTotal.usage > p->memTotal.stats.max)
-        p->memTotal.stats.max = p->memTotal.usage;
+    if (p->memTotal.usage > p->memTotal.max)
+        p->memTotal.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
@@ -754,11 +754,11 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     p->memPrivate.usage += nBytes;
     p->memTotal.usage += nBytes;
 
-    if (p->memPrivate.usage > p->memPrivate.stats.max)
-        p->memPrivate.stats.max = p->memPrivate.usage;
+    if (p->memPrivate.usage > p->memPrivate.max)
+        p->memPrivate.max = p->memPrivate.usage;
 
-    if (p->memTotal.usage > p->memTotal.stats.max)
-        p->memTotal.stats.max = p->memTotal.usage;
+    if (p->memTotal.usage > p->memTotal.max)
+        p->memTotal.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
@@ -830,11 +830,11 @@ static bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
     p->memReserved.usage += nBytes;
     p->memTotal.usage += nBytes;
 
-    if (p->memReserved.usage > p->memReserved.stats.max)
-        p->memReserved.stats.max = p->memReserved.usage;
+    if (p->memReserved.usage > p->memReserved.max)
+        p->memReserved.max = p->memReserved.usage;
 
-    if (p->memTotal.usage > p->memTotal.stats.max)
-        p->memTotal.stats.max = p->memTotal.usage;
+    if (p->memTotal.usage > p->memTotal.max)
+        p->memTotal.max = p->memTotal.usage;
 
     /** \todo Update any other memory statistics? */
 
