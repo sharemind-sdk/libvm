@@ -318,7 +318,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
-    SharemindFrameStack_destroy(&p->frames);
+    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
     SharemindPdpiCache_destroy(&p->pdpiCache);
     SharemindDataSectionsVector_destroy(&p->bssSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
