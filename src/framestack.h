@@ -33,7 +33,7 @@ SHAREMIND_EXTERN_C_BEGIN
 
 SHAREMIND_STACK_DECLARE(SharemindFrameStack,
                         SharemindStackFrame,,
-                        static inline)
+                        static inline,)
 SHAREMIND_STACK_DEFINE(SharemindFrameStack,
                        SharemindStackFrame,
                        malloc,
