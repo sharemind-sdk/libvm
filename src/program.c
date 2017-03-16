@@ -180,7 +180,8 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
 }
 
 void SharemindProgram_free(SharemindProgram * const p) {
-    SharemindProgram_destroy(((void)(assert(p)), p));
+    assert(p);
+    SharemindProgram_destroy(p);
     free(p);
 }
 

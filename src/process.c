@@ -330,7 +330,8 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 }
 
 void SharemindProcess_free(SharemindProcess * p) {
-    SharemindProcess_destroy(((void)(assert(p)), p));
+    assert(p);
+    SharemindProcess_destroy(p);
     free(p);
 }
 
