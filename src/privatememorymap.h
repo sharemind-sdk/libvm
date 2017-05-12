@@ -82,6 +82,16 @@ SHAREMIND_MAP_DECLARE_insertNew(SharemindPrivateMemoryMap,
 SHAREMIND_MAP_DEFINE_insertNew(SharemindPrivateMemoryMap,
                                inline,
                                void *)
+SHAREMIND_MAP_DECLARE_take(SharemindPrivateMemoryMap,
+                           inline,
+                           void *,
+                           visibility("internal"))
+SHAREMIND_MAP_DEFINE_take(SharemindPrivateMemoryMap,
+                          inline,
+                          void *,
+                          ((uintptr_t) (key)),
+                          SHAREMIND_MAP_KEY_EQUALS_voidptr,
+                          SHAREMIND_MAP_KEY_LESS_voidptr)
 SHAREMIND_MAP_DECLARE_remove(SharemindPrivateMemoryMap,
                              inline,
                              void *,
@@ -89,9 +99,6 @@ SHAREMIND_MAP_DECLARE_remove(SharemindPrivateMemoryMap,
 SHAREMIND_MAP_DEFINE_remove(SharemindPrivateMemoryMap,
                             inline,
                             void *,
-                            ((uintptr_t) (key)),
-                            SHAREMIND_MAP_KEY_EQUALS_voidptr,
-                            SHAREMIND_MAP_KEY_LESS_voidptr,
                             free,
                             free((assert(v->key), v->key));)
 

@@ -84,6 +84,16 @@ SHAREMIND_MAP_DECLARE_insertNew(SharemindInstrMap,
 SHAREMIND_MAP_DEFINE_insertNew(SharemindInstrMap,
                                inline,
                                size_t)
+SHAREMIND_MAP_DECLARE_take(SharemindInstrMap,
+                           inline,
+                           size_t const,
+                           visibility("internal"))
+SHAREMIND_MAP_DEFINE_take(SharemindInstrMap,
+                            inline,
+                            size_t const,
+                            ((uint16_t) (key)),
+                            SHAREMIND_MAP_KEY_EQUALS_size_t,
+                            SHAREMIND_MAP_KEY_LESS_size_t)
 SHAREMIND_MAP_DECLARE_remove(SharemindInstrMap,
                              inline,
                              size_t const,
@@ -91,9 +101,6 @@ SHAREMIND_MAP_DECLARE_remove(SharemindInstrMap,
 SHAREMIND_MAP_DEFINE_remove(SharemindInstrMap,
                             inline,
                             size_t const,
-                            ((uint16_t) (key)),
-                            SHAREMIND_MAP_KEY_EQUALS_size_t,
-                            SHAREMIND_MAP_KEY_LESS_size_t,
                             free,)
 
 SHAREMIND_MAP_DECLARE_BODY(SharemindInstrMapP, size_t, SharemindInstrMapValue *)
