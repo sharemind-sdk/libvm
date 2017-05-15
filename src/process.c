@@ -315,10 +315,10 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
     if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
         SharemindProcess_stop_pdpis(p);
 
+    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
-    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
     SharemindPdpiCache_destroy(&p->pdpiCache);
     SharemindDataSectionsVector_destroy(&p->bssSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
