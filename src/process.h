@@ -56,20 +56,15 @@ struct SharemindProcess_ {
 
     SharemindPdpiCache pdpiCache;
 
-    SharemindFrameStack frames;
-    SharemindStackFrame * globalFrame;
-    SharemindStackFrame * nextFrame;
-    SharemindStackFrame * thisFrame;
-
-    SharemindMemoryMap memoryMap;
-    uint64_t memorySlotNext;
-    SharemindPrivateMemoryMap privateMemoryMap;
-
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;
     bool trapCond;
 
     sf_fpu_state fpuState;
+
+    SharemindMemoryMap memoryMap;
+    uint64_t memorySlotNext;
+    SharemindPrivateMemoryMap privateMemoryMap;
 
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;
@@ -82,6 +77,11 @@ struct SharemindProcess_ {
     SharemindMemoryInfo memPrivate;
     SharemindMemoryInfo memReserved;
     SharemindMemoryInfo memTotal;
+
+    SharemindFrameStack frames;
+    SharemindStackFrame * globalFrame;
+    SharemindStackFrame * nextFrame;
+    SharemindStackFrame * thisFrame;
 
     SharemindVmProcessState state;
 };

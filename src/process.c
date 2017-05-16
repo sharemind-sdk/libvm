@@ -186,11 +186,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     }
     assert(p->pdpiCache.size == program->pdBindings.size);
 
-    SharemindFrameStack_init(&p->frames);
-
-    SharemindMemoryMap_init(&p->memoryMap);
-    SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
-
     /* Set currentCodeSectionIndex before initializing memory slots: */
     p->currentCodeSectionIndex = program->activeLinkingUnit;
     p->currentIp = 0u;
@@ -201,6 +196,10 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     // NB! By default, we ignore any fpu exceptions.
     p->fpuState = (sf_fpu_state) (sf_float_tininess_after_rounding |
                                   sf_float_round_nearest_even);
+
+
+    SharemindMemoryMap_init(&p->memoryMap);
+    SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
 
     /* Initialize section pointers: */
 
@@ -256,12 +255,15 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     SharemindMemoryInfo_init(&p->memReserved);
     SharemindMemoryInfo_init(&p->memTotal);
 
-    p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
+    /* Initialize the frame stack */
+    SharemindFrameStack_init(&p->frames);
+
     p->globalFrame = SharemindFrameStack_push(&p->frames);
     if (unlikely(!p->globalFrame)) {
         SharemindProgram_setErrorOom(program);
         goto SharemindProgram_newProcess_fail_framestack;
     }
+
 
     /* Initialize global frame: */
     SharemindStackFrame_init(p->globalFrame, NULL);
@@ -269,10 +271,16 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     /* p->globalFrame->returnValueAddr = &(p->returnValue); is not needed. */
     p->thisFrame = p->globalFrame;
     p->nextFrame = NULL;
+
+    p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
+
     SharemindProgram_unlock(program);
+
     return p;
 
 SharemindProgram_newProcess_fail_framestack:
+    /* There is nothing to destroy in SharemindFrameStack, because push of the
+     * globalFrame failed */
 
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
 
