@@ -197,7 +197,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->fpuState = (sf_fpu_state) (sf_float_tininess_after_rounding |
                                   sf_float_round_nearest_even);
 
-
     SharemindMemoryMap_init(&p->memoryMap);
     SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
 
@@ -263,7 +262,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
         SharemindProgram_setErrorOom(program);
         goto SharemindProgram_newProcess_fail_framestack;
     }
-
 
     /* Initialize global frame: */
     SharemindStackFrame_init(p->globalFrame, NULL);
