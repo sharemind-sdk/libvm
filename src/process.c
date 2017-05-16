@@ -277,9 +277,8 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     return p;
 
 SharemindProgram_newProcess_fail_framestack:
-    /* There is nothing to destroy in SharemindFrameStack, because push of the
-     * globalFrame failed */
 
+    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
 
 SharemindProgram_newProcess_fail_memslots:
