@@ -84,9 +84,8 @@ struct SharemindProgram_ {
 
 };
 
-SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
-        SharemindProgram,
-        inline,
+SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE(
+        SharemindProgram,,
         SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProgram)
 

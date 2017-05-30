@@ -756,6 +756,7 @@ SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
     return r;
 }
 
+SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindProgram)
