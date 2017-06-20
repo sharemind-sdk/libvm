@@ -19,8 +19,13 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION "2.8.12")
 PROJECT("SHAREMIND_LIBVM" "C")
-SET(LIBVM_VERSION "0.5.0.0")
-SET(LIBVM_COMPAT_VERSION "0.5.0.0")
+
+SET(CPACK_PACKAGE_VERSION_MAJOR "0")
+SET(CPACK_PACKAGE_VERSION_MINOR "5")
+SET(CPACK_PACKAGE_VERSION_PATCH "0")
+SET(LIBVM_VERSION
+    "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+SET(LIBVM_COMPAT_VERSION "${LIBVM_VERSION}")
 
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
@@ -130,10 +135,12 @@ IF(NOT "${SHAREMIND_LIBVM_LINKING_MODE}" STREQUAL "STATIC")
 ENDIF()
 
 INSTALL(TARGETS "libvm"
+        COMPONENT lib
         LIBRARY DESTINATION "lib")
 
 INSTALL(FILES "src/libvm.h"
-        DESTINATION "include/sharemind/libvm")
+        DESTINATION "include/sharemind/libvm"
+        COMPONENT dev)
 
 # Install cmake files:
 FILE(GLOB_RECURSE sharemind_libvm_in_files "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
@@ -150,4 +157,27 @@ CONFIGURE_FILE(
     "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake" @ONLY)
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/SharemindLibvmConfigVersion.cmake"
-        DESTINATION "lib/SharemindLibvm")
+        DESTINATION "lib/SharemindLibvm"
+        COMPONENT dev)
+
+
+# Packaging:
+SET(CPACK_PACKAGE_VENDOR "Cybernetica AS")
+SET(CPACK_PACKAGE_CONTACT "Sharemind packaging <sharemind-packaging@cyber.ee>")
+SET(CPACK_GENERATOR "DEB")
+SET(CPACK_DEBIAN_PACKAGE_NAME "libsharemind-vm")
+SET(CPACK_DEBIAN_PACKAGE_RELEASE "cyber1")
+SET(CPACK_DEBIAN_COMPRESSION_TYPE "xz")
+SET(CPACK_DEB_COMPONENT_INSTALL "ON")
+SET(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+
+SET(CPACK_DEBIAN_LIB_PACKAGE_NAME "libsharemind-vm")
+SET(CPACK_COMPONENT_DEV_DESCRIPTION
+    "Sharemind VM library development headers")
+SET(CPACK_COMPONENT_LIB_DESCRIPTION "Sharemind VM library")
+SET(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "libsharemind-vm (= ${LIBVM_VERSION}), libsharemind-vmi-dev (>= 0.1.0), libsharemind-modapi-dev (>= 0.3.0), libsharemind-cheaders-dev (>= 0.1.0), libc6-dev (>= 2.19)")
+SET(CPACK_DEBIAN_LIB_PACKAGE_DEPENDS "libsharemind-vmi (>= 0.1.0), libsharemind-executable (>= 0.1.0), libsharemind-modapi (>= 0.3.0), libc6 (>= 2.19)")
+SET(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
+SET(CPACK_DEBIAN_LIB_PACKAGE_SECTION "libs")
+SET(CPACK_DEBIAN_DEV_PACKAGE_ARCHITECTURE "any")
+INCLUDE(CPack)
