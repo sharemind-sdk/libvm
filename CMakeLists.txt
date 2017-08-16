@@ -178,5 +178,4 @@ SET(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "libsharemind-vm (= ${LIBVM_VERSION}), libs
 SET(CPACK_DEBIAN_LIB_PACKAGE_DEPENDS "libsharemind-vmi (>= 0.1.0), libsharemind-executable (>= 0.1.0), libsharemind-modapi (>= 0.3.0), libc6 (>= 2.19)")
 SET(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
 SET(CPACK_DEBIAN_LIB_PACKAGE_SECTION "libs")
-SET(CPACK_DEBIAN_DEV_PACKAGE_ARCHITECTURE "any")
 INCLUDE(CPack)
