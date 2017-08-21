@@ -34,7 +34,7 @@ INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi 0.3.0 REQUIRED)
-FIND_PACKAGE(SharemindLibsoftfloat REQUIRED)
+FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibvmi REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
@@ -42,7 +42,7 @@ INCLUDE_DIRECTORIES(
     ${SharemindCHeaders_INCLUDE_DIRS}
     ${SharemindLibexecutable_INCLUDE_DIRS}
     ${SharemindLibmodapi_INCLUDE_DIRS}
-    ${SharemindLibsoftfloat_INCLUDE_DIRS}
+    ${SharemindLibSoftfloat_INCLUDE_DIRS}
     ${SharemindLibvmi_INCLUDE_DIRS}
     ${SharemindVmM4_INCLUDE_DIRS}
 )
@@ -78,7 +78,7 @@ ADD_DEFINITIONS(
     ${SharemindCHeaders_DEFINITIONS}
     ${SharemindLibexecutable_DEFINITIONS}
     ${SharemindLibmodapi_DEFINITIONS}
-    ${SharemindLibsoftfloat_DEFINITIONS}
+    ${SharemindLibSoftfloat_DEFINITIONS}
     ${SharemindLibvmi_DEFINITIONS}
     ${SharemindVmM4_DEFINITIONS}
     ${LIBVM_INSTALL_DEFINITIONS}
@@ -88,7 +88,7 @@ ADD_DEFINITIONS(
 SET(LIBVM_LINK_LIBRARIES
     ${SharemindLibexecutable_LIBRARIES}
     ${SharemindLibmodapi_LIBRARIES}
-    ${SharemindLibsoftfloat_LIBRARIES}
+    ${SharemindLibSoftfloat_LIBRARIES}
     ${SharemindLibvmi_LIBRARIES}
     "m"
     "pthread"

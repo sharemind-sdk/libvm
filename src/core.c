@@ -22,7 +22,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <sharemind/3rdparty/libsoftfloat/softfloat.h>
+#include <sharemind/libsoftfloat/softfloat.h>
 #ifdef SHAREMIND_DEBUG
 #include <stdio.h>
 #endif
