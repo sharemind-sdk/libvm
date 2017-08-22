@@ -35,7 +35,7 @@ FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibexecutable REQUIRED)
 FIND_PACKAGE(SharemindLibmodapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
-FIND_PACKAGE(SharemindLibvmi REQUIRED)
+FIND_PACKAGE(SharemindLibVmi REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
 INCLUDE_DIRECTORIES(
@@ -43,7 +43,7 @@ INCLUDE_DIRECTORIES(
     ${SharemindLibexecutable_INCLUDE_DIRS}
     ${SharemindLibmodapi_INCLUDE_DIRS}
     ${SharemindLibSoftfloat_INCLUDE_DIRS}
-    ${SharemindLibvmi_INCLUDE_DIRS}
+    ${SharemindLibVmi_INCLUDE_DIRS}
     ${SharemindVmM4_INCLUDE_DIRS}
 )
 
@@ -79,7 +79,7 @@ ADD_DEFINITIONS(
     ${SharemindLibexecutable_DEFINITIONS}
     ${SharemindLibmodapi_DEFINITIONS}
     ${SharemindLibSoftfloat_DEFINITIONS}
-    ${SharemindLibvmi_DEFINITIONS}
+    ${SharemindLibVmi_DEFINITIONS}
     ${SharemindVmM4_DEFINITIONS}
     ${LIBVM_INSTALL_DEFINITIONS}
     "-DSHAREMIND_INTERNAL_=1"
@@ -89,7 +89,7 @@ SET(LIBVM_LINK_LIBRARIES
     ${SharemindLibexecutable_LIBRARIES}
     ${SharemindLibmodapi_LIBRARIES}
     ${SharemindLibSoftfloat_LIBRARIES}
-    ${SharemindLibvmi_LIBRARIES}
+    ${SharemindLibVmi_LIBRARIES}
     "m"
     "pthread"
 )
