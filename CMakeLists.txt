@@ -33,7 +33,7 @@ INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable REQUIRED)
-FIND_PACKAGE(SharemindLibmodapi 0.3.0 REQUIRED)
+FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibVmi REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
@@ -41,7 +41,7 @@ FIND_PACKAGE(SharemindVmM4 REQUIRED)
 INCLUDE_DIRECTORIES(
     ${SharemindCHeaders_INCLUDE_DIRS}
     ${SharemindLibExecutable_INCLUDE_DIRS}
-    ${SharemindLibmodapi_INCLUDE_DIRS}
+    ${SharemindLibModapi_INCLUDE_DIRS}
     ${SharemindLibSoftfloat_INCLUDE_DIRS}
     ${SharemindLibVmi_INCLUDE_DIRS}
     ${SharemindVmM4_INCLUDE_DIRS}
@@ -77,7 +77,7 @@ SET(LIBVM_INSTALL_DEFINITIONS "-D__STDC_LIMIT_MACROS" "-D_XOPEN_SOURCE=700")
 ADD_DEFINITIONS(
     ${SharemindCHeaders_DEFINITIONS}
     ${SharemindLibExecutable_DEFINITIONS}
-    ${SharemindLibmodapi_DEFINITIONS}
+    ${SharemindLibModapi_DEFINITIONS}
     ${SharemindLibSoftfloat_DEFINITIONS}
     ${SharemindLibVmi_DEFINITIONS}
     ${SharemindVmM4_DEFINITIONS}
@@ -87,7 +87,7 @@ ADD_DEFINITIONS(
 
 SET(LIBVM_LINK_LIBRARIES
     ${SharemindLibExecutable_LIBRARIES}
-    ${SharemindLibmodapi_LIBRARIES}
+    ${SharemindLibModapi_LIBRARIES}
     ${SharemindLibSoftfloat_LIBRARIES}
     ${SharemindLibVmi_LIBRARIES}
     "m"
