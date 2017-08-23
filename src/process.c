@@ -902,9 +902,7 @@ static void * sharemind_processFacility(
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
-    SharemindProcessFacility * const f =
-            SharemindProcessFacilityMap_get(&p->facilityMap, facilityName);
-    return f ? *f : NULL;
+    return SharemindProcessFacilityMap_get(&p->facilityMap, facilityName);
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProcess)
