@@ -83,11 +83,11 @@ SharemindAddSharedLibrary("libvm"
 )
 
 # Install cmake files:
-SET(SharemindLibVm_INSTALL_DEFINITIONS
+SharemindNewUniqueList(SharemindLibVm_INSTALL_DEFINITIONS
     "-D__STDC_LIMIT_MACROS"
     "-D_XOPEN_SOURCE=700"
 )
-SET(SharemindLibVm_INSTALL_LINK_LIBRARIES
+SharemindNewUniqueList(SharemindLibVm_INSTALL_LINK_LIBRARIES
     ${SharemindLibExecutable_LIBRARIES}
     ${SharemindLibModapi_LIBRARIES}
     ${SharemindLibSoftfloat_LIBRARIES}
@@ -97,7 +97,9 @@ SET(SharemindLibVm_INSTALL_LINK_LIBRARIES
     "-L${CMAKE_INSTALL_PREFIX}/lib"
     "-lsharemind_vm"
 )
-SET(SharemindLibVm_INSTALL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+SharemindNewUniqueList(SharemindLibVm_INSTALL_INCLUDE_DIRS
+    "${CMAKE_INSTALL_PREFIX}/include"
+)
 SharemindUseCMakeFindFiles()
 
 
