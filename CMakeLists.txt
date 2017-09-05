@@ -26,7 +26,7 @@ INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 FIND_PACKAGE(SharemindCMakeHelpers REQUIRED)
 
 SharemindSetProjectVersion()
-SET(SharemindLibVm_COMPAT_VERSION "${SharemindLibVm_VERSION}")
+
 
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable REQUIRED)
@@ -83,24 +83,22 @@ SharemindAddSharedLibrary("libvm"
 )
 
 # Install cmake files:
-SharemindNewUniqueList(SharemindLibVm_INSTALL_DEFINITIONS
-    "-D__STDC_LIMIT_MACROS"
-    "-D_XOPEN_SOURCE=700"
+SharemindCreateCMakeFindFiles(
+    INCLUDE_DIRS
+        "${CMAKE_INSTALL_PREFIX}/include"
+    DEFINITIONS
+        "-D__STDC_LIMIT_MACROS"
+        "-D_XOPEN_SOURCE=700"
+    LIBRARIES
+        ${SharemindLibExecutable_LIBRARIES}
+        ${SharemindLibModapi_LIBRARIES}
+        ${SharemindLibSoftfloat_LIBRARIES}
+        ${SharemindLibVmi_LIBRARIES}
+        "m"
+        "pthread"
+        "-L${CMAKE_INSTALL_PREFIX}/lib"
+        "-lsharemind_vm"
 )
-SharemindNewUniqueList(SharemindLibVm_INSTALL_LINK_LIBRARIES
-    ${SharemindLibExecutable_LIBRARIES}
-    ${SharemindLibModapi_LIBRARIES}
-    ${SharemindLibSoftfloat_LIBRARIES}
-    ${SharemindLibVmi_LIBRARIES}
-    "m"
-    "pthread"
-    "-L${CMAKE_INSTALL_PREFIX}/lib"
-    "-lsharemind_vm"
-)
-SharemindNewUniqueList(SharemindLibVm_INSTALL_INCLUDE_DIRS
-    "${CMAKE_INSTALL_PREFIX}/include"
-)
-SharemindUseCMakeFindFiles()
 
 
 # Packaging:
