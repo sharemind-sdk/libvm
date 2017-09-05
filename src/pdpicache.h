@@ -27,8 +27,8 @@
 
 #include <assert.h>
 #include <sharemind/extern_c.h>
-#include <sharemind/libmodapi/api_0x1.h>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/vector.h>
 #include <stddef.h>
 #include <stdlib.h>

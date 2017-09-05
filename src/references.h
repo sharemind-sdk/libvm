@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
-#include <sharemind/libmodapi/api_0x1.h>
+#include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/vector.h>
 #include <stdlib.h>
 #include "memoryslot.h"

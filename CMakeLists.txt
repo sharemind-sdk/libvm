@@ -33,6 +33,7 @@ FIND_PACKAGE(SharemindLibExecutable REQUIRED)
 FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibVmi REQUIRED)
+FIND_PACKAGE(SharemindModuleApis REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
 
@@ -62,6 +63,7 @@ SharemindAddSharedLibrary("libvm"
         ${SharemindLibModapi_INCLUDE_DIRS}
         ${SharemindLibSoftfloat_INCLUDE_DIRS}
         ${SharemindLibVmi_INCLUDE_DIRS}
+        ${SharemindModuleApis_INCLUDE_DIRS}
         ${SharemindVmM4_INCLUDE_DIRS}
     LINK_LIBRARIES
         ${SharemindLibExecutable_LIBRARIES}
