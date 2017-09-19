@@ -38,6 +38,7 @@ struct DataSection: SharemindMemorySlot {
 /* Types: */
 
     enum ZeroInitT { ZeroInit };
+    enum Permissions { Read, ReadWrite };
 
 /* Methods: */
 
@@ -51,24 +52,24 @@ struct DataSection: SharemindMemorySlot {
     DataSection(DataSection const &) = delete;
 
     DataSection(std::size_t const size,
-                SharemindMemorySlotSpecials * const specials)
+                Permissions const perms)
         : SharemindMemorySlot{
             size ? ::operator new(size) : nullptr,
             size,
             1u,
-            assertReturn(specials)}
+            assertReturn(specials_(perms))}
     {}
 
     DataSection(std::size_t const size,
-                SharemindMemorySlotSpecials * const specials,
+                Permissions const perms,
                 ZeroInitT const)
-        : DataSection(size, specials)
+        : DataSection(size, perms)
     { std::memset(this->pData, 0, size); }
 
     DataSection(void const * const data,
                 std::size_t const size,
-                SharemindMemorySlotSpecials * const specials)
-        : DataSection(size, specials)
+                Permissions const perms)
+        : DataSection(size, perms)
     { std::memcpy(this->pData, data, size); }
 
     ~DataSection() noexcept { ::operator delete(this->pData); }
@@ -82,6 +83,15 @@ struct DataSection: SharemindMemorySlot {
     }
 
     DataSection & operator=(DataSection const &) = delete;
+
+    SharemindMemorySlotSpecials * specials_(Permissions const perms) {
+        static SharemindMemorySlotSpecials roDataSpecials{nullptr, true, false};
+        static SharemindMemorySlotSpecials rwDataSpecials{nullptr, true, true};
+        if (perms == Read)
+            return &roDataSpecials;
+        assert(perms == ReadWrite);
+        return &rwDataSpecials;
+    }
 
 };
 

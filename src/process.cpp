@@ -25,7 +25,6 @@
 #include <limits.h>
 #include <sharemind/comma.h>
 #include "core.h"
-#include "rwdataspecials.h"
 #include "program.h"
 
 
@@ -118,7 +117,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
         try {
             p->dataSections.emplace_back(originalSection.pData,
                                          originalSection.size,
-                                         &rwDataSpecials);
+                                         sharemind::DataSection::ReadWrite);
         } catch (...) {
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_data_sections;
@@ -131,9 +130,10 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
         try {
             static_assert(sizeof(program->bssSectionSizes[i])
                           <= sizeof(std::size_t), "");
-            p->bssSections.emplace_back(program->bssSectionSizes[i],
-                                        &rwDataSpecials,
-                                        sharemind::DataSection::ZeroInit);
+            p->bssSections.emplace_back(
+                        program->bssSectionSizes[i],
+                        sharemind::DataSection::ReadWrite,
+                        sharemind::DataSection::ZeroInit);
         } catch (...) {
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_bss_sections;

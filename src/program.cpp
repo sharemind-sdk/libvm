@@ -31,8 +31,6 @@
 #include "core.h"
 #include "innercommand.h"
 #include "preparationblock.h"
-#include "rodataspecials.h"
-#include "rwdataspecials.h"
 
 
 /*******************************************************************************
@@ -295,7 +293,10 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 #define LOAD_DATASECTION_CASE(utype,ltype,spec) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         try { \
-            p->ltype ## Sections.emplace_back(pos, sh.length, (spec)); \
+            p->ltype ## Sections.emplace_back( \
+                    pos, \
+                    sh.length, \
+                    sharemind::DataSection::spec); \
         } catch (...) { \
             RETURN_SPLR_OOM(pos, p); \
         } \
@@ -334,8 +335,8 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                                       sh.length * sizeof(SharemindCodeBlock));
                 } break;
 
-                LOAD_DATASECTION_CASE(RODATA,rodata,&roDataSpecials)
-                LOAD_DATASECTION_CASE(DATA,data,&rwDataSpecials)
+                LOAD_DATASECTION_CASE(RODATA,rodata,Read)
+                LOAD_DATASECTION_CASE(DATA,data,ReadWrite)
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_BSS: {
 
@@ -401,14 +402,16 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 #define PUSH_EMPTY_DATASECTION(ltype,spec) \
     if (p->ltype ## Sections.size() == ui) { \
         try { \
-            p->ltype ## Sections.emplace_back(0u, (spec)); \
+            p->ltype ## Sections.emplace_back( \
+                    0u, \
+                    sharemind::DataSection::spec); \
         } catch (...) { \
             RETURN_SPLR_OOM(nullptr, p); \
         } \
     }
 
-        PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)
-        PUSH_EMPTY_DATASECTION(data,&rwDataSpecials)
+        PUSH_EMPTY_DATASECTION(rodata,Read)
+        PUSH_EMPTY_DATASECTION(data,ReadWrite)
         if (p->bssSectionSizes.size() == ui) {
             try {
                 p->bssSectionSizes.emplace_back(0u);
