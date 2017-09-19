@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/likely.h>
 #include <stdbool.h>
 #include "memoryslot.h"
 
