@@ -29,6 +29,7 @@
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/libexecutable/libexecutable_0x0.h>
+#include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/tag.h>
 #include <sharemind/vector.h>
@@ -36,7 +37,6 @@
 #include "codesection.h"
 #include "datasectionsvector.h"
 #include "lasterror.h"
-#include "pdbindingsvector.h"
 #include "processfacilitymap.h"
 #include "vm.h"
 
@@ -56,6 +56,7 @@ struct SharemindProgram_ {
             std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
     using CodeSectionsVector = std::vector<sharemind::CodeSection>;
     using SyscallBindingsVector = std::vector<SharemindSyscallWrapper>;
+    using PdBindingsVector = std::vector<SharemindPd *>;
 
 /* Fields: */
 
@@ -65,7 +66,7 @@ struct SharemindProgram_ {
     DataSectionSizesVector bssSectionSizes;
 
     SyscallBindingsVector bindings;
-    SharemindPdBindings pdBindings;
+    PdBindingsVector pdBindings;
 
     SharemindProcessFacilityMap processFacilityMap;
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;

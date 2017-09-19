@@ -86,7 +86,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 
     SharemindDataSectionsVector_init(&p->dataSections);
     SharemindDataSectionsVector_init(&p->rodataSections);
-    SharemindPdBindings_init(&p->pdBindings);
 
     if (!SHAREMIND_RECURSIVE_LOCK_INIT(p)) {
         SharemindVm_setErrorMie(vm);
@@ -105,7 +104,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 
 SharemindProgram_new_error_1:
 
-    SharemindPdBindings_destroy(&p->pdBindings);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     delete p;
@@ -120,7 +118,6 @@ void SharemindProgram_free(SharemindProgram * const p) {
     assert(p);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
-    SharemindPdBindings_destroy(&p->pdBindings);
 
     SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
@@ -383,8 +380,8 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                             SHAREMIND_VM_PREPARE_ERROR_INVALID_INPUT_FILE,
                             pos,
                             p);
-                    for (size_t i = 0; i < p->pdBindings.size; i++)
-                        if (strcmp(SharemindPd_name(p->pdBindings.data[i]),
+                    for (size_t i = 0; i < p->pdBindings.size(); i++)
+                        if (strcmp(SharemindPd_name(p->pdBindings[i]),
                                    (char const *) pos) == 0)
                             RETURN_SPLR(SHAREMIND_VM_PREPARE_DUPLICATE_PDBIND,
                                         pos,
@@ -395,11 +392,11 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_PDBIND,
                                     pos,
                                     p);
-                    SharemindPd ** const pdBinding =
-                            SharemindPdBindings_push(&p->pdBindings);
-                    if (!pdBinding)
+                    try {
+                        p->pdBindings.emplace_back(w);
+                    } catch (...) {
                         RETURN_SPLR_OOM(pos, p);
-                    (*pdBinding) = w;)
+                    })
 
                 default:
                     /* Ignore other sections */
@@ -654,7 +651,7 @@ SharemindVmInstruction const * SharemindProgram_instruction(
 size_t SharemindProgram_pdCount(SharemindProgram const * program) {
     assert(program);
     SharemindProgram_lockConst(program);
-    size_t const r = program->pdBindings.size;
+    size_t const r = program->pdBindings.size();
     SharemindProgram_unlockConst(program);
     return r;
 }
@@ -662,8 +659,8 @@ size_t SharemindProgram_pdCount(SharemindProgram const * program) {
 SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
     assert(program);
     SharemindProgram_lockConst(program);
-    SharemindPd * const r = i < program->pdBindings.size
-                          ? program->pdBindings.data[i]
+    SharemindPd * const r = i < program->pdBindings.size()
+                          ? program->pdBindings[i]
                           : nullptr;
     SharemindProgram_unlockConst(program);
     return r;

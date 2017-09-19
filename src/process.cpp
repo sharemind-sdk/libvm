@@ -165,7 +165,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
     /* Initialize PDPI cache: */
     SharemindPdpiCache_init(&p->pdpiCache);
-    for (size_t i = 0u; i < program->pdBindings.size; i++) {
+    for (size_t i = 0u; i < program->pdBindings.size(); i++) {
         SharemindPdpiCacheItem * const ci =
                 SharemindPdpiCache_push(&p->pdpiCache);
         if (!ci) {
@@ -173,13 +173,13 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
             goto SharemindProgram_newProcess_fail_pdpiCache;
         }
 
-        if (!SharemindPdpiCacheItem_init(ci, program->pdBindings.data[i])) {
+        if (!SharemindPdpiCacheItem_init(ci, program->pdBindings[i])) {
             SharemindPdpiCache_pop(&p->pdpiCache);
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_pdpiCache;
         }
     }
-    assert(p->pdpiCache.size == program->pdBindings.size);
+    assert(p->pdpiCache.size == program->pdBindings.size());
 
     /* Set currentCodeSectionIndex before initializing memory slots: */
     p->currentCodeSectionIndex = program->activeLinkingUnit;
