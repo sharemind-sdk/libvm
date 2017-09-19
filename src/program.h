@@ -47,14 +47,6 @@ SHAREMIND_EXTERN_C_BEGIN
 
 
 /*******************************************************************************
- *  SharemindCodeSectionsVector
-*******************************************************************************/
-
-SHAREMIND_VECTOR_DECLARE_BODY(SharemindCodeSectionsVector,SharemindCodeSection)
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindCodeSectionsVector,)
-
-
-/*******************************************************************************
  *  SharemindProgram
 *******************************************************************************/
 
@@ -64,10 +56,11 @@ struct SharemindProgram_ {
 
     using DataSectionSizesVector =
             std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
+    using CodeSectionsVector = std::vector<sharemind::CodeSection>;
 
 /* Fields: */
 
-    SharemindCodeSectionsVector codeSections;
+    CodeSectionsVector codeSections;
     SharemindDataSectionsVector rodataSections;
     SharemindDataSectionsVector dataSections;
     DataSectionSizesVector bssSectionSizes;

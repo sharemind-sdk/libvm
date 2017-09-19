@@ -24,72 +24,80 @@
 #error including an internal header!
 #endif
 
-
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <limits>
+#include <new>
 #include <sharemind/codeblock.h>
-#include <sharemind/extern_c.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
-#include "instrmap.h"
+#include <sharemind/DebugOnly.h>
+#include <sharemind/libvmi/instr.h>
+#include <unordered_map>
+#include <vector>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-typedef struct {
-    SharemindCodeBlock * data;
-    size_t size;
-    SharemindInstrMap instrmap;
-    SharemindInstrMapP blockmap;
-} SharemindCodeSection;
+class CodeSection {
 
+public: /* Methods: */
 
-static inline bool SharemindCodeSection_init(
-        SharemindCodeSection * const s,
-        SharemindCodeBlock const * const code,
-        size_t const codeSize) __attribute__ ((nonnull(1), warn_unused_result));
-static inline bool SharemindCodeSection_init(
-        SharemindCodeSection * const s,
-        SharemindCodeBlock const * const code,
-        size_t const codeSize)
-{
-    assert(s);
-    assert(code || codeSize == 0u);
+    CodeSection(SharemindCodeBlock const * const code,
+                std::size_t const codeSize)
+    {
+        if (codeSize == std::numeric_limits<std::size_t>::max())
+            throw std::bad_alloc();
+        m_data.resize(codeSize + 1u);
+        std::copy(code, code + codeSize, m_data.data());
+    }
 
-    /* Add space for an exception pointer: */
-    size_t const realCodeSize = codeSize + 1;
-    if (unlikely(realCodeSize < codeSize))
-        return false;
+    bool isInstructionAtOffset(std::size_t const offset) const noexcept
+    { return m_instrmap.find(offset) != m_instrmap.end(); }
 
-    size_t const memSize = realCodeSize * sizeof(SharemindCodeBlock);
-    if (unlikely(memSize / sizeof(SharemindCodeBlock) != realCodeSize))
-        return false;
+    void registerInstruction(std::size_t const offset,
+                             std::size_t const instructionBlockIndex,
+                             SharemindVmInstruction const * const description)
+    {
+        auto const r(m_instrmap.emplace(
+                         std::piecewise_construct,
+                         std::forward_as_tuple(offset),
+                         std::forward_as_tuple(description)));
+        assert(r.second);
+        try {
+            SHAREMIND_DEBUG_ONLY(auto const r2 =)
+                    m_blockmap.emplace(
+                        std::piecewise_construct,
+                        std::forward_as_tuple(instructionBlockIndex),
+                        std::forward_as_tuple(description));
+            assert(r2.second);
+        } catch (...) {
+            m_instrmap.erase(r.first);
+            throw;
+        }
+    }
 
+    SharemindVmInstruction const * instructionDescriptionAtOffset(
+            std::size_t const offset) const noexcept
+    {
+        auto const it(m_blockmap.find(offset));
+        return (it != m_blockmap.end()) ? it->second : nullptr;
+    }
 
-    s->data = (SharemindCodeBlock *) malloc(memSize);
-    if (unlikely(!s->data))
-        return false;
+    SharemindCodeBlock * data() noexcept { return m_data.data(); }
 
-    s->size = codeSize;
-    memcpy(s->data, code, memSize);
+    SharemindCodeBlock const * constData() const noexcept
+    { return m_data.data(); }
 
-    SharemindInstrMap_init(&s->instrmap);
-    SharemindInstrMapP_init(&s->blockmap);
+    std::size_t size() const noexcept { return m_data.size() - 1u; }
 
-    return true;
-}
+private: /* Fields: */
 
+    std::vector<SharemindCodeBlock> m_data;
+    std::unordered_map<std::size_t, SharemindVmInstruction const *> m_instrmap;
+    std::unordered_map<std::size_t, SharemindVmInstruction const *> m_blockmap;
 
-inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindCodeSection_destroy(SharemindCodeSection * const s)
-{
-    assert(s);
-    free(s->data);
-    SharemindInstrMapP_destroy(&s->blockmap);
-    SharemindInstrMap_destroy(&s->instrmap);
-}
+};
 
-SHAREMIND_EXTERN_C_END
+} /* namespace sharemind */
 
 #endif /* SHAREMIND_LIBVM_CODESECTION_H */

@@ -331,9 +331,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     } while ((0))
 
 #define SHAREMIND_MI_IS_INSTR(i) \
-    (SharemindInstrMap_get(\
-        &p->program->codeSections.data[p->currentCodeSectionIndex].instrmap, \
-        ((size_t) (i))) != nullptr)
+    (p->program->codeSections[p->currentCodeSectionIndex] \
+            .isInstructionAtOffset((size_t) (i)))
 
 #define SHAREMIND_MI_CHECK_JUMP_REL(reladdr) \
     do { \
@@ -345,8 +344,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         } else { \
             SHAREMIND_MI_TRY_EXCEPT( \
                 ((uint64_t) (reladdr)) \
-                < p->program \
-                    ->codeSections.data[p->currentCodeSectionIndex].size \
+                < p->program->codeSections[p->currentCodeSectionIndex].size() \
                   - unsignedIp - 1u, \
                 SHAREMIND_VM_PROCESS_JUMP_TO_INVALID_ADDRESS); \
         } \
@@ -840,8 +838,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_IMPL_INNER(name,code) \
     static inline HaltCode name (SharemindProcess * const p) \
     { \
-        SharemindCodeBlock const * const codeStart = \
-                p->program->codeSections.data[p->currentCodeSectionIndex].data;\
+        auto const codeStart = \
+            p->program->codeSections[p->currentCodeSectionIndex].constData();\
         SharemindCodeBlock const * ip = &codeStart[p->currentIp]; \
         SharemindRegisterVector * const globalStack = &p->globalFrame->stack; \
         SharemindRegisterVector * thisStack = &p->thisFrame->stack; \
@@ -930,8 +928,8 @@ SharemindVmError sharemind_vm_run(
 #ifndef __GNUC__
 #pragma STDC FENV_ACCESS ON
 #endif
-        SharemindCodeBlock const * const codeStart =
-                p->program->codeSections.data[p->currentCodeSectionIndex].data;
+        auto const codeStart =
+            p->program->codeSections[p->currentCodeSectionIndex].constData();
 
 #ifndef SHAREMIND_FAST_BUILD
         SharemindCodeBlock const * ip = &codeStart[p->currentIp];

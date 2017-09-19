@@ -29,6 +29,7 @@ SharemindSetProjectVersion()
 
 
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
+FIND_PACKAGE(SharemindCxxHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable REQUIRED)
 FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
@@ -59,6 +60,7 @@ SharemindAddSharedLibrary("libvm"
         ${SharemindLibVm_HEADERS}
     INCLUDE_DIRECTORIES
         ${SharemindCHeaders_INCLUDE_DIRS}
+        ${SharemindCxxHeaders_INCLUDE_DIRS}
         ${SharemindLibExecutable_INCLUDE_DIRS}
         ${SharemindLibModapi_INCLUDE_DIRS}
         ${SharemindLibSoftfloat_INCLUDE_DIRS}
@@ -74,6 +76,7 @@ SharemindAddSharedLibrary("libvm"
         "pthread"
     LEGACY_DEFINITIONS
         ${SharemindCHeaders_DEFINITIONS}
+        ${SharemindCxxHeaders_DEFINITIONS}
         ${SharemindLibExecutable_DEFINITIONS}
         ${SharemindLibModapi_DEFINITIONS}
         ${SharemindLibSoftfloat_DEFINITIONS}
