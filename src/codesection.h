@@ -47,33 +47,26 @@ public: /* Methods: */
     {
         if (codeSize == std::numeric_limits<std::size_t>::max())
             throw std::bad_alloc();
+        m_instrmap.resize(codeSize, false);
         m_data.resize(codeSize + 1u);
         std::copy(code, code + codeSize, m_data.data());
     }
 
     bool isInstructionAtOffset(std::size_t const offset) const noexcept
-    { return m_instrmap.find(offset) != m_instrmap.end(); }
+    { return (offset < m_instrmap.size()) && m_instrmap[offset]; }
 
     void registerInstruction(std::size_t const offset,
                              std::size_t const instructionBlockIndex,
                              SharemindVmInstruction const * const description)
     {
-        auto const r(m_instrmap.emplace(
-                         std::piecewise_construct,
-                         std::forward_as_tuple(offset),
-                         std::forward_as_tuple(description)));
+        assert(!m_instrmap[offset]);
+        m_instrmap[offset] = true;
+        SHAREMIND_DEBUG_ONLY(auto const r =)
+                m_blockmap.emplace(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(instructionBlockIndex),
+                    std::forward_as_tuple(description));
         assert(r.second);
-        try {
-            SHAREMIND_DEBUG_ONLY(auto const r2 =)
-                    m_blockmap.emplace(
-                        std::piecewise_construct,
-                        std::forward_as_tuple(instructionBlockIndex),
-                        std::forward_as_tuple(description));
-            assert(r2.second);
-        } catch (...) {
-            m_instrmap.erase(r.first);
-            throw;
-        }
     }
 
     SharemindVmInstruction const * instructionDescriptionAtOffset(
@@ -93,7 +86,7 @@ public: /* Methods: */
 private: /* Fields: */
 
     std::vector<SharemindCodeBlock> m_data;
-    std::unordered_map<std::size_t, SharemindVmInstruction const *> m_instrmap;
+    std::vector<bool> m_instrmap;
     std::unordered_map<std::size_t, SharemindVmInstruction const *> m_blockmap;
 
 };
