@@ -53,7 +53,7 @@ static inline bool SharemindDataSection_init(
         if (unlikely(!ds->pData))
             return false;
     } else {
-        ds->pData = NULL;
+        ds->pData = nullptr;
     }
     ds->size = size;
     ds->nrefs = 1u;

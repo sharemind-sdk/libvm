@@ -62,8 +62,8 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                     context);
     } else {
         SharemindProcessFacilityMap_init_with_getter(&vm->processFacilityMap,
-                                                     NULL,
-                                                     NULL);
+                                                     nullptr,
+                                                     nullptr);
     }
 
     SHAREMIND_LIBVM_LASTERROR_INIT(vm);

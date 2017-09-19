@@ -126,7 +126,7 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 
     p->vm = vm;
     p->ready = false;
-    p->lastParsePosition = NULL;
+    p->lastParsePosition = nullptr;
 
     SharemindVm_lock(vm);
     if (unlikely(!SharemindVm_refs_ref(vm))) {
@@ -156,7 +156,7 @@ SharemindProgram_new_error_1:
 
 SharemindProgram_new_error_0:
 
-    return NULL;
+    return nullptr;
 
 }
 
@@ -211,7 +211,7 @@ static size_t const extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 #define RETURN_SPLR(e,pos,p) \
     do { \
         p->lastParsePosition = (pos); \
-        SharemindProgram_setError((p), (e), NULL); \
+        SharemindProgram_setError((p), (e), nullptr); \
         SharemindProgram_unlock((p)); \
         return (e); \
     } while (0)
@@ -468,16 +468,16 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
         }
 
         if (unlikely(p->codeSections.size == ui))
-            RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION, NULL, p);
+            RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION, nullptr, p);
 
 #define PUSH_EMPTY_DATASECTION(ltype,spec) \
     if (p->ltype ## Sections.size == ui) { \
         SharemindDataSection * const s = \
                 SharemindDataSectionsVector_push(&p->ltype ## Sections); \
         if (unlikely(!s)) \
-            RETURN_SPLR_OOM(NULL, p); \
+            RETURN_SPLR_OOM(nullptr, p); \
         if (unlikely(!SharemindDataSection_init(s, 0u, (spec)))) \
-            RETURN_SPLR_OOM(NULL, p); \
+            RETURN_SPLR_OOM(nullptr, p); \
     }
 
         PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)
@@ -486,14 +486,14 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
             uint32_t * const s =
                     SharemindDataSectionSizesVector_push(&p->bssSectionSizes);
             if (unlikely(!s))
-                RETURN_SPLR_OOM(NULL, p);
+                RETURN_SPLR_OOM(nullptr, p);
             (*s) = 0u;
         }
     }
     p->activeLinkingUnit = h.activeLinkingUnit;
 
     SharemindVmError const e = SharemindProgram_endPrepare(p);
-    p->lastParsePosition = NULL;
+    p->lastParsePosition = nullptr;
     SharemindProgram_unlock(p);
     return e;
 }
@@ -549,7 +549,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
         SharemindPreparationBlock pb = \
                 { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
-        if (runner(NULL, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) \
+        if (runner(nullptr, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) \
                 != SHAREMIND_VM_OK) \
             abort(); \
         SHAREMIND_PREPARE_CURRENT_I += (numargs); \
@@ -559,11 +559,11 @@ static SharemindVmError SharemindProgram_addCodeSection(
 #define SHAREMIND_PREPARE_CODESIZE (s)->size
 
 #define SHAREMIND_PREPARE_IS_INSTR(addr) \
-    (SharemindInstrMap_get(&s->instrmap, (addr)) != NULL)
+    (SharemindInstrMap_get(&s->instrmap, (addr)) != nullptr)
 #define SHAREMIND_PREPARE_IS_EXCEPTIONCODE(c) \
     ((c) != SHAREMIND_VM_PROCESS_OK \
      && SharemindVmProcessException_toString( \
-                (SharemindVmProcessException) (c)) != NULL)
+                (SharemindVmProcessException) (c)) != nullptr)
 #define SHAREMIND_PREPARE_SYSCALL(argNum) \
     do { \
         SHAREMIND_PREPARE_CHECK_OR_ERROR( \
@@ -601,7 +601,7 @@ struct preprocess_pass2_function {
 };
 static struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include <sharemind/m4/preprocess_pass2_functions.h>
-    { .code = 0u, .f = NULL }
+    { .code = 0u, .f = nullptr }
 };
 
 static SharemindVmError SharemindProgram_endPrepare(
@@ -676,7 +676,7 @@ static SharemindVmError SharemindProgram_endPrepare(
         c[s->size].uint64[0] = 0u; /* && eof */
         pb.block = &c[s->size];
         pb.type = 2;
-        if (sharemind_vm_run(NULL, SHAREMIND_I_GET_IMPL_LABEL, &pb)
+        if (sharemind_vm_run(nullptr, SHAREMIND_I_GET_IMPL_LABEL, &pb)
                 != SHAREMIND_VM_OK)
             abort();
 
@@ -684,7 +684,7 @@ static SharemindVmError SharemindProgram_endPrepare(
 
     prepare_codesection_return_error:
         p->prepareCodeSectionIndex = j;
-        RETURN_SPLR(returnCode, NULL, p);
+        RETURN_SPLR(returnCode, nullptr, p);
     }
 
     p->ready = true;
@@ -735,7 +735,7 @@ SharemindVmInstruction const * SharemindProgram_instruction(
 SharemindProgram_get_instruction_error:
 
     SharemindProgram_unlockConst(p);
-    return NULL;
+    return nullptr;
 }
 
 size_t SharemindProgram_pdCount(SharemindProgram const * program) {
@@ -751,7 +751,7 @@ SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
     SharemindProgram_lockConst(program);
     SharemindPd * const r = i < program->pdBindings.size
                           ? program->pdBindings.data[i]
-                          : NULL;
+                          : nullptr;
     SharemindProgram_unlockConst(program);
     return r;
 }

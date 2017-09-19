@@ -133,8 +133,8 @@ inline void SharemindProcessFacilityMap_init(
         fm->nextGetter = &SharemindProcessFacilityMap_nextMapGetter;
         fm->nextContext = nextMap;
     } else {
-        fm->nextGetter = NULL;
-        fm->nextContext = NULL;
+        fm->nextGetter = nullptr;
+        fm->nextContext = nullptr;
     }
     SharemindProcessFacilityMapInner_init(&fm->realMap);
 }

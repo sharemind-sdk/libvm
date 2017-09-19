@@ -56,7 +56,7 @@ static inline bool SharemindPdpiCacheItem_init(
     if (!ci->pdpi)
         return false;
 
-    ci->info.pdpiHandle = NULL;
+    ci->info.pdpiHandle = nullptr;
     ci->info.pdHandle = SharemindPd_handle(pd);
     SharemindPdk * pdk = SharemindPd_pdk(pd);
     assert(pdk);
@@ -90,7 +90,7 @@ static inline void SharemindPdpiCacheItem_stop(
     assert(ci);
     assert(ci->info.pdpiHandle);
     SharemindPdpi_stop(ci->pdpi);
-    ci->info.pdpiHandle = NULL;
+    ci->info.pdpiHandle = nullptr;
 }
 
 inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * const ci)

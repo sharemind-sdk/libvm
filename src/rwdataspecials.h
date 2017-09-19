@@ -30,8 +30,7 @@
 
 SHAREMIND_EXTERN_C_BEGIN
 
-static SharemindMemorySlotSpecials rwDataSpecials =
-        { .writeable = 1, .readable = 1, .free = NULL };
+static SharemindMemorySlotSpecials rwDataSpecials = { nullptr, true, true };
 
 SHAREMIND_EXTERN_C_END
 

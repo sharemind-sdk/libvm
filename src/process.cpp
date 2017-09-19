@@ -210,9 +210,9 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
     do { \
         assert((pSection)->size > p->currentCodeSectionIndex); \
-        SharemindDataSection * const restrict staticSlot = \
+        SharemindDataSection * const staticSlot = \
                 &(pSection)->data[p->currentCodeSectionIndex]; \
-        SharemindMemoryMap_value * const restrict v = \
+        SharemindMemoryMap_value * const v = \
                 SharemindMemoryMap_insertNew(&p->memoryMap, (index)); \
         if (unlikely(!v)) { \
             SharemindProgram_setErrorOom(program); \
@@ -244,7 +244,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->syscallContext.reservePrivate = &sharemind_private_reserve;
     p->syscallContext.releasePrivate = &sharemind_private_release;
     p->syscallContext.vm_internal = p;
-    p->syscallContext.process_internal = NULL;
+    p->syscallContext.process_internal = nullptr;
 
     SharemindProcessFacilityMap_init(&p->facilityMap,
                                      &program->processFacilityMap);
@@ -264,11 +264,11 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     }
 
     /* Initialize global frame: */
-    SharemindStackFrame_init(p->globalFrame, NULL);
-    p->globalFrame->returnAddr = NULL; /* Triggers halt on return. */
+    SharemindStackFrame_init(p->globalFrame, nullptr);
+    p->globalFrame->returnAddr = nullptr; /* Triggers halt on return. */
     /* p->globalFrame->returnValueAddr = &(p->returnValue); is not needed. */
     p->thisFrame = p->globalFrame;
-    p->nextFrame = NULL;
+    p->nextFrame = nullptr;
 
     p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
 
@@ -311,7 +311,7 @@ SharemindProgram_newProcess_error_fail_ref:
 
 SharemindProcess_new_fail_0:
 
-    return NULL;
+    return nullptr;
 }
 
 static inline void SharemindProcess_destroy(SharemindProcess * p) {
@@ -366,7 +366,7 @@ SharemindPdpi * SharemindProcess_pdpi(SharemindProcess const * process,
     SharemindPdpiCache const * const cache = &process->pdpiCache;
     SharemindPdpi * const r = (pdpiIndex < cache->size)
                             ? cache->data[pdpiIndex].pdpi
-                            : NULL;
+                            : nullptr;
     SharemindProcess_unlockConst(process);
     return r;
 }
@@ -447,7 +447,7 @@ SharemindVmError SharemindProcess_run(SharemindProcess * p) {
     }
 
     p->state = SHAREMIND_VM_PROCESS_RUNNING;
-    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_RUN, NULL);
+    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_RUN, nullptr);
     if (e != SHAREMIND_VM_RUNTIME_TRAP)
         SharemindProcess_stop_pdpis(p);
     SharemindProcess_unlock(p);
@@ -466,7 +466,8 @@ SharemindVmError SharemindProcess_continue(SharemindProcess * p) {
         return SHAREMIND_VM_INVALID_INPUT_STATE;
     }
 
-    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_CONTINUE, NULL);
+    SharemindVmError const e =
+            sharemind_vm_run(p, SHAREMIND_I_CONTINUE, nullptr);
     if (e != SHAREMIND_VM_RUNTIME_TRAP)
         SharemindProcess_stop_pdpis(p);
     SharemindProcess_unlock(p);
@@ -495,7 +496,7 @@ SharemindVmProcessException SharemindProcess_exception(
     SharemindVmProcessException const r =
             (SharemindVmProcessException) p->exceptionValue;
     SharemindProcess_unlockConst(p);
-    assert(SharemindVmProcessException_toString(r) != 0);
+    assert(SharemindVmProcessException_toString(r));
     return r;
 }
 
@@ -546,7 +547,7 @@ static inline uint64_t SharemindProcess_public_alloc_slot(
 
     /* Optimize next alloc: */
     p->memorySlotNext = index + 1u;
-    /* skip "NULL" and static memory pointers: */
+    /* skip "nullptr" and static memory pointers: */
     if (unlikely(!p->memorySlotNext))
         p->memorySlotNext = 4u;
 
@@ -592,7 +593,7 @@ uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
     assert(index >= 4u);
 
     /* Initialize the slot: */
-    SharemindMemorySlot_init(slot, pData, (size_t) nBytes, NULL);
+    SharemindMemorySlot_init(slot, pData, (size_t) nBytes, nullptr);
 
     /* Update memory statistics: */
     p->memPublicHeap.usage += nBytes;
@@ -660,7 +661,7 @@ static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
-    return SharemindProcess_public_alloc(p, nBytes, NULL);
+    return SharemindProcess_public_alloc(p, nBytes, nullptr);
 }
 
 static bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
@@ -706,7 +707,7 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
     assert(c->vm_internal);
 
     if (unlikely(ptr == 0u))
-        return NULL;
+        return nullptr;
 
     SharemindProcess const * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
@@ -714,7 +715,7 @@ static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
     SharemindMemoryMap_value const * const v =
             SharemindMemoryMap_get(&p->memoryMap, ptr);
     if (!v)
-        return NULL;
+        return nullptr;
 
     return v->value.pData;
 }
@@ -726,7 +727,7 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     assert(c->vm_internal);
 
     if (unlikely(nBytes == 0))
-        return NULL;
+        return nullptr;
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
@@ -734,14 +735,14 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     /* Check memory limits: */
     if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
                  || (p->memPrivate.upperLimit - p->memPrivate.usage < nBytes)))
-        return NULL;
+        return nullptr;
 
     /** \todo Check any other memory limits? */
 
     /* Allocate the memory: */
     void * ptr = malloc(nBytes);
     if (unlikely(!ptr))
-        return NULL;
+        return nullptr;
 
     /* Add pointer to private memory map: */
 #ifndef NDEBUG
@@ -751,7 +752,7 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
             SharemindPrivateMemoryMap_insertNew(&p->privateMemoryMap, ptr);
     if (unlikely(!v)) {
         free(ptr);
-        return NULL;
+        return nullptr;
     }
     assert(oldSize < p->privateMemoryMap.size);
     v->value = nBytes;
@@ -877,7 +878,7 @@ static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
     assert(c->vm_internal);
 
     if (pd_index > SIZE_MAX)
-        return NULL;
+        return nullptr;
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
@@ -889,7 +890,7 @@ static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
         return &pdpiCacheItem->info;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static void * sharemind_processFacility(

@@ -48,11 +48,11 @@ struct SharemindStackFrame_ {
 typedef struct SharemindStackFrame_ SharemindStackFrame;
 
 static inline void SharemindStackFrame_init(
-        SharemindStackFrame * const restrict f,
-        SharemindStackFrame * const restrict prev) __attribute__ ((nonnull(1)));
+        SharemindStackFrame * const f,
+        SharemindStackFrame * const prev) __attribute__ ((nonnull(1)));
 static inline void SharemindStackFrame_init(
-        SharemindStackFrame * const restrict f,
-        SharemindStackFrame * const restrict prev)
+        SharemindStackFrame * const f,
+        SharemindStackFrame * const prev)
 {
     assert(f);
     SharemindRegisterVector_init(&f->stack);

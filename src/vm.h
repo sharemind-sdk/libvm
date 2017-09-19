@@ -77,7 +77,7 @@ static inline SharemindSyscallWrapper SharemindVm_findSyscall(
     assert(signature);
     assert(signature[0u]);
     if (!vm->context || !vm->context->find_syscall) {
-        static SharemindSyscallWrapper const nullWrapper = { NULL, NULL };
+        static SharemindSyscallWrapper const nullWrapper = { nullptr, nullptr };
         return nullWrapper;
     }
 
@@ -94,7 +94,7 @@ static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
     assert(pdName);
     assert(pdName[0u]);
     if (!vm->context || !vm->context->find_pd)
-        return NULL;
+        return nullptr;
 
     return (*(vm->context->find_pd))(vm->context, pdName);
 }

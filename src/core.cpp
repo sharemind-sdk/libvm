@@ -333,7 +333,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_IS_INSTR(i) \
     (SharemindInstrMap_get(\
         &p->program->codeSections.data[p->currentCodeSectionIndex].instrmap, \
-        ((size_t) (i))) != NULL)
+        ((size_t) (i))) != nullptr)
 
 #define SHAREMIND_MI_CHECK_JUMP_REL(reladdr) \
     do { \
@@ -401,7 +401,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
         ref->pData = (&(b)->uint8[0] + (bOffset)); \
         ref->size = (rSize); \
-        ref->internal = NULL; \
+        ref->internal = nullptr; \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_BLOCK_ref(b) \
@@ -456,8 +456,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             ref->pData = ((((uint8_t *) (slot)->pData) + (mOffset))); \
         } else { \
             /* Non-NULL invalid pointer so as not to signal end of (c)refs: */ \
-            ref->pData = ((uint8_t *) NULL) + 1u; \
-            assert(ref->pData != NULL); \
+            ref->pData = ((uint8_t *) nullptr) + 1u; \
+            assert(ref->pData != nullptr); \
         } \
         ref->internal = (slot); \
         (slot)->nrefs++; \
@@ -505,7 +505,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         p->nextFrame->returnValueAddr = (r); \
         p->nextFrame->returnAddr = (ip + 1 + (nargs)); \
         p->thisFrame = p->nextFrame; \
-        p->nextFrame = NULL; \
+        p->nextFrame = nullptr; \
         ip = codeStart + ((size_t) (a)); \
         SHAREMIND_CALL_RETURN_DISPATCH(ip); \
     } while ((0))
@@ -530,21 +530,21 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SharemindReference * ref; \
         bool hasRefs = (nextFrame->refstack.size > 0u); \
         if (!hasRefs) { \
-            ref = NULL; \
+            ref = nullptr; \
         } else { \
             ref = SharemindReferenceVector_push(&nextFrame->refstack); \
             SHAREMIND_MI_TRY_OOM(ref); \
-            ref->pData = NULL; \
+            ref->pData = nullptr; \
             ref = nextFrame->refstack.data; \
         } \
         bool hasCRefs = (nextFrame->crefstack.size > 0u); \
         SharemindCReference * cref; \
         if (!hasCRefs) { \
-            cref = NULL; \
+            cref = nullptr; \
         } else { \
             cref = SharemindCReferenceVector_push(&nextFrame->crefstack); \
             SHAREMIND_MI_TRY_OOM(cref); \
-            cref->pData = NULL; \
+            cref->pData = nullptr; \
             cref = nextFrame->crefstack.data; \
         } \
         SharemindModuleApi0x1Error const st = \
@@ -557,7 +557,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             SharemindCReferenceVector_pop(&nextFrame->crefstack); \
         SharemindStackFrame_destroy(nextFrame); \
         SharemindFrameStack_pop(&p->frames); \
-        p->nextFrame = NULL; \
+        p->nextFrame = nullptr; \
         if (st != SHAREMIND_MODULE_API_0x1_OK) { \
             p->syscallException = st; \
             SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_SYSCALL_ERROR); \
@@ -580,7 +580,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         if (unlikely(p->nextFrame)) { \
             SharemindStackFrame_destroy(p->nextFrame); \
             SharemindFrameStack_pop(&p->frames); \
-            p->nextFrame = NULL; \
+            p->nextFrame = nullptr; \
         } \
         if (likely(p->thisFrame->returnAddr)) { \
             if (p->thisFrame->returnValueAddr) \
@@ -651,7 +651,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
 #define SHAREMIND_MI_REF_CAN_READ(ref) \
-    (((SharemindMemorySlot *) ref->internal == NULL \
+    (((SharemindMemorySlot *) ref->internal == nullptr \
      || SHAREMIND_MI_MEM_CAN_READ((SharemindMemorySlot *) ref->internal)))
 
 #define SHAREMIND_MI_BLOCK_AS(b,t) (b->t[0])
@@ -794,14 +794,14 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     SHAREMIND_SF_FPU64F((a),sf_uint64_to_float64((b),p->fpuState))
 
 #define SHAREMIND_MI_MEM_CAN_READ(slot) \
-    ((slot)->specials == NULL || (slot)->specials->readable)
+    ((slot)->specials == nullptr || (slot)->specials->readable)
 #define SHAREMIND_MI_MEM_CAN_WRITE(slot) \
-    ((slot)->specials == NULL || (slot)->specials->writeable)
+    ((slot)->specials == nullptr || (slot)->specials->writeable)
 
 #define SHAREMIND_MI_MEM_ALLOC(dptr,sizereg) \
     do { \
         (dptr)->uint64[0] = \
-                SharemindProcess_public_alloc(p, (sizereg)->uint64[0], NULL); \
+            SharemindProcess_public_alloc(p, (sizereg)->uint64[0], nullptr); \
     } while ((0))
 
 #define SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
@@ -978,7 +978,7 @@ SharemindVmError sharemind_vm_run(
         except:
             assert(p->exceptionValue != SHAREMIND_VM_PROCESS_OK);
             assert(SharemindVmProcessException_toString(
-                       (SharemindVmProcessException) p->exceptionValue) != 0);
+                       (SharemindVmProcessException) p->exceptionValue));
             p->state = SHAREMIND_VM_PROCESS_CRASHED;
 #ifndef SHAREMIND_FAST_BUILD
             SHAREMIND_UPDATESTATE;
