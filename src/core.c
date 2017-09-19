@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sharemind/libsoftfloat/softfloat.h>
+#include <sharemind/null.h>
+#include <sharemind/restrict.h>
 #ifdef SHAREMIND_DEBUG
 #include <stdio.h>
 #endif
