@@ -69,7 +69,6 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
     }
 
     SHAREMIND_LIBVM_LASTERROR_INIT(vm);
-    SHAREMIND_REFS_INIT(vm);
     SHAREMIND_TAG_INIT(vm);
     vm->context = context;
     return vm;
@@ -85,7 +84,6 @@ SharemindVm_new_error_0:
 
 void SharemindVm_free(SharemindVm * vm) {
     assert(vm);
-    SHAREMIND_REFS_ASSERT_IF_REFERENCED(vm);
     if (vm->context && vm->context->destructor)
         (*(vm->context->destructor))(vm->context);
     SHAREMIND_TAG_DESTROY(vm);
@@ -96,5 +94,4 @@ void SharemindVm_free(SharemindVm * vm) {
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindVm)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindVm,)
-SHAREMIND_REFS_DEFINE_FUNCTIONS_WITH_RECURSIVE_MUTEX(SharemindVm)
 SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS(SharemindVm,process,Process)

@@ -104,11 +104,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->program = program;
 
     SharemindProgram_lock(program);
-    if (unlikely(!SharemindProgram_refs_ref(program))) {
-        SharemindProgram_setErrorOor(program);
-        goto SharemindProgram_newProcess_error_fail_ref;
-    }
-
     if (!SHAREMIND_RECURSIVE_LOCK_INIT(p)) {
         SharemindProgram_setErrorMie(program);
         goto SharemindProgram_newProcess_fail_mutex;
@@ -302,10 +297,6 @@ SharemindProgram_newProcess_fail_data_sections:
 
 SharemindProgram_newProcess_fail_mutex:
 
-    SharemindProgram_refs_unref(program);
-
-SharemindProgram_newProcess_error_fail_ref:
-
     SharemindProgram_unlock(program);
     free(p);
 
@@ -330,8 +321,6 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
-
-    SharemindProgram_refs_unref(p->program);
 }
 
 void SharemindProcess_free(SharemindProcess * p) {

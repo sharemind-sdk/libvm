@@ -30,7 +30,6 @@
 #include <sharemind/extern_c.h>
 #include <sharemind/libexecutable/libexecutable_0x0.h>
 #include <sharemind/recursive_locks.h>
-#include <sharemind/refs.h>
 #include <sharemind/tag.h>
 #include <sharemind/vector.h>
 #include <vector>
@@ -71,7 +70,6 @@ struct SharemindProgram_ {
     SharemindProcessFacilityMap processFacilityMap;
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
-    SHAREMIND_REFS_DECLARE_FIELDS
     SHAREMIND_TAG_DECLARE_FIELDS;
 
     size_t activeLinkingUnit;
@@ -90,14 +88,6 @@ SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE(
         SharemindProgram,,
         SHAREMIND_COMMA visibility("internal"))
 SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProgram)
-
-#ifdef __GNUC__
-#pragma GCC visibility push(internal)
-#endif
-SHAREMIND_REFS_DECLARE_FUNCTIONS(SharemindProgram)
-#ifdef __GNUC__
-#pragma GCC visibility pop
-#endif
 
 SHAREMIND_EXTERN_C_END
 
