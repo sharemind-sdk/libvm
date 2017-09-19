@@ -930,9 +930,6 @@ SharemindVmError sharemind_vm_run(
 #ifndef __GNUC__
 #pragma STDC FENV_ACCESS ON
 #endif
-        if (SHAREMIND_TRAP_CHECK)
-            goto trap;
-
         SharemindCodeBlock const * const codeStart =
                 p->program->codeSections.data[p->currentCodeSectionIndex].data;
 
@@ -942,7 +939,12 @@ SharemindVmError sharemind_vm_run(
         SharemindRegisterVector * thisStack = &p->thisFrame->stack;
         SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;
         SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack;
+#endif
 
+        if (SHAREMIND_TRAP_CHECK)
+            goto trap;
+
+#ifndef SHAREMIND_FAST_BUILD
         SHAREMIND_MI_DISPATCH(ip);
 
         #include <sharemind/m4/dispatches.h>
