@@ -22,7 +22,6 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <sharemind/libexecutable/libexecutable.h>
-#include <sharemind/libexecutable/libexecutable_0x0.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
 #include <stdio.h>
@@ -99,9 +98,10 @@ static SharemindVmError SharemindProgram_endPrepare(
 SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
     assert(vm);
 
-    SharemindProgram * const p =
-            (SharemindProgram *) malloc(sizeof(SharemindProgram));
-    if (unlikely(!p)) {
+    SharemindProgram * p;
+    try {
+        p = new SharemindProgram();
+    } catch (...) { // Not enought error codes in VmError
         SharemindVm_setErrorOom(vm);
         goto SharemindProgram_new_error_0;
     }
@@ -109,7 +109,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
     SharemindCodeSectionsVector_init(&p->codeSections);
     SharemindDataSectionsVector_init(&p->dataSections);
     SharemindDataSectionsVector_init(&p->rodataSections);
-    SharemindDataSectionSizesVector_init(&p->bssSectionSizes);
     SharemindSyscallBindingsVector_init(&p->bindings);
     SharemindPdBindings_init(&p->pdBindings);
 
@@ -148,11 +147,10 @@ SharemindProgram_new_error_1:
 
     SharemindPdBindings_destroy(&p->pdBindings);
     SharemindSyscallBindingsVector_destroy(&p->bindings);
-    SharemindDataSectionSizesVector_destroy(&p->bssSectionSizes);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     SharemindCodeSectionsVector_destroy(&p->codeSections);
-    free(p);
+    delete p;
 
 SharemindProgram_new_error_0:
 
@@ -160,7 +158,7 @@ SharemindProgram_new_error_0:
 
 }
 
-static inline void SharemindProgram_destroy(SharemindProgram * const p) {
+void SharemindProgram_free(SharemindProgram * const p) {
     assert(p);
 
     SHAREMIND_REFS_ASSERT_IF_REFERENCED(p);
@@ -170,19 +168,13 @@ static inline void SharemindProgram_destroy(SharemindProgram * const p) {
     SharemindCodeSectionsVector_destroy(&p->codeSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
-    SharemindDataSectionSizesVector_destroy(&p->bssSectionSizes);
     SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);
 
     SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
-}
-
-void SharemindProgram_free(SharemindProgram * const p) {
-    assert(p);
-    SharemindProgram_destroy(p);
-    free(p);
+    delete p;
 }
 
 SharemindVm * SharemindProgram_vm(SharemindProgram const * const p)
@@ -408,14 +400,11 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_BSS: {
 
-                    uint32_t * const s =
-                            SharemindDataSectionSizesVector_push(
-                                &p->bssSectionSizes);
-                    if (unlikely(!s))
+                    try {
+                        p->bssSectionSizes.emplace_back(sh.length);
+                    } catch (...) {
                         RETURN_SPLR_OOM(pos, p);
-
-                    SHAREMIND_STATIC_ASSERT(sizeof(*s) == sizeof(sh.length));
-                    (*s) = sh.length;
+                    }
 
                 } break;
 
@@ -482,12 +471,12 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
         PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)
         PUSH_EMPTY_DATASECTION(data,&rwDataSpecials)
-        if (p->bssSectionSizes.size == ui) {
-            uint32_t * const s =
-                    SharemindDataSectionSizesVector_push(&p->bssSectionSizes);
-            if (unlikely(!s))
+        if (p->bssSectionSizes.size() == ui) {
+            try {
+                p->bssSectionSizes.emplace_back(0u);
+            } catch (...) {
                 RETURN_SPLR_OOM(nullptr, p);
-            (*s) = 0u;
+            }
         }
     }
     p->activeLinkingUnit = h.activeLinkingUnit;

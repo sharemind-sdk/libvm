@@ -28,13 +28,14 @@
 #include <assert.h>
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/libexecutable/libexecutable_0x0.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/refs.h>
 #include <sharemind/tag.h>
 #include <sharemind/vector.h>
+#include <vector>
 #include "codesection.h"
 #include "datasectionsvector.h"
-#include "datasectionsizesvector.h"
 #include "lasterror.h"
 #include "pdbindingsvector.h"
 #include "processfacilitymap.h"
@@ -58,10 +59,18 @@ SHAREMIND_VECTOR_DEFINE_BODY(SharemindCodeSectionsVector,)
 *******************************************************************************/
 
 struct SharemindProgram_ {
+
+/* Types: */
+
+    using DataSectionSizesVector =
+            std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
+
+/* Fields: */
+
     SharemindCodeSectionsVector codeSections;
     SharemindDataSectionsVector rodataSections;
     SharemindDataSectionsVector dataSections;
-    SharemindDataSectionSizesVector bssSectionSizes;
+    DataSectionSizesVector bssSectionSizes;
 
     SharemindSyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;

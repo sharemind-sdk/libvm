@@ -145,27 +145,27 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
     /* Initialize BSS sections */
     SharemindDataSectionsVector_init(&p->bssSections);
-    for (size_t i = 0u; i < program->bssSectionSizes.size; i++) {
+    for (size_t i = 0u; i < program->bssSectionSizes.size(); i++) {
         SharemindDataSection * const bssSection =
                 SharemindDataSectionsVector_push(&p->bssSections);
         if (!bssSection) {
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_bss_sections;
         }
-        SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes.data[i])
+        SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes[i])
                                 <= sizeof(size_t));
         if (!SharemindDataSection_init(bssSection,
-                                       program->bssSectionSizes.data[i],
+                                       program->bssSectionSizes[i],
                                        &rwDataSpecials))
         {
             SharemindDataSectionsVector_pop(&p->bssSections);
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_bss_sections;
         }
-        assert(bssSection->size == program->bssSectionSizes.data[i]);
-        memset(bssSection->pData, 0, program->bssSectionSizes.data[i]);
+        assert(bssSection->size == program->bssSectionSizes[i]);
+        memset(bssSection->pData, 0, program->bssSectionSizes[i]);
     }
-    assert(p->bssSections.size == program->bssSectionSizes.size);
+    assert(p->bssSections.size == program->bssSectionSizes.size());
 
 
     /* Initialize PDPI cache: */
