@@ -113,54 +113,33 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     SHAREMIND_TAG_INIT(p);
 
     /* Copy DATA section */
-    SharemindDataSectionsVector_init(&p->dataSections);
-    for (size_t i = 0u; i < program->dataSections.size; i++) {
-        SharemindDataSection * const processSection =
-                SharemindDataSectionsVector_push(&p->dataSections);
-        if (!processSection) {
+    for (std::size_t i = 0u; i < program->dataSections.size(); i++) {
+        auto const & originalSection = program->dataSections[i];
+        try {
+            p->dataSections.emplace_back(originalSection.pData,
+                                         originalSection.size,
+                                         &rwDataSpecials);
+        } catch (...) {
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_data_sections;
         }
-        SharemindDataSection * const originalSection =
-                &program->dataSections.data[i];
-        if (!SharemindDataSection_init(processSection,
-                                       originalSection->size,
-                                       &rwDataSpecials))
-        {
-            SharemindDataSectionsVector_pop(&p->dataSections);
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_data_sections;
-        }
-        assert(processSection->size == originalSection->size);
-        memcpy(processSection->pData,
-               originalSection->pData,
-               originalSection->size);
     }
-    assert(p->dataSections.size == program->dataSections.size);
+    assert(p->dataSections.size() == program->dataSections.size());
 
     /* Initialize BSS sections */
-    SharemindDataSectionsVector_init(&p->bssSections);
-    for (size_t i = 0u; i < program->bssSectionSizes.size(); i++) {
-        SharemindDataSection * const bssSection =
-                SharemindDataSectionsVector_push(&p->bssSections);
-        if (!bssSection) {
+    for (std::size_t i = 0u; i < program->bssSectionSizes.size(); i++) {
+        try {
+            static_assert(sizeof(program->bssSectionSizes[i])
+                          <= sizeof(std::size_t), "");
+            p->bssSections.emplace_back(program->bssSectionSizes[i],
+                                        &rwDataSpecials,
+                                        sharemind::DataSection::ZeroInit);
+        } catch (...) {
             SharemindProgram_setErrorOom(program);
             goto SharemindProgram_newProcess_fail_bss_sections;
         }
-        SHAREMIND_STATIC_ASSERT(sizeof(program->bssSectionSizes[i])
-                                <= sizeof(size_t));
-        if (!SharemindDataSection_init(bssSection,
-                                       program->bssSectionSizes[i],
-                                       &rwDataSpecials))
-        {
-            SharemindDataSectionsVector_pop(&p->bssSections);
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_bss_sections;
-        }
-        assert(bssSection->size == program->bssSectionSizes[i]);
-        memset(bssSection->pData, 0, program->bssSectionSizes[i]);
     }
-    assert(p->bssSections.size == program->bssSectionSizes.size());
+    assert(p->bssSections.size() == program->bssSectionSizes.size());
 
 
     /* Initialize PDPI cache: */
@@ -204,9 +183,9 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
 #define INIT_STATIC_MEMSLOT(index,pSection,errorLabel) \
     do { \
-        assert((pSection)->size > p->currentCodeSectionIndex); \
-        SharemindDataSection * const staticSlot = \
-                &(pSection)->data[p->currentCodeSectionIndex]; \
+        assert((pSection).size() > p->currentCodeSectionIndex); \
+        auto * const staticSlot = \
+                &((pSection)[p->currentCodeSectionIndex]); \
         SharemindMemoryMap_value * const v = \
                 SharemindMemoryMap_insertNew(&p->memoryMap, (index)); \
         if (unlikely(!v)) { \
@@ -217,13 +196,13 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     } while ((0))
 
     INIT_STATIC_MEMSLOT(1u,
-                        &p->program->rodataSections,
+                        p->program->rodataSections,
                         SharemindProgram_newProcess_fail_firstmemslot);
     INIT_STATIC_MEMSLOT(2u,
-                        &p->dataSections,
+                        p->dataSections,
                         SharemindProgram_newProcess_fail_memslots);
     INIT_STATIC_MEMSLOT(3u,
-                        &p->bssSections,
+                        p->bssSections,
                         SharemindProgram_newProcess_fail_memslots);
 
     p->memorySlotNext = 4u;
@@ -282,11 +261,11 @@ SharemindProgram_newProcess_fail_pdpiCache:
 
 SharemindProgram_newProcess_fail_bss_sections:
 
-    SharemindDataSectionsVector_destroy(&p->bssSections);
+    p->bssSections.clear();
 
 SharemindProgram_newProcess_fail_data_sections:
 
-    SharemindDataSectionsVector_destroy(&p->dataSections);
+    p->dataSections.clear();
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
@@ -311,8 +290,6 @@ void SharemindProcess_free(SharemindProcess * p) {
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);
     SharemindPdpiCache_destroy(&p->pdpiCache);
-    SharemindDataSectionsVector_destroy(&p->bssSections);
-    SharemindDataSectionsVector_destroy(&p->dataSections);
 
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);

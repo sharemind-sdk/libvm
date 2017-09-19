@@ -24,44 +24,14 @@
 #error including an internal header!
 #endif
 
-#include <cstdlib>
-#include <sharemind/comma.h>
-#include <sharemind/extern_c.h>
-#include <sharemind/vector.h>
+#include <vector>
 #include "datasection.h"
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-// static inline
-SHAREMIND_VECTOR_DECLARE_BODY(SharemindDataSectionsVector, SharemindDataSection)
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindDataSectionsVector,)
-SHAREMIND_VECTOR_DECLARE_INIT(SharemindDataSectionsVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_INIT(SharemindDataSectionsVector, inline)
-SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindDataSectionsVector,
-                                 inline,
-                                 SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindDataSectionsVector,
-                                     inline,,
-                                     free,
-                                     SharemindDataSection_destroy(value);)
-SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindDataSectionsVector,
-                                      inline,
-                                      SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindDataSectionsVector,
-                                     inline,
-                                     realloc)
-SHAREMIND_VECTOR_DECLARE_PUSH(SharemindDataSectionsVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindDataSectionsVector, inline)
-SHAREMIND_VECTOR_DECLARE_POP(SharemindDataSectionsVector,
-                             inline,
-                             SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_POP(SharemindDataSectionsVector, inline)
+using DataSectionsVector = std::vector<DataSection>;
 
-SHAREMIND_EXTERN_C_END
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_DATASECTIONSVECTOR_H */

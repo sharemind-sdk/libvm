@@ -84,9 +84,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
         goto SharemindProgram_new_error_0;
     }
 
-    SharemindDataSectionsVector_init(&p->dataSections);
-    SharemindDataSectionsVector_init(&p->rodataSections);
-
     if (!SHAREMIND_RECURSIVE_LOCK_INIT(p)) {
         SharemindVm_setErrorMie(vm);
         goto SharemindProgram_new_error_1;
@@ -104,8 +101,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 
 SharemindProgram_new_error_1:
 
-    SharemindDataSectionsVector_destroy(&p->rodataSections);
-    SharemindDataSectionsVector_destroy(&p->dataSections);
     delete p;
 
 SharemindProgram_new_error_0:
@@ -116,8 +111,8 @@ SharemindProgram_new_error_0:
 
 void SharemindProgram_free(SharemindProgram * const p) {
     assert(p);
-    SharemindDataSectionsVector_destroy(&p->dataSections);
-    SharemindDataSectionsVector_destroy(&p->rodataSections);
+    p->dataSections.clear();
+    p->rodataSections.clear();
 
     SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
@@ -299,15 +294,11 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
 #define LOAD_DATASECTION_CASE(utype,ltype,spec) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
-        SharemindDataSection * const s = \
-            SharemindDataSectionsVector_push(&p->ltype ## Sections); \
-        if (unlikely(!s)) \
-            RETURN_SPLR_OOM(pos, p); \
-        if (unlikely(!SharemindDataSection_init(s, sh.length, (spec)))) { \
-            SharemindDataSectionsVector_pop(&p->ltype ## Sections); \
+        try { \
+            p->ltype ## Sections.emplace_back(pos, sh.length, (spec)); \
+        } catch (...) { \
             RETURN_SPLR_OOM(pos, p); \
         } \
-        memcpy(s->pData, pos, sh.length); \
         CONSTVOIDPTR_INCR(pos, (sh.length + extraPadding[sh.length % 8])); \
     } break;
 #define LOAD_BINDSECTION_CASE(utype,code) \
@@ -408,13 +399,12 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
             RETURN_SPLR(SHAREMIND_VM_PREPARE_ERROR_NO_CODE_SECTION, nullptr, p);
 
 #define PUSH_EMPTY_DATASECTION(ltype,spec) \
-    if (p->ltype ## Sections.size == ui) { \
-        SharemindDataSection * const s = \
-                SharemindDataSectionsVector_push(&p->ltype ## Sections); \
-        if (unlikely(!s)) \
+    if (p->ltype ## Sections.size() == ui) { \
+        try { \
+            p->ltype ## Sections.emplace_back(0u, (spec)); \
+        } catch (...) { \
             RETURN_SPLR_OOM(nullptr, p); \
-        if (unlikely(!SharemindDataSection_init(s, 0u, (spec)))) \
-            RETURN_SPLR_OOM(nullptr, p); \
+        } \
     }
 
         PUSH_EMPTY_DATASECTION(rodata,&roDataSpecials)

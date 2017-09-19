@@ -61,8 +61,8 @@ struct SharemindProgram_ {
 /* Fields: */
 
     CodeSectionsVector codeSections;
-    SharemindDataSectionsVector rodataSections;
-    SharemindDataSectionsVector dataSections;
+    sharemind::DataSectionsVector rodataSections;
+    sharemind::DataSectionsVector dataSections;
     DataSectionSizesVector bssSectionSizes;
 
     SyscallBindingsVector bindings;

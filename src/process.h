@@ -62,8 +62,8 @@ struct SharemindProcess_ {
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_TAG_DECLARE_FIELDS;
 
-    SharemindDataSectionsVector dataSections;
-    SharemindDataSectionsVector bssSections;
+    sharemind::DataSectionsVector dataSections;
+    sharemind::DataSectionsVector bssSections;
 
     SharemindPdpiCache pdpiCache;
 

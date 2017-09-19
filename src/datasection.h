@@ -24,48 +24,68 @@
 #error including an internal header!
 #endif
 
-#include <cassert>
-#include <sharemind/extern_c.h>
+#include <cstring>
+#include <sharemind/AssertReturn.h>
 #include <sharemind/likely.h>
+#include <utility>
 #include "memoryslot.h"
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-typedef SharemindMemorySlot SharemindDataSection;
+struct DataSection: SharemindMemorySlot {
 
-static inline bool SharemindDataSection_init(
-        SharemindDataSection * const ds,
-        size_t const size,
-        SharemindMemorySlotSpecials * const specials)
-        __attribute__ ((nonnull(1), warn_unused_result));
-static inline bool SharemindDataSection_init(
-        SharemindDataSection * const ds,
-        size_t const size,
-        SharemindMemorySlotSpecials * const specials)
-{
-    assert(ds);
-    assert(specials);
+/* Types: */
 
-    if (size != 0u) {
-        ds->pData = malloc(size);
-        if (unlikely(!ds->pData))
-            return false;
-    } else {
-        ds->pData = nullptr;
+    enum ZeroInitT { ZeroInit };
+
+/* Methods: */
+
+    DataSection(DataSection && move) noexcept
+        : SharemindMemorySlot(std::move(move))
+    {
+        move.size = 0u;
+        move.pData = nullptr;
     }
-    ds->size = size;
-    ds->nrefs = 1u;
-    ds->specials = specials;
-    return true;
-}
 
-inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindDataSection_destroy(SharemindDataSection * const ds)
-{ free(ds->pData); }
+    DataSection(DataSection const &) = delete;
 
-SHAREMIND_EXTERN_C_END
+    DataSection(std::size_t const size,
+                SharemindMemorySlotSpecials * const specials)
+        : SharemindMemorySlot{
+            size ? ::operator new(size) : nullptr,
+            size,
+            1u,
+            assertReturn(specials)}
+    {}
+
+    DataSection(std::size_t const size,
+                SharemindMemorySlotSpecials * const specials,
+                ZeroInitT const)
+        : DataSection(size, specials)
+    { std::memset(this->pData, 0, size); }
+
+    DataSection(void const * const data,
+                std::size_t const size,
+                SharemindMemorySlotSpecials * const specials)
+        : DataSection(size, specials)
+    { std::memcpy(this->pData, data, size); }
+
+    ~DataSection() noexcept { ::operator delete(this->pData); }
+
+    DataSection & operator=(DataSection && move) noexcept {
+        ::operator delete(this->pData);
+        static_cast<SharemindMemorySlot &>(*this) = move;
+        move.pData = nullptr;
+        move.size = 0u;
+        return *this;
+    }
+
+    DataSection & operator=(DataSection const &) = delete;
+
+};
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_DATASECTION_H */
 
