@@ -38,8 +38,10 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               SharemindVmError * error,
                               char const ** errorStr)
 {
-    SharemindVm * const vm = (SharemindVm *) malloc(sizeof(SharemindVm));
-    if (unlikely(!vm)) {
+    SharemindVm * vm;
+    try {
+        vm = new SharemindVm();
+    } catch (...) {
         if (error)
             (*error) = SHAREMIND_VM_OUT_OF_MEMORY;
         if (errorStr)
@@ -74,7 +76,7 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
 
 SharemindVm_new_error_1:
 
-    free(vm);
+    delete vm;
 
 SharemindVm_new_error_0:
 
@@ -89,7 +91,7 @@ void SharemindVm_free(SharemindVm * vm) {
     SHAREMIND_TAG_DESTROY(vm);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
     SharemindProcessFacilityMap_destroy(&vm->processFacilityMap);
-    free(vm);
+    delete vm;
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindVm)
