@@ -244,11 +244,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     SharemindProcessFacilityMap_init(&p->facilityMap,
                                      &program->processFacilityMap);
 
-    SharemindMemoryInfo_init(&p->memPublicHeap);
-    SharemindMemoryInfo_init(&p->memPrivate);
-    SharemindMemoryInfo_init(&p->memReserved);
-    SharemindMemoryInfo_init(&p->memTotal);
-
     /* Initialize the frame stack */
     SharemindFrameStack_init(&p->frames);
 

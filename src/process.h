@@ -24,6 +24,8 @@
 #error including an internal header!
 #endif
 
+#include <cstddef>
+#include <limits>
 #include <sharemind/extern_c.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/recursive_locks.h>
@@ -34,7 +36,6 @@
 #include "framestack.h"
 #include "lasterror.h"
 #include "libvm.h"
-#include "memoryinfo.h"
 #include "memorymap.h"
 #include "pdpicache.h"
 #include "privatememorymap.h"
@@ -45,6 +46,17 @@
 SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindProcess_ {
+
+/* Types: */
+
+    struct MemoryInfo {
+        std::size_t usage = 0u;
+        std::size_t max = 0u;
+        std::size_t upperLimit = std::numeric_limits<std::size_t>::max();
+    };
+
+/* Fields: */
+
     SharemindProgram * program;
 
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
@@ -73,10 +85,10 @@ struct SharemindProcess_ {
     SharemindModuleApi0x1SyscallContext syscallContext;
     SharemindProcessFacilityMap facilityMap;
 
-    SharemindMemoryInfo memPublicHeap;
-    SharemindMemoryInfo memPrivate;
-    SharemindMemoryInfo memReserved;
-    SharemindMemoryInfo memTotal;
+    MemoryInfo memPublicHeap;
+    MemoryInfo memPrivate;
+    MemoryInfo memReserved;
+    MemoryInfo memTotal;
 
     SharemindFrameStack frames;
     SharemindStackFrame * globalFrame;
