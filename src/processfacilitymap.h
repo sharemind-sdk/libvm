@@ -181,28 +181,27 @@ SHAREMIND_EXTERN_C_END
         CN ## _lock(c); \
         SharemindProcessFacility const f = \
                 SharemindProcessFacilityMap_get(&c->fF ## Map, name); \
-        if (unlikely(f)) { \
+        if (likely(!f)) { \
+            void * const insertHint = \
+                    SharemindProcessFacilityMapInner_insertHint(\
+                            &c->fF ## Map.realMap, \
+                            name); \
+            assert(insertHint); \
+            SharemindProcessFacilityMapInner_value * const v = \
+                    SharemindProcessFacilityMapInner_insertAtHint( \
+                            &c->fF ## Map.realMap, \
+                            name, \
+                            insertHint); \
+            if (likely(v)) { \
+                v->value = facility; \
+            } else { \
+                r = SHAREMIND_VM_OUT_OF_MEMORY; \
+                CN ## _setErrorOom(c); \
+            } \
+        } else { \
             r = SHAREMIND_VM_FACILITY_ALREADY_EXISTS; \
             CN ## _setError(c, r, "Facility with this name already exists!"); \
-            goto CN ## _set ## FF ## _exit; \
         } \
-        void * const insertHint = \
-                SharemindProcessFacilityMapInner_insertHint(\
-                        &c->fF ## Map.realMap, \
-                        name); \
-        assert(insertHint); \
-        SharemindProcessFacilityMapInner_value * const v = \
-                SharemindProcessFacilityMapInner_insertAtHint( \
-                        &c->fF ## Map.realMap, \
-                        name, \
-                        insertHint); \
-        if (unlikely(!v)) { \
-            r = SHAREMIND_VM_OUT_OF_MEMORY; \
-            CN ## _setErrorOom(c); \
-            goto CN ## _set ## FF ## _exit; \
-        } \
-        v->value = facility; \
-    CN ## _set ## FF ## _exit: \
         CN ## _unlock(c); \
         return r; \
     } \
