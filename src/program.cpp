@@ -33,6 +33,57 @@
 #include "preparationblock.h"
 
 
+namespace {
+
+class SharemindProgramGuard {
+
+public: /* Methods: */
+
+    SharemindProgramGuard(SharemindProgramGuard &&) = delete;
+    SharemindProgramGuard(SharemindProgramGuard const &) = delete;
+
+    SharemindProgramGuard(SharemindProgram & program) noexcept
+        : m_program(program)
+    { SharemindProgram_lock(&program); }
+
+    ~SharemindProgramGuard() noexcept { SharemindProgram_unlock(&m_program); }
+
+    SharemindProgramGuard & operator=(SharemindProgramGuard &&) = delete;
+    SharemindProgramGuard & operator=(SharemindProgramGuard const &) = delete;
+
+private: /* Fields: */
+
+    SharemindProgram & m_program;
+
+};
+
+class ConstSharemindProgramGuard {
+
+public: /* Methods: */
+
+    ConstSharemindProgramGuard(ConstSharemindProgramGuard &&) = delete;
+    ConstSharemindProgramGuard(ConstSharemindProgramGuard const &) = delete;
+
+    ConstSharemindProgramGuard(SharemindProgram const & program) noexcept
+        : m_program(program)
+    { SharemindProgram_lockConst(&program); }
+
+    ~ConstSharemindProgramGuard() noexcept
+    { SharemindProgram_unlockConst(&m_program); }
+
+    ConstSharemindProgramGuard & operator=(ConstSharemindProgramGuard &&)
+            = delete;
+    ConstSharemindProgramGuard & operator=(ConstSharemindProgramGuard const &)
+            = delete;
+
+private: /* Fields: */
+
+    SharemindProgram const & m_program;
+
+};
+
+} // anonymous namespace
+
 /*******************************************************************************
  *  Forward declarations
 *******************************************************************************/
@@ -127,7 +178,6 @@ static size_t const extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
     do { \
         p->lastParsePosition = (pos); \
         SharemindProgram_setErrorOom((p)); \
-        SharemindProgram_unlock((p)); \
         return SHAREMIND_VM_OUT_OF_MEMORY; \
     } while (0)
 
@@ -136,7 +186,6 @@ static size_t const extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
     do { \
         p->lastParsePosition = (pos); \
         SharemindProgram_setErrorOor((p)); \
-        SharemindProgram_unlock((p)); \
         return SHAREMIND_VM_OUT_OF_MEMORY; \
     } while (0)
 #endif
@@ -145,7 +194,6 @@ static size_t const extraPadding[8] = { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
     do { \
         p->lastParsePosition = (pos); \
         SharemindProgram_setError((p), (e), nullptr); \
-        SharemindProgram_unlock((p)); \
         return (e); \
     } while (0)
 
@@ -242,7 +290,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     assert(p);
     assert(data);
 
-    SharemindProgram_lock(p);
+    SharemindProgramGuard const guard(*p);
     assert(!p->ready);
 
     if (dataSize < sizeof(SharemindExecutableCommonHeader))
@@ -424,7 +472,6 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
 
     SharemindVmError const e = SharemindProgram_endPrepare(p);
     p->lastParsePosition = nullptr;
-    SharemindProgram_unlock(p);
     return e;
 }
 
@@ -610,19 +657,15 @@ static SharemindVmError SharemindProgram_endPrepare(
 bool SharemindProgram_isReady(SharemindProgram const * p) {
     assert(p);
 
-    SharemindProgram_lockConst(p);
-    bool const r = p->ready;
-    SharemindProgram_unlockConst(p);
-    return r;
+    ConstSharemindProgramGuard const guard(*p);
+    return p->ready;
 }
 
 void const * SharemindProgram_lastParsePosition(SharemindProgram const * p) {
     assert(p);
 
-    SharemindProgram_lockConst(p);
-    void const * const pos = p->lastParsePosition;
-    SharemindProgram_unlockConst(p);
-    return pos;
+    ConstSharemindProgramGuard const guard(*p);
+    return p->lastParsePosition;
 }
 
 SharemindVmInstruction const * SharemindProgram_instruction(
@@ -631,32 +674,30 @@ SharemindVmInstruction const * SharemindProgram_instruction(
         size_t instructionIndex)
 {
     assert(p);
-    SharemindVmInstruction const * r = nullptr;
-    SharemindProgram_lockConst(p);
-    if (p->ready && codeSection < p->codeSections.size()) {
-        r = p->codeSections[codeSection].instructionDescriptionAtOffset(
-                instructionIndex);
+    {
+        ConstSharemindProgramGuard const guard(*p);
+        if (p->ready && codeSection < p->codeSections.size()) {
+            return p->codeSections[codeSection].instructionDescriptionAtOffset(
+                        instructionIndex);
+        }
     }
-    SharemindProgram_unlockConst(p);
-    return r;
+    return nullptr;
 }
 
 size_t SharemindProgram_pdCount(SharemindProgram const * program) {
     assert(program);
-    SharemindProgram_lockConst(program);
-    size_t const r = program->pdBindings.size();
-    SharemindProgram_unlockConst(program);
-    return r;
+    ConstSharemindProgramGuard const guard(*program);
+    return program->pdBindings.size();
 }
 
 SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
     assert(program);
-    SharemindProgram_lockConst(program);
-    SharemindPd * const r = i < program->pdBindings.size()
-                          ? program->pdBindings[i]
-                          : nullptr;
-    SharemindProgram_unlockConst(program);
-    return r;
+    {
+        ConstSharemindProgramGuard const guard(*program);
+        if (i < program->pdBindings.size())
+            return program->pdBindings[i];
+    }
+    return nullptr;
 }
 
 SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DEFINE(SharemindProgram,)
