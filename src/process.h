@@ -31,7 +31,6 @@
 #include <sharemind/recursive_locks.h>
 #include <sharemind/stringmap.h>
 #include <sharemind/tag.h>
-#include <stdbool.h>
 #include "datasectionsvector.h"
 #include "framestack.h"
 #include "lasterror.h"

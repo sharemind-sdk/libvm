@@ -24,8 +24,8 @@
 #error including an internal header!
 #endif
 
+#include <cstdint>
 #include <sharemind/extern_c.h>
-#include <stdint.h>
 #include "libvm.h"
 #include "innercommand.h"
 

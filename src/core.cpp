@@ -19,16 +19,15 @@
 
 #include "core.h"
 
+#include <cstddef>
+#ifdef SHAREMIND_DEBUG
+#include <cstdio>
+#endif
+#include <cstring>
 #include <limits.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/null.h>
 #include <sharemind/restrict.h>
-#ifdef SHAREMIND_DEBUG
-#include <stdio.h>
-#endif
-#include <string.h>
 #include "preparationblock.h"
 #include "process.h"
 #include "program.h"

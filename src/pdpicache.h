@@ -25,13 +25,13 @@
 #endif
 
 
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 #include <sharemind/extern_c.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/vector.h>
-#include <stddef.h>
-#include <stdlib.h>
 
 
 SHAREMIND_EXTERN_C_BEGIN

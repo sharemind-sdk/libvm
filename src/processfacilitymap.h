@@ -24,13 +24,12 @@
 #error including an internal header!
 #endif
 
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/stringmap.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
 #include "libvm.h"
 
 

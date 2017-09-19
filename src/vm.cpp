@@ -19,8 +19,8 @@
 
 #include "vm.h"
 
+#include <cstdlib>
 #include <sharemind/likely.h>
-#include <stdlib.h>
 
 
 /*******************************************************************************

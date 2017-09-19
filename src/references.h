@@ -24,12 +24,12 @@
 #error including an internal header!
 #endif
 
-#include <assert.h>
+#include <cassert>
+#include <cstdlib>
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/vector.h>
-#include <stdlib.h>
 #include "memoryslot.h"
 
 

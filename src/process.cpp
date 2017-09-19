@@ -19,11 +19,11 @@
 
 #include "process.h"
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include <limits.h>
 #include <sharemind/comma.h>
-#include <stdio.h>
-#include <string.h>
 #include "core.h"
 #include "rwdataspecials.h"
 #include "program.h"

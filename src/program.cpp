@@ -19,13 +19,13 @@
 
 #include "program.h"
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include <fcntl.h>
 #include <sharemind/libexecutable/libexecutable.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "core.h"

@@ -24,10 +24,9 @@
 #error including an internal header!
 #endif
 
-#include <assert.h>
+#include <cassert>
 #include <sharemind/extern_c.h>
 #include <sharemind/likely.h>
-#include <stdbool.h>
 #include "memoryslot.h"
 
 

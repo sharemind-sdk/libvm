@@ -25,10 +25,10 @@
 #endif
 
 
-#include <assert.h>
+#include <cassert>
+#include <cstdlib>
 #include <sharemind/codeblock.h>
 #include <sharemind/extern_c.h>
-#include <stdlib.h>
 #include <vector>
 #include "references.h"
 

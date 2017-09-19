@@ -25,7 +25,7 @@
 #endif
 
 
-#include <assert.h>
+#include <cassert>
 #include <sharemind/comma.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/libexecutable/libexecutable_0x0.h>

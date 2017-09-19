@@ -25,12 +25,11 @@
 #endif
 
 
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <sharemind/extern_c.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
 
 
 SHAREMIND_EXTERN_C_BEGIN

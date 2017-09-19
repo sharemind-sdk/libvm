@@ -24,11 +24,11 @@
 #error including an internal header!
 #endif
 
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 #include <sharemind/fnv.h>
 #include <sharemind/map.h>
-#include <stddef.h>
-#include <stdlib.h>
 
 
 SHAREMIND_MAP_DECLARE_BODY(SharemindPrivateMemoryMap, void *, size_t)

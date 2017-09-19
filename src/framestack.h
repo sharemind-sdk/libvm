@@ -24,10 +24,11 @@
 #error including an internal header!
 #endif
 
+#include <cstdlib>
 #include <sharemind/extern_c.h>
 #include <sharemind/stack.h>
-#include <stdlib.h>
 #include "stackframe.h"
+
 
 SHAREMIND_EXTERN_C_BEGIN
 

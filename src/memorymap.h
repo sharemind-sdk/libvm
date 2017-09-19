@@ -25,7 +25,7 @@
 #endif
 
 
-#include <assert.h>
+#include <cassert>
 #include <sharemind/extern_c.h>
 #include <sharemind/map.h>
 #include "memoryslot.h"
