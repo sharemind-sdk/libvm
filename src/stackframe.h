@@ -28,16 +28,22 @@
 #include <assert.h>
 #include <sharemind/codeblock.h>
 #include <sharemind/extern_c.h>
-#include <sharemind/vector.h>
 #include <stdlib.h>
+#include <vector>
 #include "references.h"
-#include "registervector.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN
 
 struct SharemindStackFrame_ {
-    SharemindRegisterVector stack;
+
+/* Types: */
+
+    using RegisterVector = std::vector<::SharemindCodeBlock>;
+
+/* Fields: */
+
+    RegisterVector stack;
     SharemindReferenceVector refstack;
     SharemindCReferenceVector crefstack;
     struct SharemindStackFrame_ * prev;
@@ -55,7 +61,7 @@ static inline void SharemindStackFrame_init(
         SharemindStackFrame * const prev)
 {
     assert(f);
-    SharemindRegisterVector_init(&f->stack);
+    new (&f->stack) SharemindStackFrame::RegisterVector();
     SharemindReferenceVector_init(&f->refstack);
     SharemindCReferenceVector_init(&f->crefstack);
     f->prev = prev;
@@ -65,7 +71,7 @@ inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
         __attribute__ ((nonnull(1), visibility("internal")));
 inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
     assert(f);
-    SharemindRegisterVector_destroy(&f->stack);
+    f->stack.SharemindStackFrame::RegisterVector::~RegisterVector();
     SharemindReferenceVector_destroy(&f->refstack);
     SharemindCReferenceVector_destroy(&f->crefstack);
 }

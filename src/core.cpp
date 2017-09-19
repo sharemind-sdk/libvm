@@ -32,7 +32,6 @@
 #include "preparationblock.h"
 #include "process.h"
 #include "program.h"
-#include "registervector.h"
 
 
 typedef sf_float32 SharemindFloat32;
@@ -366,6 +365,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SHAREMIND_MI_DO_EXCEPT((e)); \
     } else (void) 0
 
+#define SHAREMIND_MI_DO_OOM \
+    SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY)
+
 #define SHAREMIND_MI_TRY_OOM(e) \
     SHAREMIND_MI_TRY_EXCEPT((e),SHAREMIND_VM_PROCESS_OUT_OF_MEMORY)
 
@@ -385,10 +387,11 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_PUSH(v) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        SharemindCodeBlock * reg = \
-            SharemindRegisterVector_push(&p->nextFrame->stack); \
-        SHAREMIND_MI_TRY_OOM(reg); \
-        *reg = (v); \
+        try { \
+            p->nextFrame->stack.emplace_back(v); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
+        } \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_BLOCK_(prefix,value,b,bOffset,rSize) \
@@ -471,11 +474,17 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
     SHAREMIND_MI_PUSHREF_MEM_(CRef,crefstack, (slot), (o), (s))
 
 #define SHAREMIND_MI_RESIZE_STACK(size) \
-    SHAREMIND_MI_TRY_OOM(SharemindRegisterVector_resize(thisStack, (size)))
+    do { \
+        try { \
+            thisStack->resize(size, SharemindCodeBlock{0}); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
+        } \
+    } while (false)
 
 #define SHAREMIND_MI_CLEAR_STACK \
     do { \
-        SharemindRegisterVector_force_resize(&p->nextFrame->stack, 0u); \
+        p->nextFrame->stack.clear(); \
         SharemindReferenceVector_destroy(&p->nextFrame->refstack); \
         SharemindReferenceVector_init(&p->nextFrame->refstack); \
         SharemindCReferenceVector_destroy(&p->nextFrame->crefstack); \
@@ -546,7 +555,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             cref = nextFrame->crefstack.data; \
         } \
         SharemindModuleApi0x1Error const st = \
-                (*rc)(nextFrame->stack.data, nextFrame->stack.size, \
+                (*rc)(nextFrame->stack.data(), nextFrame->stack.size(), \
                         ref, cref, \
                         (r), &p->syscallContext); \
         if (hasRefs) \
@@ -595,9 +604,9 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_GET_(d,i,source,exception,isconst) \
     do { \
-        (d) = SharemindRegisterVector_get_ ## isconst ## pointer((source), \
-                                                                 (i)); \
-        SHAREMIND_MI_TRY_EXCEPT((d),(exception)); \
+        if ((i) >= (source)->size()) \
+            SHAREMIND_MI_DO_EXCEPT((exception)); \
+        (d) = &(*(source))[(i)]; \
     } while ((0))
 
 #define SHAREMIND_MI_GET_stack(d,i) \
@@ -841,8 +850,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         auto const codeStart = \
             p->program->codeSections[p->currentCodeSectionIndex].constData();\
         SharemindCodeBlock const * ip = &codeStart[p->currentIp]; \
-        SharemindRegisterVector * const globalStack = &p->globalFrame->stack; \
-        SharemindRegisterVector * thisStack = &p->thisFrame->stack; \
+        auto * const globalStack = &p->globalFrame->stack; \
+        auto * thisStack = &p->thisFrame->stack; \
         SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack; \
         SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack; \
         (void) codeStart; (void) ip; (void) globalStack; \
@@ -933,8 +942,8 @@ SharemindVmError sharemind_vm_run(
 
 #ifndef SHAREMIND_FAST_BUILD
         SharemindCodeBlock const * ip = &codeStart[p->currentIp];
-        SharemindRegisterVector * const globalStack = &p->globalFrame->stack;
-        SharemindRegisterVector * thisStack = &p->thisFrame->stack;
+        auto * const globalStack = &p->globalFrame->stack;
+        auto * thisStack = &p->thisFrame->stack;
         SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;
         SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack;
 #endif
