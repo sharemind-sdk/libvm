@@ -86,7 +86,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 
     SharemindDataSectionsVector_init(&p->dataSections);
     SharemindDataSectionsVector_init(&p->rodataSections);
-    SharemindSyscallBindingsVector_init(&p->bindings);
     SharemindPdBindings_init(&p->pdBindings);
 
     if (!SHAREMIND_RECURSIVE_LOCK_INIT(p)) {
@@ -107,7 +106,6 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
 SharemindProgram_new_error_1:
 
     SharemindPdBindings_destroy(&p->pdBindings);
-    SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     delete p;
@@ -122,7 +120,6 @@ void SharemindProgram_free(SharemindProgram * const p) {
     assert(p);
     SharemindDataSectionsVector_destroy(&p->dataSections);
     SharemindDataSectionsVector_destroy(&p->rodataSections);
-    SharemindSyscallBindingsVector_destroy(&p->bindings);
     SharemindPdBindings_destroy(&p->pdBindings);
 
     SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
@@ -374,11 +371,11 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                         RETURN_SPLR(SHAREMIND_VM_PREPARE_UNDEFINED_BIND,
                                     pos,
                                     p);
-                    SharemindSyscallWrapper * const binding =
-                            SharemindSyscallBindingsVector_push(&p->bindings);
-                    if (!binding)
+                    try {
+                        p->bindings.emplace_back(w);
+                    } catch (...) {
                         RETURN_SPLR_OOM(pos, p);
-                    (*binding) = w;)
+                    })
 
                 LOAD_BINDSECTION_CASE(PDBIND,
                     if (((char const *) pos)[0u] == '\0')
@@ -504,10 +501,10 @@ static SharemindVmError SharemindProgram_addCodeSection(
 #define SHAREMIND_PREPARE_SYSCALL(argNum) \
     do { \
         SHAREMIND_PREPARE_CHECK_OR_ERROR( \
-            c[(*i)+(argNum)].uint64[0] < p->bindings.size, \
+            c[(*i)+(argNum)].uint64[0] < p->bindings.size(), \
             SHAREMIND_VM_PREPARE_ERROR_INVALID_ARGUMENTS); \
         c[(*i)+(argNum)].cp[0] = \
-                &p->bindings.data[(size_t) c[(*i)+(argNum)].uint64[0]]; \
+                &p->bindings[(size_t) c[(*i)+(argNum)].uint64[0]]; \
     } while ((0))
 
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,code) \

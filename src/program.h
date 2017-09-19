@@ -38,7 +38,6 @@
 #include "lasterror.h"
 #include "pdbindingsvector.h"
 #include "processfacilitymap.h"
-#include "syscallbindingsvector.h"
 #include "vm.h"
 
 
@@ -56,6 +55,7 @@ struct SharemindProgram_ {
     using DataSectionSizesVector =
             std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
     using CodeSectionsVector = std::vector<sharemind::CodeSection>;
+    using SyscallBindingsVector = std::vector<SharemindSyscallWrapper>;
 
 /* Fields: */
 
@@ -64,7 +64,7 @@ struct SharemindProgram_ {
     SharemindDataSectionsVector dataSections;
     DataSectionSizesVector bssSectionSizes;
 
-    SharemindSyscallBindingsVector bindings;
+    SyscallBindingsVector bindings;
     SharemindPdBindings pdBindings;
 
     SharemindProcessFacilityMap processFacilityMap;

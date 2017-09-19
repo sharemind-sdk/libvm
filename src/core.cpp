@@ -573,10 +573,10 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_CHECK_SYSCALL(a,r,nargs) \
     do { \
-        SHAREMIND_MI_TRY_EXCEPT((a)->uint64[0] < p->program->bindings.size, \
+        SHAREMIND_MI_TRY_EXCEPT((a)->uint64[0] < p->program->bindings.size(), \
                                 SHAREMIND_VM_PROCESS_INVALID_INDEX_SYSCALL); \
         SHAREMIND_MI_SYSCALL( \
-            &p->program->bindings.data[(size_t) (a)->uint64[0]], \
+            &p->program->bindings[(size_t) (a)->uint64[0]], \
             r, \
             nargs); \
     } while ((0))
