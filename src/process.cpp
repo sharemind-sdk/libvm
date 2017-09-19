@@ -86,7 +86,6 @@ static void * sharemind_processFacility(
  *  SharemindProcess:
 *******************************************************************************/
 
-static inline void SharemindProcess_destroy(SharemindProcess * p);
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p);
 static inline void SharemindProcess_stop_pdpis(SharemindProcess * p);
 
@@ -94,9 +93,10 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     assert(program);
     assert(SharemindProgram_isReady(program));
 
-    SharemindProcess * const p =
-            (SharemindProcess *) malloc(sizeof(SharemindProcess));
-    if (unlikely(!p)) {
+    SharemindProcess * p;
+    try {
+        p = new SharemindProcess();
+    } catch (...) {
         SharemindProgram_setErrorOom(program);
         goto SharemindProcess_new_fail_0;
     }
@@ -298,14 +298,14 @@ SharemindProgram_newProcess_fail_data_sections:
 SharemindProgram_newProcess_fail_mutex:
 
     SharemindProgram_unlock(program);
-    free(p);
+    delete p;
 
 SharemindProcess_new_fail_0:
 
     return nullptr;
 }
 
-static inline void SharemindProcess_destroy(SharemindProcess * p) {
+void SharemindProcess_free(SharemindProcess * p) {
     assert(p);
     assert(p->state != SHAREMIND_VM_PROCESS_RUNNING);
     if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
@@ -321,12 +321,7 @@ static inline void SharemindProcess_destroy(SharemindProcess * p) {
 
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
-}
-
-void SharemindProcess_free(SharemindProcess * p) {
-    assert(p);
-    SharemindProcess_destroy(p);
-    free(p);
+    delete p;
 }
 
 SharemindProgram * SharemindProcess_program(SharemindProcess const * const p) {
