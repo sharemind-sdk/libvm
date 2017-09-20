@@ -24,8 +24,6 @@
 #include <limits>
 #include <new>
 #include <sharemind/DebugOnly.h>
-#include <utility>
-#include <tuple>
 
 
 namespace sharemind {
@@ -53,10 +51,7 @@ void CodeSection::registerInstruction(
     assert(!m_instrmap[offset]);
     m_instrmap[offset] = true;
     SHAREMIND_DEBUG_ONLY(auto const r =)
-            m_blockmap.emplace(
-                std::piecewise_construct,
-                std::forward_as_tuple(instructionBlockIndex),
-                std::forward_as_tuple(description));
+            m_blockmap.emplace(instructionBlockIndex, description);
     assert(r.second);
 }
 
