@@ -26,7 +26,7 @@
 
 #include <memory>
 #include <vector>
-#include "datasection.h"
+#include "DataSection.h"
 
 
 namespace sharemind {

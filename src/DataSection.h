@@ -24,9 +24,9 @@
 #error including an internal header!
 #endif
 
-#include <cstring>
-#include <utility>
 #include "memoryslot.h"
+
+#include <cstddef>
 
 
 namespace sharemind {
@@ -35,12 +35,14 @@ class DataSection: public MemorySlot {
 
 public: /* Methods: */
 
-    bool ref() noexcept final override { return true; }
-    void deref() noexcept final override {}
-    bool canFree() const noexcept final override { return false; }
+    ~DataSection() noexcept override;
 
-    void * data() const noexcept final override { return m_data; }
-    std::size_t size() const noexcept final override { return m_size; }
+    bool ref() noexcept final override;
+    void deref() noexcept final override;
+    bool canFree() const noexcept final override;
+
+    void * data() const noexcept final override;
+    std::size_t size() const noexcept final override;
 
 protected: /* Methods: */
 
@@ -60,11 +62,8 @@ class BssDataSection: public DataSection {
 
 public: /* Methods: */
 
-    BssDataSection(std::size_t const size)
-        : DataSection(::operator new(size), size)
-    { std::memset(data(), 0, size); }
-
-    ~BssDataSection() noexcept override { ::operator delete(data()); }
+    BssDataSection(std::size_t const size);
+    ~BssDataSection() noexcept override;
 
 };
 
@@ -72,13 +71,11 @@ class RegularDataSection: public DataSection {
 
 public: /* Methods: */
 
-    ~RegularDataSection() noexcept override { ::operator delete(data()); }
+    ~RegularDataSection() noexcept override;
 
 protected: /* Methods: */
 
-    RegularDataSection(void const * const data, std::size_t const size)
-        : DataSection(::operator new(size), size)
-    { std::memcpy(this->data(), data, size); }
+    RegularDataSection(void const * const data, std::size_t const size);
 
 };
 
@@ -86,9 +83,8 @@ class RwDataSection: public RegularDataSection {
 
 public: /* Methods: */
 
-    RwDataSection(void const * const data, std::size_t const size)
-        : RegularDataSection(data, size)
-    {}
+    RwDataSection(void const * const data, std::size_t const size);
+    ~RwDataSection() noexcept override;
 
 };
 
@@ -96,11 +92,10 @@ class RoDataSection: public RegularDataSection {
 
 public: /* Methods: */
 
-    RoDataSection(void const * const data, std::size_t const size)
-        : RegularDataSection(data, size)
-    {}
+    RoDataSection(void const * const data, std::size_t const size);
+    ~RoDataSection() noexcept override;
 
-    bool isWritable() const noexcept final override { return false; }
+    bool isWritable() const noexcept final override;
 
 };
 

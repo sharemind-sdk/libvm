@@ -30,7 +30,7 @@
 #include <memory>
 #include <sharemind/likely.h>
 #include <unordered_map>
-#include "datasection.h"
+#include "DataSection.h"
 #include "libvm.h"
 #include "memoryslot.h"
 
