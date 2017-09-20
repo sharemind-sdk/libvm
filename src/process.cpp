@@ -224,16 +224,15 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
                                      &program->processFacilityMap);
 
     /* Initialize the frame stack */
-    SharemindFrameStack_init(&p->frames);
-
-    p->globalFrame = SharemindFrameStack_push(&p->frames);
-    if (unlikely(!p->globalFrame)) {
+    try {
+        p->frames.emplace_back();
+    } catch (...) {
         SharemindProgram_setErrorOom(program);
         goto SharemindProgram_newProcess_fail_framestack;
     }
 
     /* Initialize global frame: */
-    SharemindStackFrame_init(p->globalFrame, nullptr);
+    p->globalFrame = &p->frames.back();
     p->globalFrame->returnAddr = nullptr; /* Triggers halt on return. */
     /* p->globalFrame->returnValueAddr = &(p->returnValue); is not needed. */
     p->thisFrame = p->globalFrame;
@@ -247,7 +246,7 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
 SharemindProgram_newProcess_fail_framestack:
 
-    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
+    p->frames.clear();
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
 
 SharemindProgram_newProcess_fail_memslots:
@@ -285,7 +284,7 @@ void SharemindProcess_free(SharemindProcess * p) {
     if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
         SharemindProcess_stop_pdpis(p);
 
-    SharemindFrameStack_destroy_with(&p->frames, &SharemindStackFrame_destroy);
+    p->frames.clear();
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
     SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindMemoryMap_destroy(&p->memoryMap);

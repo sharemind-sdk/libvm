@@ -381,9 +381,12 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME \
     if (!SHAREMIND_MI_HAS_STACK) { \
-        p->nextFrame = SharemindFrameStack_push(&p->frames); \
-        SHAREMIND_MI_TRY_OOM(p->nextFrame); \
-        SharemindStackFrame_init(p->nextFrame, p->thisFrame); \
+        try { \
+            p->frames.emplace_back(); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
+        } \
+        p->nextFrame = &p->frames.back(); \
     } else (void)0
 
 #define SHAREMIND_MI_PUSH(v) \
@@ -534,7 +537,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_SYSCALL(sc,r,nargs) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        SharemindStackFrame * nextFrame = p->nextFrame; \
+        auto * nextFrame = p->nextFrame; \
         nextFrame->returnValueAddr = (r); \
         SharemindSyscallCallable const rc = \
             ((SharemindSyscallWrapper const *) sc)->callable; \
@@ -572,8 +575,7 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
             nextFrame->refstack.pop_back(); \
         if (hasCRefs) \
             nextFrame->crefstack.pop_back(); \
-        SharemindStackFrame_destroy(nextFrame); \
-        SharemindFrameStack_pop(&p->frames); \
+        p->frames.pop_back(); \
         p->nextFrame = nullptr; \
         if (st != SHAREMIND_MODULE_API_0x1_OK) { \
             p->syscallException = st; \
@@ -595,17 +597,15 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_RETURN(r) \
     do { \
         if (unlikely(p->nextFrame)) { \
-            SharemindStackFrame_destroy(p->nextFrame); \
-            SharemindFrameStack_pop(&p->frames); \
+            p->frames.pop_back(); \
             p->nextFrame = nullptr; \
         } \
         if (likely(p->thisFrame->returnAddr)) { \
             if (p->thisFrame->returnValueAddr) \
                 *p->thisFrame->returnValueAddr = (r); \
             ip = p->thisFrame->returnAddr; \
-            SharemindStackFrame_destroy(p->thisFrame); \
-            p->thisFrame = p->thisFrame->prev; \
-            SharemindFrameStack_pop(&p->frames); \
+            p->frames.pop_back(); \
+            p->thisFrame = &p->frames.back(); \
             SHAREMIND_CALL_RETURN_DISPATCH(ip); \
         } else { \
             SHAREMIND_MI_HALT((r)); \

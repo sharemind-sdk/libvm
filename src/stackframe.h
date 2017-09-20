@@ -24,18 +24,14 @@
 #error including an internal header!
 #endif
 
-
-#include <cassert>
-#include <cstdlib>
 #include <sharemind/codeblock.h>
-#include <sharemind/extern_c.h>
 #include <vector>
 #include "references.h"
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-struct SharemindStackFrame_ {
+struct StackFrame {
 
 /* Types: */
 
@@ -46,36 +42,11 @@ struct SharemindStackFrame_ {
     RegisterVector stack;
     sharemind::ReferenceVector refstack;
     sharemind::CReferenceVector crefstack;
-    struct SharemindStackFrame_ * prev;
 
     SharemindCodeBlock const * returnAddr;
     SharemindCodeBlock * returnValueAddr;
 };
-typedef struct SharemindStackFrame_ SharemindStackFrame;
 
-static inline void SharemindStackFrame_init(
-        SharemindStackFrame * const f,
-        SharemindStackFrame * const prev) __attribute__ ((nonnull(1)));
-static inline void SharemindStackFrame_init(
-        SharemindStackFrame * const f,
-        SharemindStackFrame * const prev)
-{
-    assert(f);
-    new (&f->stack) SharemindStackFrame::RegisterVector();
-    new (&f->refstack) sharemind::ReferenceVector();
-    new (&f->crefstack) sharemind::CReferenceVector();
-    f->prev = prev;
-}
-
-inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
-    assert(f);
-    f->stack.SharemindStackFrame::RegisterVector::~RegisterVector();
-    f->refstack.sharemind::ReferenceVector::~ReferenceVector();
-    f->crefstack.sharemind::CReferenceVector::~CReferenceVector();
-}
-
-SHAREMIND_EXTERN_C_END
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_STACKFRAME_H */

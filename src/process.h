@@ -26,13 +26,13 @@
 
 #include <cstddef>
 #include <limits>
+#include <list>
 #include <sharemind/extern_c.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/stringmap.h>
 #include <sharemind/tag.h>
 #include "datasectionsvector.h"
-#include "framestack.h"
 #include "lasterror.h"
 #include "libvm.h"
 #include "memorymap.h"
@@ -89,10 +89,10 @@ struct SharemindProcess_ {
     MemoryInfo memReserved;
     MemoryInfo memTotal;
 
-    SharemindFrameStack frames;
-    SharemindStackFrame * globalFrame;
-    SharemindStackFrame * nextFrame;
-    SharemindStackFrame * thisFrame;
+    std::list<sharemind::StackFrame> frames;
+    sharemind::StackFrame * globalFrame;
+    sharemind::StackFrame * nextFrame;
+    sharemind::StackFrame * thisFrame;
 
     SharemindVmProcessState state;
 };
