@@ -24,13 +24,8 @@
 #error including an internal header!
 #endif
 
-#include <algorithm>
-#include <cassert>
 #include <cstddef>
-#include <limits>
-#include <new>
 #include <sharemind/codeblock.h>
-#include <sharemind/DebugOnly.h>
 #include <sharemind/libvmi/instr.h>
 #include <unordered_map>
 #include <vector>
@@ -46,41 +41,21 @@ public: /* Methods: */
     CodeSection(CodeSection const &) = delete;
 
     CodeSection(SharemindCodeBlock const * const code,
-                std::size_t const codeSize)
-    {
-        if (codeSize == std::numeric_limits<std::size_t>::max())
-            throw std::bad_alloc();
-        m_instrmap.resize(codeSize, false);
-        m_data.resize(codeSize + 1u);
-        std::copy(code, code + codeSize, m_data.data());
-    }
+                std::size_t const codeSize);
+
+    ~CodeSection() noexcept;
 
     CodeSection & operator=(CodeSection &&) = default;
     CodeSection & operator=(CodeSection const &) = delete;
 
-    bool isInstructionAtOffset(std::size_t const offset) const noexcept
-    { return (offset < m_instrmap.size()) && m_instrmap[offset]; }
+    bool isInstructionAtOffset(std::size_t const offset) const noexcept;
 
     void registerInstruction(std::size_t const offset,
                              std::size_t const instructionBlockIndex,
-                             SharemindVmInstruction const * const description)
-    {
-        assert(!m_instrmap[offset]);
-        m_instrmap[offset] = true;
-        SHAREMIND_DEBUG_ONLY(auto const r =)
-                m_blockmap.emplace(
-                    std::piecewise_construct,
-                    std::forward_as_tuple(instructionBlockIndex),
-                    std::forward_as_tuple(description));
-        assert(r.second);
-    }
+                             SharemindVmInstruction const * const description);
 
     SharemindVmInstruction const * instructionDescriptionAtOffset(
-            std::size_t const offset) const noexcept
-    {
-        auto const it(m_blockmap.find(offset));
-        return (it != m_blockmap.end()) ? it->second : nullptr;
-    }
+            std::size_t const offset) const noexcept;
 
     SharemindCodeBlock * data() noexcept { return m_data.data(); }
 

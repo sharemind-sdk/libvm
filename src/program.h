@@ -34,7 +34,7 @@
 #include <sharemind/tag.h>
 #include <sharemind/vector.h>
 #include <vector>
-#include "codesection.h"
+#include "CodeSection.h"
 #include "datasectionsvector.h"
 #include "lasterror.h"
 #include "processfacilitymap.h"
