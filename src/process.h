@@ -31,7 +31,6 @@
 #include <sharemind/extern_c.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/recursive_locks.h>
-#include <sharemind/stringmap.h>
 #include <sharemind/tag.h>
 #include <unordered_map>
 #include "datasectionsvector.h"
