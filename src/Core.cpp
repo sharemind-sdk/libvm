@@ -34,8 +34,8 @@
 #include "Program.h"
 
 
-typedef sf_float32 SharemindFloat32;
-typedef sf_float64 SharemindFloat64;
+using SharemindFloat32 = sf_float32;
+using SharemindFloat64 = sf_float64;
 
 #define SHAREMIND_T_CodeBlock SharemindCodeBlock
 #define SHAREMIND_T_CReference sharemind::CReference
@@ -287,7 +287,7 @@ typedef sf_float64 SharemindFloat64;
 #define SHAREMIND_DO_HALT   do { goto halt;   } while ((0))
 #define SHAREMIND_DO_TRAP   do { goto trap;   } while ((0))
 #else
-typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
+enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT };
 #define SHAREMIND_DO_EXCEPT do { return HC_EXCEPT; } while ((0))
 #define SHAREMIND_DO_HALT   do { return HC_HALT;   } while ((0))
 #define SHAREMIND_DO_TRAP   do { return HC_TRAP;   } while ((0))
@@ -911,17 +911,17 @@ SharemindVmError sharemind_vm_run(
         assert(!p);
 
 #ifndef SHAREMIND_FAST_BUILD
-        typedef void * ImplLabelType;
+        using ImplLabelType = void *;
 #define SHAREMIND_CBPTR p
-        typedef void * CbPtrType;
+        using CbPtrType = void *;
 #define SHAREMIND_IMPL_LABEL(name) && label_impl_ ## name ,
 #include <sharemind/m4/static_label_structs.h>
         static ImplLabelType const system_labels[] =
                 { && eof, && except, && halt, && trap };
 #else
-        typedef HaltCode (* ImplLabelType)(SharemindProcess * const p);
+        using ImplLabelType = HaltCode (*)(SharemindProcess * const p);
 #define SHAREMIND_CBPTR fp
-        typedef void (* CbPtrType)(void);
+        using CbPtrType = void (*)(void);
 #define SHAREMIND_IMPL_LABEL(name) & func_impl_ ## name ,
 #include <sharemind/m4/static_label_structs.h>
         static ImplLabelType const system_labels[] = {&_func_impl_eof,
@@ -980,7 +980,7 @@ SharemindVmError sharemind_vm_run(
         {
             HaltCode haltCode;
             do {
-                typedef HaltCode (* F)(SharemindProcess * const);
+                using F = HaltCode (*)(SharemindProcess * const);
                 haltCode = (*((F) (codeStart[p->currentIp].fp[0])))(p);
             } while (haltCode == HC_NEXT);
             SHAREMIND_STATIC_ASSERT(sizeof(haltCode) <= sizeof(int));

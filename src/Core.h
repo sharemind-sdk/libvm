@@ -43,10 +43,10 @@ enum SharemindInnerCommand {
     SHAREMIND_I_CONTINUE
 };
 
-typedef SharemindVmError (*SharemindCoreVmRunner)(
-        SharemindProcess * p,
-        SharemindInnerCommand const c,
-        void * d);
+using SharemindCoreVmRunner =
+        SharemindVmError (*)(SharemindProcess * p,
+                             SharemindInnerCommand const c,
+                             void * d);
 
 SharemindVmError sharemind_vm_run(
         SharemindProcess * p,
