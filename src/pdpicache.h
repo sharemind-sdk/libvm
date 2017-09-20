@@ -27,113 +27,182 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdlib>
-#include <sharemind/extern_c.h>
+#include <sharemind/Concat.h>
+#include <sharemind/Exception.h>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <sharemind/MakeUnique.h>
 #include <sharemind/module-apis/api_0x1.h>
-#include <sharemind/vector.h>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-typedef struct {
-    SharemindPdpi * pdpi;
-    SharemindModuleApi0x1PdpiInfo info;
-} SharemindPdpiCacheItem;
+class PdpiCache {
 
-static inline bool SharemindPdpiCacheItem_init(
-        SharemindPdpiCacheItem * const ci,
-        SharemindPd * const pd)
-        __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline bool SharemindPdpiCacheItem_init(
-        SharemindPdpiCacheItem * const ci,
-        SharemindPd * const pd)
-{
-    assert(ci);
-    assert(pd);
+public: /* Types: */
 
-    ci->pdpi = SharemindPd_newPdpi(pd);
-    if (!ci->pdpi)
-        return false;
+    SHAREMIND_DEFINE_EXCEPTION(std::exception, Exception);
+    SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING(Exception,
+                                               PdpiStartupExceptionBase);
+    class PdpiStartupException: public PdpiStartupExceptionBase {
 
-    ci->info.pdpiHandle = nullptr;
-    ci->info.pdHandle = SharemindPd_handle(pd);
-    SharemindPdk * pdk = SharemindPd_pdk(pd);
-    assert(pdk);
-    ci->info.pdkIndex = SharemindPdk_index(pdk);
-    SharemindModule * module = SharemindPdk_module(pdk);
-    assert(module);
-    ci->info.moduleHandle = SharemindModule_handle(module);
-    return true;
-}
+    public: /* Methods: */
 
-static inline bool SharemindPdpiCacheItem_start(
-        SharemindPdpiCacheItem * const ci)
-        __attribute__ ((nonnull(1), warn_unused_result));
-static inline bool SharemindPdpiCacheItem_start(
-        SharemindPdpiCacheItem * const ci)
+        PdpiStartupException(SharemindPd * const pd)
+            : PdpiStartupExceptionBase(concat("Failed to start PDPI for PD \"",
+                                              ::SharemindPd_name(pd), "\"!"))
+        {}
 
-{
-    assert(ci);
-    assert(!ci->info.pdpiHandle);
-    bool const r = (SharemindPdpi_start(ci->pdpi) == SHAREMIND_MODULE_API_OK);
-    if (r)
-        ci->info.pdpiHandle = SharemindPdpi_handle(ci->pdpi);
-    return r;
-}
+    };
 
-static inline void SharemindPdpiCacheItem_stop(
-        SharemindPdpiCacheItem * const ci) __attribute__ ((nonnull(1)));
-static inline void SharemindPdpiCacheItem_stop(
-        SharemindPdpiCacheItem * const ci)
-{
-    assert(ci);
-    assert(ci->info.pdpiHandle);
-    SharemindPdpi_stop(ci->pdpi);
-    ci->info.pdpiHandle = nullptr;
-}
+private: /* Types: */
 
-inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * const ci)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindPdpiCacheItem_destroy(SharemindPdpiCacheItem * const ci) {
-    assert(ci);
-    assert(ci->pdpi);
-    SharemindPdpi_free(ci->pdpi);
-}
+    class Item {
 
-// static inline
-SHAREMIND_VECTOR_DECLARE_BODY(SharemindPdpiCache, SharemindPdpiCacheItem)
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindPdpiCache,)
-SHAREMIND_VECTOR_DECLARE_INIT(SharemindPdpiCache,
-                              inline,
-                              visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_INIT(SharemindPdpiCache, inline)
-SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindPdpiCache,
-                                 inline,
-                                 visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindPdpiCache,
-                                     inline,,
-                                     free,
-                                     SharemindPdpiCacheItem_destroy(value);)
-SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(SharemindPdpiCache,
-                                           inline,
-                                           visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindPdpiCache, inline)
-SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindPdpiCache,
-                                      inline,
-                                      visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindPdpiCache,
-                                     inline,
-                                     realloc)
-SHAREMIND_VECTOR_DECLARE_PUSH(SharemindPdpiCache,
-                              inline,
-                              visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindPdpiCache, inline)
-SHAREMIND_VECTOR_DECLARE_POP(SharemindPdpiCache,
-                             inline,
-                             visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_POP(SharemindPdpiCache, inline)
+    public: /* Methods: */
 
-SHAREMIND_EXTERN_C_END
+        Item(SharemindPd * const pd)
+            : m_startException(pd)
+        {
+            assert(pd);
+
+            m_pdpi = ::SharemindPd_newPdpi(pd);
+            if (!m_pdpi)
+                throw std::bad_alloc();
+
+            m_info.pdpiHandle = nullptr;
+            m_info.pdHandle = ::SharemindPd_handle(pd);
+            SharemindPdk * pdk = ::SharemindPd_pdk(pd);
+            assert(pdk);
+            m_info.pdkIndex = ::SharemindPdk_index(pdk);
+            SharemindModule * module = ::SharemindPdk_module(pdk);
+            assert(module);
+            m_info.moduleHandle = ::SharemindModule_handle(module);
+        }
+
+        ~Item() noexcept {
+            assert(m_pdpi);
+            ::SharemindPdpi_free(m_pdpi);
+        }
+
+        SharemindPdpi * pdpi() const noexcept { return m_pdpi; }
+
+        SharemindModuleApi0x1PdpiInfo const & info() const noexcept
+        { return m_info; }
+
+        void start() {
+            assert(!m_info.pdpiHandle);
+            bool const r =
+                    (::SharemindPdpi_start(m_pdpi) == SHAREMIND_MODULE_API_OK);
+            if (!r)
+                throw m_startException;
+            m_info.pdpiHandle = ::SharemindPdpi_handle(m_pdpi);
+        }
+
+        void stop() noexcept {
+            assert(m_info.pdpiHandle);
+            ::SharemindPdpi_stop(m_pdpi);
+            m_info.pdpiHandle = nullptr;
+        }
+
+    private: /* Fields: */
+
+        PdpiStartupException m_startException;
+        SharemindPdpi * m_pdpi;
+        SharemindModuleApi0x1PdpiInfo m_info;
+
+    };
+
+    using ItemStorage =
+            typename std::aligned_storage<sizeof(Item), alignof(Item)>::type;
+    using Storage = std::unique_ptr<ItemStorage[]>;
+
+public: /* Methods: */
+
+    ~PdpiCache() noexcept { destroy(); }
+
+    SharemindPdpi * pdpi(std::size_t const index) const noexcept
+    { return (index < m_size) ? getItemPtr(index)->pdpi() : nullptr; }
+
+    SharemindModuleApi0x1PdpiInfo const * info(std::size_t const index)
+            const noexcept
+    { return (index < m_size) ? &getItemPtr(index)->info() : nullptr; }
+
+    std::size_t size() const noexcept { return m_size; }
+
+    void reinitialize(std::vector<SharemindPd *> const & pdBindings) {
+        auto const newSize = pdBindings.size();
+        if (newSize) {
+            auto newStorage(makeUnique<ItemStorage[]>(newSize));
+
+            std::size_t i = 0u;
+            try {
+                for (auto * const pd : pdBindings) {
+                    new (getItemPtr(newStorage, i)) Item(pd);
+                    ++i;
+                }
+            } catch (...) {
+                while (i)
+                    getItemPtr(newStorage, --i)->~Item();
+                throw;
+            }
+            destroy();
+            m_storage = std::move(newStorage);
+            m_size = newSize;
+        } else {
+            clear();
+        }
+    }
+
+    void clear() noexcept {
+        destroy();
+        m_storage.reset();
+        m_size = 0u;
+    }
+
+    void startPdpis() {
+        std::size_t i = 0u;
+        try {
+            for (; i < m_size; ++i) {
+                getItemPtr(i)->start();
+            }
+        } catch (...) {
+            while (i)
+                getItemPtr(--i)->stop();
+            throw;
+        }
+    }
+
+    void stopPdpis() noexcept {
+        auto i = m_size;
+        while (i)
+            getItemPtr(--i)->stop();
+    }
+
+private: /* Methods: */
+
+    Item * getItemPtr(std::size_t const index) const noexcept
+    { return getItemPtr(m_storage, index); }
+
+    static Item * getItemPtr(Storage const & storage, std::size_t const index)
+            noexcept
+    { return reinterpret_cast<Item *>(std::addressof(storage[index])); }
+
+    void destroy() noexcept {
+        auto i = m_size;
+        while (i)
+            getItemPtr(--i)->~Item();
+    }
+
+private: /* Fields: */
+
+    std::size_t m_size = 0u;
+    Storage m_storage;
+
+};
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PDPICACHE_H */

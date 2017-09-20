@@ -102,7 +102,7 @@ struct SharemindProcess_ {
     sharemind::DataSectionsVector dataSections;
     sharemind::DataSectionsVector bssSections;
 
-    SharemindPdpiCache pdpiCache;
+    sharemind::PdpiCache pdpiCache;
 
     size_t currentCodeSectionIndex;
     uintptr_t currentIp;

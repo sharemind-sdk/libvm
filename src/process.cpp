@@ -138,22 +138,12 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 
 
     /* Initialize PDPI cache: */
-    SharemindPdpiCache_init(&p->pdpiCache);
-    for (size_t i = 0u; i < program->pdBindings.size(); i++) {
-        SharemindPdpiCacheItem * const ci =
-                SharemindPdpiCache_push(&p->pdpiCache);
-        if (!ci) {
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_pdpiCache;
-        }
-
-        if (!SharemindPdpiCacheItem_init(ci, program->pdBindings[i])) {
-            SharemindPdpiCache_pop(&p->pdpiCache);
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_pdpiCache;
-        }
+    try {
+        p->pdpiCache.reinitialize(program->pdBindings);
+    } catch (...) {
+        SharemindProgram_setErrorOom(program);
+        goto SharemindProgram_newProcess_fail_pdpiCache;
     }
-    assert(p->pdpiCache.size == program->pdBindings.size());
 
     /* Set currentCodeSectionIndex before initializing memory slots: */
     p->currentCodeSectionIndex = program->activeLinkingUnit;
@@ -226,7 +216,7 @@ SharemindProgram_newProcess_fail_framestack:
 SharemindProgram_newProcess_fail_memslots:
 SharemindProgram_newProcess_fail_pdpiCache:
 
-    SharemindPdpiCache_destroy(&p->pdpiCache);
+    p->pdpiCache.clear();
 
 SharemindProgram_newProcess_fail_bss_sections:
 
@@ -256,7 +246,7 @@ void SharemindProcess_free(SharemindProcess * p) {
 
     p->frames.clear();
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
-    SharemindPdpiCache_destroy(&p->pdpiCache);
+    p->pdpiCache.clear();
 
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
@@ -275,10 +265,8 @@ SharemindVm * SharemindProcess_vm(SharemindProcess const * const p) {
 
 size_t SharemindProcess_pdpiCount(SharemindProcess const * process) {
     assert(process);
-    SharemindProcess_lockConst(process);
-    size_t const r = process->pdpiCache.size;
-    SharemindProcess_unlockConst(process);
-    return r;
+    // No locking, program is const after SharemindProcess_new():
+    return process->program->pdBindings.size();
 }
 
 SharemindPdpi * SharemindProcess_pdpi(SharemindProcess const * process,
@@ -286,10 +274,7 @@ SharemindPdpi * SharemindProcess_pdpi(SharemindProcess const * process,
 {
     assert(process);
     SharemindProcess_lockConst(process);
-    SharemindPdpiCache const * const cache = &process->pdpiCache;
-    SharemindPdpi * const r = (pdpiIndex < cache->size)
-                            ? cache->data[pdpiIndex].pdpi
-                            : nullptr;
+    auto * const r = process->pdpiCache.pdpi(pdpiIndex);
     SharemindProcess_unlockConst(process);
     return r;
 }
@@ -303,9 +288,10 @@ SharemindVmError SharemindProcess_setPdpiFacility(
     assert(process);
     assert(name);
     SharemindProcess_lock(process);
-    SharemindPdpiCache const * const cache = &process->pdpiCache;
-    for (size_t i = 0u; i < cache->size; i++)
-        if (SharemindPdpi_setFacility(cache->data[i].pdpi,
+    auto const numPdpis(process->pdpiCache.size());
+    auto const & cache = process->pdpiCache;
+    for (std::size_t i = 0u; i < numPdpis; i++)
+        if (SharemindPdpi_setFacility(cache.pdpi(i),
                                       name,
                                       facility,
                                       context) != SHAREMIND_MODULE_API_OK)
@@ -329,24 +315,17 @@ void SharemindProcess_setInternal(SharemindProcess * const process,
 
 static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
     assert(p);
-    SharemindPdpiCache const * const cache = &p->pdpiCache;
-    size_t i;
-    for (i = 0u; i < cache->size; i++) {
-        if (!SharemindPdpiCacheItem_start(&cache->data[i])) {
-            while (i)
-                SharemindPdpiCacheItem_stop(&cache->data[--i]);
-            return false;
-        }
+    try {
+        p->pdpiCache.startPdpis();
+        return true;
+    } catch (...) {
+        return false;
     }
-    return true;
 }
 
 static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
     assert(p);
-    SharemindPdpiCache const * const cache = &p->pdpiCache;
-    size_t i = cache->size;
-    while (i)
-        SharemindPdpiCacheItem_stop(&cache->data[--i]);
+    p->pdpiCache.stopPdpis();
 }
 
 SharemindVmError SharemindProcess_run(SharemindProcess * p) {
@@ -671,15 +650,7 @@ static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
-
-    SharemindPdpiCacheItem const * const pdpiCacheItem =
-            SharemindPdpiCache_get_const_pointer(&p->pdpiCache, pd_index);
-    if (pdpiCacheItem) {
-        assert(pdpiCacheItem->info.pdpiHandle);
-        return &pdpiCacheItem->info;
-    }
-
-    return nullptr;
+    return p->pdpiCache.info(pd_index);
 }
 
 static void * sharemind_processFacility(
