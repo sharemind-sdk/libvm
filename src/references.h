@@ -24,97 +24,57 @@
 #error including an internal header!
 #endif
 
-#include <cassert>
-#include <cstdlib>
-#include <sharemind/comma.h>
-#include <sharemind/extern_c.h>
 #include <sharemind/module-apis/api_0x1.h>
-#include <sharemind/vector.h>
+#include <vector>
 #include "memoryslot.h"
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-typedef SharemindModuleApi0x1Reference SharemindReference;
-typedef SharemindModuleApi0x1CReference SharemindCReference;
+template <typename Base, typename DataType>
+struct ReferenceBase: Base {
+    ReferenceBase(ReferenceBase && move) noexcept
+        : Base(std::move(move))
+    {
+        move.pData = nullptr;
+        move.size = 0u;
+        move.internal = nullptr;
+    }
 
-inline void SharemindReference_destroy(SharemindReference * const r)
-        __attribute__((nonnull(1), visibility("internal")));
-inline void SharemindReference_destroy(SharemindReference * const r) {
-    assert(r);
-    if (r->internal)
-        ((SharemindMemorySlot *) r->internal)->nrefs--;
-}
+    ReferenceBase(ReferenceBase const &) = delete;
 
-inline void SharemindCReference_destroy(SharemindCReference * const r)
-        __attribute__((nonnull(1), visibility("internal")));
-inline void SharemindCReference_destroy(SharemindCReference * const r) {
-    assert(r);
-    if (r->internal)
-        ((SharemindMemorySlot *) r->internal)->nrefs--;
-}
+    ReferenceBase(void * const internal,
+                  DataType * const data,
+                  std::size_t const size)
+        : Base{internal, data, size}
+    {}
 
-SHAREMIND_VECTOR_DECLARE_BODY(SharemindReferenceVector, SharemindReference)
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindReferenceVector,)
-SHAREMIND_VECTOR_DECLARE_INIT(SharemindReferenceVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_INIT(SharemindReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindReferenceVector,
-                                 inline,
-                                 SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindReferenceVector,
-                                     inline,,
-                                     free,
-                                     SharemindReference_destroy(value);)
-SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(SharemindReferenceVector,
-                                           inline,
-                                           SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindReferenceVector,
-                                      inline,
-                                      SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindReferenceVector, inline, realloc)
-SHAREMIND_VECTOR_DECLARE_PUSH(SharemindReferenceVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_POP(SharemindReferenceVector,
-                             inline,
-                             SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_POP(SharemindReferenceVector, inline)
+    ReferenceBase & operator=(ReferenceBase && move) noexcept {
+        if (auto * const s = this->internal)
+            static_cast<::SharemindMemorySlot *>(s)->nrefs--;
+        this->internal = move.internal;
+        this->pData = move.pData;
+        this->size = move.size;
+        move.pData = nullptr;
+        move.size = 0u;
+        move.internal = nullptr;
+        return *this;
+    }
 
-SHAREMIND_VECTOR_DECLARE_BODY(SharemindCReferenceVector, SharemindCReference)
-SHAREMIND_VECTOR_DEFINE_BODY(SharemindCReferenceVector,)
-SHAREMIND_VECTOR_DECLARE_INIT(SharemindCReferenceVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_INIT(SharemindCReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_DESTROY(SharemindCReferenceVector,
-                                 inline,
-                                 SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_DESTROY_WITH(SharemindCReferenceVector,
-                                     inline,,
-                                     free,
-                                     SharemindCReference_destroy(value);)
-SHAREMIND_VECTOR_DECLARE_GET_CONST_POINTER(
-        SharemindCReferenceVector,
-        inline,
-        SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_GET_CONST_POINTER(SharemindCReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_FORCE_RESIZE(SharemindCReferenceVector,
-                                      inline,
-                                      SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_FORCE_RESIZE(SharemindCReferenceVector, inline, realloc)
-SHAREMIND_VECTOR_DECLARE_PUSH(SharemindCReferenceVector,
-                              inline,
-                              SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_PUSH(SharemindCReferenceVector, inline)
-SHAREMIND_VECTOR_DECLARE_POP(SharemindCReferenceVector,
-                             inline,
-                             SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_VECTOR_DEFINE_POP(SharemindCReferenceVector, inline)
+    ReferenceBase & operator=(ReferenceBase const &) = delete;
 
-SHAREMIND_EXTERN_C_END
+    ~ReferenceBase() noexcept {
+        if (auto * const s = this->internal)
+            static_cast<::SharemindMemorySlot *>(s)->nrefs--;
+    }
+};
+
+using Reference = ReferenceBase<::SharemindModuleApi0x1Reference, void>;
+using CReference = ReferenceBase<::SharemindModuleApi0x1CReference, void const>;
+
+using ReferenceVector = std::vector<Reference>;
+using CReferenceVector = std::vector<CReference>;
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_REFERENCES_H */

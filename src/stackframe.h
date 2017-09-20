@@ -44,8 +44,8 @@ struct SharemindStackFrame_ {
 /* Fields: */
 
     RegisterVector stack;
-    SharemindReferenceVector refstack;
-    SharemindCReferenceVector crefstack;
+    sharemind::ReferenceVector refstack;
+    sharemind::CReferenceVector crefstack;
     struct SharemindStackFrame_ * prev;
 
     SharemindCodeBlock const * returnAddr;
@@ -62,8 +62,8 @@ static inline void SharemindStackFrame_init(
 {
     assert(f);
     new (&f->stack) SharemindStackFrame::RegisterVector();
-    SharemindReferenceVector_init(&f->refstack);
-    SharemindCReferenceVector_init(&f->crefstack);
+    new (&f->refstack) sharemind::ReferenceVector();
+    new (&f->crefstack) sharemind::CReferenceVector();
     f->prev = prev;
 }
 
@@ -72,8 +72,8 @@ inline void SharemindStackFrame_destroy(SharemindStackFrame * const f)
 inline void SharemindStackFrame_destroy(SharemindStackFrame * const f) {
     assert(f);
     f->stack.SharemindStackFrame::RegisterVector::~RegisterVector();
-    SharemindReferenceVector_destroy(&f->refstack);
-    SharemindCReferenceVector_destroy(&f->crefstack);
+    f->refstack.sharemind::ReferenceVector::~ReferenceVector();
+    f->crefstack.sharemind::CReferenceVector::~CReferenceVector();
 }
 
 SHAREMIND_EXTERN_C_END

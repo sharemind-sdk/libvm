@@ -25,6 +25,7 @@
 #endif
 #include <cstring>
 #include <limits.h>
+#include <sharemind/AssertReturn.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/null.h>
 #include <sharemind/restrict.h>
@@ -36,6 +37,8 @@
 typedef sf_float32 SharemindFloat32;
 typedef sf_float64 SharemindFloat64;
 
+#define SharemindCReference sharemind::CReference
+#define SharemindReference sharemind::Reference
 #ifdef SHAREMIND_DEBUG
 #define SHAREMIND_DEBUG_PRINTSTATE \
     do { \
@@ -396,12 +399,13 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_PUSHREF_BLOCK_(prefix,value,b,bOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * const ref = \
-            Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
-        SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
-        ref->pData = (&(b)->uint8[0] + (bOffset)); \
-        ref->size = (rSize); \
-        ref->internal = nullptr; \
+        try { \
+            p->nextFrame->value.emplace_back(nullptr, \
+                                             &(b)->uint8[0] + (bOffset), \
+                                             (rSize)); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
+        } \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_BLOCK_ref(b) \
@@ -423,18 +427,21 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_PUSHREF_REF_(prefix,value,constPerhaps,r,rOffset,rSize) \
     do { \
-        if ((r)->internal \
+        auto const internal = (r)->internal; \
+        if (internal \
             && ((SharemindMemorySlot *) (r)->internal)->nrefs + 1u == 0u) \
         { SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); } \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * const ref = \
-                Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
-        SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
-        ref->pData = ((constPerhaps uint8_t *) (r)->pData) + (rOffset); \
-        ref->size = (rSize); \
-        ref->internal = (r)->internal; \
-        if (ref->internal) \
-            ((SharemindMemorySlot *) ref->internal)->nrefs++; \
+        try { \
+            p->nextFrame->value.emplace_back( \
+                internal, \
+                static_cast<constPerhaps uint8_t *>((r)->pData) + (rOffset), \
+                (rSize)); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
+        } \
+        if (internal) \
+            static_cast<SharemindMemorySlot *>(internal)->nrefs++; \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_REF_ref(r) \
@@ -449,17 +456,19 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_PUSHREF_MEM_(prefix,value,slot,mOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        Sharemind ## prefix ## erence * const ref = \
-                Sharemind ## prefix ## erenceVector_push(&p->nextFrame->value);\
-        SHAREMIND_MI_TRY_EXCEPT(ref, SHAREMIND_VM_PROCESS_OUT_OF_MEMORY); \
-        if ((ref->size = (rSize)) != 0u) { \
-            ref->pData = ((((uint8_t *) (slot)->pData) + (mOffset))); \
-        } else { \
-            /* Non-NULL invalid pointer so as not to signal end of (c)refs: */ \
-            ref->pData = ((uint8_t *) nullptr) + 1u; \
-            assert(ref->pData != nullptr); \
+        try { \
+            p->nextFrame->value.emplace_back( \
+                    (slot), \
+                    (rSize) \
+                    ? (static_cast<uint8_t *>((slot)->pData) + (mOffset)) \
+                    /* Non-NULL invalid pointer so as not to signal end of */ \
+                    /* (c)refs: */ \
+                    : sharemind::assertReturn( \
+                                static_cast<uint8_t *>(nullptr) + 1u), \
+                    (rSize)); \
+        } catch (...) { \
+            SHAREMIND_MI_DO_OOM; \
         } \
-        ref->internal = (slot); \
         (slot)->nrefs++; \
     } while ((0))
 
@@ -484,10 +493,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 #define SHAREMIND_MI_CLEAR_STACK \
     do { \
         p->nextFrame->stack.clear(); \
-        SharemindReferenceVector_destroy(&p->nextFrame->refstack); \
-        SharemindReferenceVector_init(&p->nextFrame->refstack); \
-        SharemindCReferenceVector_destroy(&p->nextFrame->crefstack); \
-        SharemindCReferenceVector_init(&p->nextFrame->crefstack); \
+        p->nextFrame->refstack.clear(); \
+        p->nextFrame->crefstack.clear(); \
     } while ((0))
 
 #define SHAREMIND_MI_HAS_STACK (!!(p->nextFrame))
@@ -534,33 +541,37 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         p->syscallContext.moduleHandle = \
             ((SharemindSyscallWrapper const *) sc)->internal; \
         SharemindReference * ref; \
-        bool hasRefs = (nextFrame->refstack.size > 0u); \
+        bool hasRefs = !nextFrame->refstack.empty(); \
         if (!hasRefs) { \
             ref = nullptr; \
         } else { \
-            ref = SharemindReferenceVector_push(&nextFrame->refstack); \
-            SHAREMIND_MI_TRY_OOM(ref); \
-            ref->pData = nullptr; \
-            ref = nextFrame->refstack.data; \
+            try { \
+                nextFrame->refstack.emplace_back(nullptr, nullptr, 0u); \
+            } catch (...) { \
+                SHAREMIND_MI_DO_OOM; \
+            } \
+            ref = nextFrame->refstack.data(); \
         } \
-        bool hasCRefs = (nextFrame->crefstack.size > 0u); \
-        SharemindCReference * cref; \
+        bool hasCRefs = !nextFrame->crefstack.empty(); \
+        sharemind::CReference * cref; \
         if (!hasCRefs) { \
             cref = nullptr; \
         } else { \
-            cref = SharemindCReferenceVector_push(&nextFrame->crefstack); \
-            SHAREMIND_MI_TRY_OOM(cref); \
-            cref->pData = nullptr; \
-            cref = nextFrame->crefstack.data; \
+            try { \
+                nextFrame->crefstack.emplace_back(nullptr, nullptr, 0u);\
+            } catch (...) { \
+                SHAREMIND_MI_DO_OOM; \
+            } \
+            cref = nextFrame->crefstack.data(); \
         } \
         SharemindModuleApi0x1Error const st = \
                 (*rc)(nextFrame->stack.data(), nextFrame->stack.size(), \
                         ref, cref, \
                         (r), &p->syscallContext); \
         if (hasRefs) \
-            SharemindReferenceVector_pop(&nextFrame->refstack); \
+            nextFrame->refstack.pop_back(); \
         if (hasCRefs) \
-            SharemindCReferenceVector_pop(&nextFrame->crefstack); \
+            nextFrame->crefstack.pop_back(); \
         SharemindStackFrame_destroy(nextFrame); \
         SharemindFrameStack_pop(&p->frames); \
         p->nextFrame = nullptr; \
@@ -633,10 +644,12 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
 
 #define SHAREMIND_MI_GET_REF_(r,i,type,exception) \
     do { \
-        (r) = Sharemind ## type ## erenceVector_get_const_pointer( \
-                    this ## type ## Stack, \
-                    (i)); \
-        SHAREMIND_MI_TRY_EXCEPT((r),(exception)); \
+        auto const & container = *this ## type ## Stack; \
+        if (((i) < container.size())) { \
+            (r) = &container[(i)]; \
+        } else { \
+            SHAREMIND_MI_DO_EXCEPT((exception)); \
+        } \
     } while ((0))
 
 #define SHAREMIND_MI_GET_ref(r,i) \
@@ -851,8 +864,8 @@ typedef enum { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT } HaltCode;
         SharemindCodeBlock const * ip = &codeStart[p->currentIp]; \
         auto * const globalStack = &p->globalFrame->stack; \
         auto * thisStack = &p->thisFrame->stack; \
-        SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack; \
-        SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack; \
+        auto * thisRefStack = &p->thisFrame->refstack; \
+        auto * thisCRefStack = &p->thisFrame->crefstack; \
         (void) codeStart; (void) ip; (void) globalStack; \
         (void) thisStack; (void) thisRefStack; (void) thisCRefStack; \
         code \
@@ -943,8 +956,8 @@ SharemindVmError sharemind_vm_run(
         SharemindCodeBlock const * ip = &codeStart[p->currentIp];
         auto * const globalStack = &p->globalFrame->stack;
         auto * thisStack = &p->thisFrame->stack;
-        SharemindReferenceVector * thisRefStack = &p->thisFrame->refstack;
-        SharemindCReferenceVector * thisCRefStack = &p->thisFrame->crefstack;
+        auto * thisRefStack = &p->thisFrame->refstack;
+        auto * thisCRefStack = &p->thisFrame->crefstack;
 #endif
 
         if (SHAREMIND_TRAP_CHECK)
