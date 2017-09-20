@@ -17,7 +17,7 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#include "program.h"
+#include "Program.h"
 
 #include <cassert>
 #include <cstdio>
@@ -28,8 +28,8 @@
 #include <sharemind/likely.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "core.h"
-#include "preparationblock.h"
+#include "Core.h"
+#include "PreparationBlock.h"
 
 
 namespace {

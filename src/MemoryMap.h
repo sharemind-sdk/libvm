@@ -32,7 +32,7 @@
 #include <unordered_map>
 #include "DataSection.h"
 #include "libvm.h"
-#include "memoryslot.h"
+#include "MemorySlot.h"
 
 
 namespace sharemind {

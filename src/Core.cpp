@@ -17,7 +17,7 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#include "core.h"
+#include "Core.h"
 
 #include <cstddef>
 #ifdef SHAREMIND_DEBUG
@@ -29,9 +29,9 @@
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/null.h>
 #include <sharemind/restrict.h>
-#include "preparationblock.h"
-#include "process.h"
-#include "program.h"
+#include "PreparationBlock.h"
+#include "Process.h"
+#include "Program.h"
 
 
 typedef sf_float32 SharemindFloat32;

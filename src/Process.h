@@ -33,13 +33,13 @@
 #include <sharemind/recursive_locks.h>
 #include <sharemind/tag.h>
 #include <unordered_map>
-#include "datasectionsvector.h"
-#include "lasterror.h"
+#include "DataSectionsVector.h"
+#include "LastError.h"
 #include "libvm.h"
-#include "memorymap.h"
-#include "pdpicache.h"
-#include "processfacilitymap.h"
-#include "stackframe.h"
+#include "MemoryMap.h"
+#include "PdpiCache.h"
+#include "ProcessFacilityMap.h"
+#include "StackFrame.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN

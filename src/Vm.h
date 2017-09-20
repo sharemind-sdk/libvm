@@ -31,8 +31,8 @@
 #include <sharemind/extern_c.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/tag.h>
-#include "lasterror.h"
-#include "processfacilitymap.h"
+#include "LastError.h"
+#include "ProcessFacilityMap.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN

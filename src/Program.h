@@ -35,10 +35,10 @@
 #include <sharemind/vector.h>
 #include <vector>
 #include "CodeSection.h"
-#include "datasectionsvector.h"
-#include "lasterror.h"
-#include "processfacilitymap.h"
-#include "vm.h"
+#include "DataSectionsVector.h"
+#include "LastError.h"
+#include "ProcessFacilityMap.h"
+#include "Vm.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN

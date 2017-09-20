@@ -26,7 +26,7 @@
 
 #include <sharemind/module-apis/api_0x1.h>
 #include <vector>
-#include "memoryslot.h"
+#include "MemorySlot.h"
 
 
 namespace sharemind {

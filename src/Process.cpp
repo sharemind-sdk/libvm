@@ -17,15 +17,15 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#include "process.h"
+#include "Process.h"
 
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <limits.h>
 #include <sharemind/comma.h>
-#include "core.h"
-#include "program.h"
+#include "Core.h"
+#include "Program.h"
 
 
 /*******************************************************************************

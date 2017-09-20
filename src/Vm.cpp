@@ -17,7 +17,7 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#include "vm.h"
+#include "Vm.h"
 
 #include <cstdlib>
 #include <sharemind/likely.h>

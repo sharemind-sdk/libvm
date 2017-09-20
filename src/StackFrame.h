@@ -26,7 +26,7 @@
 
 #include <sharemind/codeblock.h>
 #include <vector>
-#include "references.h"
+#include "References.h"
 
 
 namespace sharemind {

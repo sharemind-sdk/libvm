@@ -24,7 +24,7 @@
 #error including an internal header!
 #endif
 
-#include "memoryslot.h"
+#include "MemorySlot.h"
 
 #include <cstddef>
 
