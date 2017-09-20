@@ -24,6 +24,7 @@
 #include <sharemind/likely.h>
 #include "DataSection.h"
 #include "MemorySlot.h"
+#include "PublicMemory.h"
 
 
 namespace sharemind {

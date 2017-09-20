@@ -25,10 +25,7 @@
 #endif
 
 
-#include <cassert>
 #include <cstddef>
-#include <cstring>
-#include <limits>
 
 
 namespace sharemind {
@@ -51,41 +48,6 @@ public: /* Methods: */
     virtual void deref() noexcept = 0;
     virtual bool canFree() const noexcept = 0;
     virtual bool isWritable() const noexcept { return true; }
-
-};
-
-class PublicMemory: public MemorySlot {
-
-public: /* Methods: */
-
-    PublicMemory(std::size_t const size) noexcept
-        : m_data(::operator new(size))
-        , m_size(size)
-    { std::memset(m_data, 0, size); }
-
-    ~PublicMemory() noexcept override { ::operator delete(m_data); }
-
-    bool ref() noexcept final override {
-        if (m_nrefs == std::numeric_limits<decltype(m_nrefs)>::max())
-            return false;
-        ++m_nrefs;
-        return true;
-    }
-
-    void deref() noexcept final override {
-        assert(m_nrefs);
-        --m_nrefs;
-    }
-
-    bool canFree() const noexcept final override { return m_nrefs == 0u; }
-    void * data() const noexcept final override { return m_data; }
-    std::size_t size() const noexcept final override { return m_size; }
-
-private: /* Fields: */
-
-    void * const m_data;
-    std::size_t const m_size;
-    std::size_t m_nrefs = 0u;
 
 };
 
