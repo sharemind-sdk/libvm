@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <sharemind/extern_c.h>
 #include "libvm.h"
-#include "innercommand.h"
 
 
 SHAREMIND_EXTERN_C_BEGIN
@@ -37,6 +36,12 @@ SHAREMIND_EXTERN_C_BEGIN
 #else
 #define SHAREMIND_NOCLONE_
 #endif
+
+enum SharemindInnerCommand {
+    SHAREMIND_I_GET_IMPL_LABEL,
+    SHAREMIND_I_RUN,
+    SHAREMIND_I_CONTINUE
+};
 
 typedef SharemindVmError (*SharemindCoreVmRunner)(
         SharemindProcess * p,

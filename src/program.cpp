@@ -29,7 +29,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "core.h"
-#include "innercommand.h"
 #include "preparationblock.h"
 
 
