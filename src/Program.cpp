@@ -524,7 +524,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
     do { \
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
         sharemind::PreparationBlock pb = \
-                { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
+                { &c[SHAREMIND_PREPARE_CURRENT_I], 0u }; \
         if (runner(nullptr, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) \
                 != SHAREMIND_VM_OK) \
             abort(); \
@@ -565,7 +565,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
 
 #undef SHAREMIND_PREPARE_PASS2_FUNCTION
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,_) \
-    { .code = bytecode, .f = prepare_pass2_ ## name},
+    { bytecode, prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     uint64_t code;
     SharemindVmError (*f)(SharemindProgram * const p,
@@ -576,7 +576,7 @@ struct preprocess_pass2_function {
 };
 static struct preprocess_pass2_function preprocess_pass2_functions[] = {
 #include <sharemind/m4/preprocess_pass2_functions.h>
-    { .code = 0u, .f = nullptr }
+    { 0u, nullptr }
 };
 
 static SharemindVmError SharemindProgram_endPrepare(
