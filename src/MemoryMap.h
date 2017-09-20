@@ -24,19 +24,17 @@
 #error including an internal header!
 #endif
 
-
-#include <cassert>
-#include <limits>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
-#include <sharemind/likely.h>
 #include <unordered_map>
-#include "DataSection.h"
 #include "libvm.h"
-#include "MemorySlot.h"
 
 
 namespace sharemind {
 
+class DataSection;
+class MemorySlot;
 
 class MemoryMap {
 
@@ -52,72 +50,17 @@ private: /* Constants: */
 
 public: /* Methods: */
 
-    ValueType const & get(KeyType const ptr) const noexcept {
-        static ValueType const notFound;
-        auto const it(m_inner.find(ptr));
-        return (it != m_inner.end()) ? it->second : notFound;
-    }
+    ValueType const & get(KeyType const ptr) const noexcept;
 
-    void insertDataSection(KeyType ptr,
-                           std::shared_ptr<DataSection> section)
-    {
-        assert(ptr);
-        assert(ptr < numReservedPointers);
-        assert(m_inner.find(ptr) == m_inner.end());
-        m_inner.emplace(std::move(ptr), std::move(section));
-    }
+    void insertDataSection(KeyType ptr, std::shared_ptr<DataSection> section);
 
-    KeyType allocate(std::size_t const size) {
-        /* All reserved pointers must have been allocated beforehand: */
-        #ifndef NDEBUG
-        for (KeyType i = 1u; i < numReservedPointers; ++i)
-            assert(m_inner.find(i) != m_inner.end());
-        #endif
+    KeyType allocate(std::size_t const size);
 
-        auto const ptr(findUnusedPtr());
-        m_inner.emplace(ptr, std::make_shared<PublicMemory>(size));
-        return ptr;
-    }
-
-    std::pair<SharemindVmProcessException, std::size_t> free(KeyType const ptr)
-    {
-        using R = std::pair<SharemindVmProcessException, std::size_t>;
-        if (ptr < numReservedPointers)
-            return R(ptr
-                     ? SHAREMIND_VM_PROCESS_OK
-                     : SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE,
-                     0u);
-        auto const it(m_inner.find(ptr));
-        if (it == m_inner.end())
-            return R(SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE, 0u);
-        if (!it->second->canFree())
-            return R(SHAREMIND_VM_PROCESS_MEMORY_IN_USE, 0u);
-        R r(SHAREMIND_VM_PROCESS_OK, it->second->size());
-        m_inner.erase(it);
-        return r;
-    }
+    std::pair<SharemindVmProcessException, std::size_t> free(KeyType const ptr);
 
 private: /* Methods: */
 
-    KeyType findUnusedPtr() const noexcept {
-        assert(m_nextTryPtr >= numReservedPointers);
-        assert(m_inner.size() < std::numeric_limits<std::size_t>::max());
-        assert(m_inner.size() < std::numeric_limits<KeyType>::max());
-        auto index = m_nextTryPtr;
-        for (;;) {
-            /* Check if slot is free: */
-            if (likely(m_inner.find(index) == m_inner.end()))
-                break;
-            /* Increment index, skip "NULL" and static memory pointers: */
-            if (unlikely(!++index))
-                index = numReservedPointers;
-            /* This shouldn't trigger because (m->size < UINT64_MAX) */
-            assert(index != m_nextTryPtr);
-        }
-        assert(index != 0u);
-        m_nextTryPtr = index;
-        return index;
-    }
+    KeyType findUnusedPtr() const noexcept;
 
 private: /* Fields: */
 
