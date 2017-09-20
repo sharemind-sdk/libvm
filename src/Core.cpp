@@ -373,9 +373,6 @@ enum HaltCode { HC_EOF, HC_EXCEPT, HC_HALT, HC_TRAP, HC_NEXT };
 #define SHAREMIND_MI_DO_OOM \
     SHAREMIND_MI_DO_EXCEPT(SHAREMIND_VM_PROCESS_OUT_OF_MEMORY)
 
-#define SHAREMIND_MI_TRY_OOM(e) \
-    SHAREMIND_MI_TRY_EXCEPT((e),SHAREMIND_VM_PROCESS_OUT_OF_MEMORY)
-
 #define SHAREMIND_MI_TRY_MEMRANGE(size,offset,numBytes,exception) \
     SHAREMIND_MI_TRY_EXCEPT(((offset) < (size)) \
                        && ((numBytes) <= (size)) \
