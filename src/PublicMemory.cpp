@@ -17,39 +17,37 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#ifndef SHAREMIND_LIBVM_PUBLICMEMORY_H
-#define SHAREMIND_LIBVM_PUBLICMEMORY_H
+#include "PublicMemory.h"
 
-#ifndef SHAREMIND_INTERNAL_
-#error including an internal header!
-#endif
-
-#include "MemorySlot.h"
+#include <cassert>
+#include <cstring>
+#include <limits>
+#include <new>
 
 
 namespace sharemind {
 
-class PublicMemory: public MemorySlot {
+PublicMemory::PublicMemory(std::size_t const size) noexcept
+    : m_data(::operator new(size))
+    , m_size(size)
+{ std::memset(m_data, 0, size); }
 
-public: /* Methods: */
+PublicMemory::~PublicMemory() noexcept { ::operator delete(m_data); }
 
-    PublicMemory(std::size_t const size) noexcept;
-    ~PublicMemory() noexcept override;
+bool PublicMemory::ref() noexcept {
+    if (m_nrefs == std::numeric_limits<decltype(m_nrefs)>::max())
+        return false;
+    ++m_nrefs;
+    return true;
+}
 
-    bool ref() noexcept final override;
-    void deref() noexcept final override;
-    bool canFree() const noexcept final override;
-    void * data() const noexcept final override;
-    std::size_t size() const noexcept final override;
+void PublicMemory::deref() noexcept {
+    assert(m_nrefs);
+    --m_nrefs;
+}
 
-private: /* Fields: */
+bool PublicMemory::canFree() const noexcept { return m_nrefs == 0u; }
+void * PublicMemory::data() const noexcept { return m_data; }
+std::size_t PublicMemory::size() const noexcept { return m_size; }
 
-    void * const m_data;
-    std::size_t const m_size;
-    std::size_t m_nrefs = 0u;
-
-};
-
-} /* namespace sharemind { */
-
-#endif /* SHAREMIND_LIBVM_PUBLICMEMORY_H */
+} // namespace sharemind {
