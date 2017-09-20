@@ -54,6 +54,11 @@ struct SharemindProcess_ {
         std::size_t upperLimit = std::numeric_limits<std::size_t>::max();
     };
 
+/* Methods: */
+
+    std::uint64_t publicAlloc(std::uint64_t size);
+    void publicFree(std::uint64_t ptr);
+
 /* Fields: */
 
     SharemindProgram * program;
@@ -73,7 +78,7 @@ struct SharemindProcess_ {
 
     sf_fpu_state fpuState;
 
-    SharemindMemoryMap memoryMap;
+    sharemind::MemoryMap memoryMap;
     uint64_t memorySlotNext;
     SharemindPrivateMemoryMap privateMemoryMap;
 
@@ -104,8 +109,7 @@ SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
 SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProcess)
 
 uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
-                                       uint64_t const nBytes,
-                                       SharemindMemorySlot ** const memorySlot)
+                                       uint64_t const nBytes)
         __attribute__ ((visibility("internal"),
                         nonnull(1),
                         warn_unused_result));

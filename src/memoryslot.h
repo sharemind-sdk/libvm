@@ -27,60 +27,68 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <sharemind/extern_c.h>
+#include <cstring>
+#include <limits>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-struct SharemindMemorySlotSpecials_;
-typedef struct SharemindMemorySlotSpecials_ SharemindMemorySlotSpecials;
+class MemorySlot {
 
-typedef struct {
-    void * pData;
-    size_t size;
-    uint64_t nrefs;
-    SharemindMemorySlotSpecials * specials;
-} SharemindMemorySlot;
+public: /* Methods: */
 
-struct SharemindMemorySlotSpecials_ {
-    void (*free)(SharemindMemorySlot *);
-    bool readable;
-    bool writeable;
+    MemorySlot() noexcept {}
+    MemorySlot(MemorySlot &&) = delete;
+    MemorySlot(MemorySlot const &) = delete;
+    MemorySlot & operator=(MemorySlot &&) = delete;
+    MemorySlot & operator=(MemorySlot const &) = delete;
+
+    virtual ~MemorySlot() noexcept {}
+
+    virtual void * data() const noexcept = 0;
+    virtual std::size_t size() const noexcept = 0;
+    virtual bool ref() noexcept = 0;
+    virtual void deref() noexcept = 0;
+    virtual bool canFree() const noexcept = 0;
+    virtual bool isWritable() const noexcept { return true; }
+
 };
 
-inline void SharemindMemorySlot_init(
-        SharemindMemorySlot * const m,
-        void * const pData,
-        size_t const size,
-        SharemindMemorySlotSpecials * const specials)
-    __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindMemorySlot_init(
-        SharemindMemorySlot * const m,
-        void * const pData,
-        size_t const size,
-        SharemindMemorySlotSpecials * const specials)
-{
-    assert(m);
-    m->pData = pData;
-    m->size = size;
-    m->nrefs = 0u;
-    m->specials = specials;
-}
+class PublicMemory: public MemorySlot {
 
-inline void SharemindMemorySlot_destroy(SharemindMemorySlot * const m)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindMemorySlot_destroy(SharemindMemorySlot * const m) {
-    assert(m);
-    if (m->specials) {
-        if (m->specials->free)
-            m->specials->free(m);
-    } else {
-        free(m->pData);
+public: /* Methods: */
+
+    PublicMemory(std::size_t const size) noexcept
+        : m_data(::operator new(size))
+        , m_size(size)
+    { std::memset(m_data, 0, size); }
+
+    ~PublicMemory() noexcept override { ::operator delete(m_data); }
+
+    bool ref() noexcept final override {
+        if (m_nrefs == std::numeric_limits<decltype(m_nrefs)>::max())
+            return false;
+        ++m_nrefs;
+        return true;
     }
-}
 
-SHAREMIND_EXTERN_C_END
+    void deref() noexcept final override {
+        assert(m_nrefs);
+        --m_nrefs;
+    }
+
+    bool canFree() const noexcept final override { return m_nrefs == 0u; }
+    void * data() const noexcept final override { return m_data; }
+    std::size_t size() const noexcept final override { return m_size; }
+
+private: /* Fields: */
+
+    void * const m_data;
+    std::size_t const m_size;
+    std::size_t m_nrefs = 0u;
+
+};
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_MEMORYSLOT_H */

@@ -24,13 +24,14 @@
 #error including an internal header!
 #endif
 
+#include <memory>
 #include <vector>
 #include "datasection.h"
 
 
 namespace sharemind {
 
-using DataSectionsVector = std::vector<DataSection>;
+using DataSectionsVector = std::vector<std::shared_ptr<DataSection> >;
 
 } /* namespace sharemind { */
 

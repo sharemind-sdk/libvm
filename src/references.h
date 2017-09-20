@@ -51,7 +51,7 @@ struct ReferenceBase: Base {
 
     ReferenceBase & operator=(ReferenceBase && move) noexcept {
         if (auto * const s = this->internal)
-            static_cast<::SharemindMemorySlot *>(s)->nrefs--;
+            static_cast<sharemind::MemorySlot *>(s)->deref();
         this->internal = move.internal;
         this->pData = move.pData;
         this->size = move.size;
@@ -65,7 +65,7 @@ struct ReferenceBase: Base {
 
     ~ReferenceBase() noexcept {
         if (auto * const s = this->internal)
-            static_cast<::SharemindMemorySlot *>(s)->nrefs--;
+            static_cast<sharemind::MemorySlot *>(s)->deref();
     }
 };
 

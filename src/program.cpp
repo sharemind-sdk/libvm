@@ -341,9 +341,7 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         try { \
             p->ltype ## Sections.emplace_back( \
-                    pos, \
-                    sh.length, \
-                    sharemind::DataSection::spec); \
+                    std::make_shared<sharemind::spec>(pos, sh.length)); \
         } catch (...) { \
             RETURN_SPLR_OOM(pos, p); \
         } \
@@ -382,8 +380,8 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
                                       sh.length * sizeof(SharemindCodeBlock));
                 } break;
 
-                LOAD_DATASECTION_CASE(RODATA,rodata,Read)
-                LOAD_DATASECTION_CASE(DATA,data,ReadWrite)
+                LOAD_DATASECTION_CASE(RODATA,rodata,RoDataSection)
+                LOAD_DATASECTION_CASE(DATA,data,RwDataSection)
 
                 case SHAREMIND_EXECUTABLE_SECTION_TYPE_BSS: {
 
@@ -450,15 +448,14 @@ SharemindVmError SharemindProgram_loadFromMemory(SharemindProgram * p,
     if (p->ltype ## Sections.size() == ui) { \
         try { \
             p->ltype ## Sections.emplace_back( \
-                    0u, \
-                    sharemind::DataSection::spec); \
+                    std::make_shared<sharemind::spec>(nullptr, 0u)); \
         } catch (...) { \
             RETURN_SPLR_OOM(nullptr, p); \
         } \
     }
 
-        PUSH_EMPTY_DATASECTION(rodata,Read)
-        PUSH_EMPTY_DATASECTION(data,ReadWrite)
+        PUSH_EMPTY_DATASECTION(rodata,RoDataSection)
+        PUSH_EMPTY_DATASECTION(data,RwDataSection)
         if (p->bssSectionSizes.size() == ui) {
             try {
                 p->bssSectionSizes.emplace_back(0u);

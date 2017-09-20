@@ -25,73 +25,82 @@
 #endif
 
 #include <cstring>
-#include <sharemind/AssertReturn.h>
-#include <sharemind/likely.h>
 #include <utility>
 #include "memoryslot.h"
 
 
 namespace sharemind {
 
-struct DataSection: SharemindMemorySlot {
+class DataSection: public MemorySlot {
 
-/* Types: */
+public: /* Methods: */
 
-    enum ZeroInitT { ZeroInit };
-    enum Permissions { Read, ReadWrite };
+    bool ref() noexcept final override { return true; }
+    void deref() noexcept final override {}
+    bool canFree() const noexcept final override { return false; }
 
-/* Methods: */
+    void * data() const noexcept final override { return m_data; }
+    std::size_t size() const noexcept final override { return m_size; }
 
-    DataSection(DataSection && move) noexcept
-        : SharemindMemorySlot(std::move(move))
-    {
-        move.size = 0u;
-        move.pData = nullptr;
-    }
+protected: /* Methods: */
 
-    DataSection(DataSection const &) = delete;
-
-    DataSection(std::size_t const size,
-                Permissions const perms)
-        : SharemindMemorySlot{
-            size ? ::operator new(size) : nullptr,
-            size,
-            1u,
-            assertReturn(specials_(perms))}
+    DataSection(void * const data, std::size_t const size) noexcept
+        : m_data(data)
+        , m_size(size)
     {}
 
-    DataSection(std::size_t const size,
-                Permissions const perms,
-                ZeroInitT const)
-        : DataSection(size, perms)
-    { std::memset(this->pData, 0, size); }
+private: /* Fields: */
 
-    DataSection(void const * const data,
-                std::size_t const size,
-                Permissions const perms)
-        : DataSection(size, perms)
-    { std::memcpy(this->pData, data, size); }
+    void * const m_data;
+    std::size_t const m_size;
 
-    ~DataSection() noexcept { ::operator delete(this->pData); }
+};
 
-    DataSection & operator=(DataSection && move) noexcept {
-        ::operator delete(this->pData);
-        static_cast<SharemindMemorySlot &>(*this) = move;
-        move.pData = nullptr;
-        move.size = 0u;
-        return *this;
-    }
+class BssDataSection: public DataSection {
 
-    DataSection & operator=(DataSection const &) = delete;
+public: /* Methods: */
 
-    SharemindMemorySlotSpecials * specials_(Permissions const perms) {
-        static SharemindMemorySlotSpecials roDataSpecials{nullptr, true, false};
-        static SharemindMemorySlotSpecials rwDataSpecials{nullptr, true, true};
-        if (perms == Read)
-            return &roDataSpecials;
-        assert(perms == ReadWrite);
-        return &rwDataSpecials;
-    }
+    BssDataSection(std::size_t const size)
+        : DataSection(::operator new(size), size)
+    { std::memset(data(), 0, size); }
+
+    ~BssDataSection() noexcept override { ::operator delete(data()); }
+
+};
+
+class RegularDataSection: public DataSection {
+
+public: /* Methods: */
+
+    ~RegularDataSection() noexcept override { ::operator delete(data()); }
+
+protected: /* Methods: */
+
+    RegularDataSection(void const * const data, std::size_t const size)
+        : DataSection(::operator new(size), size)
+    { std::memcpy(this->data(), data, size); }
+
+};
+
+class RwDataSection: public RegularDataSection {
+
+public: /* Methods: */
+
+    RwDataSection(void const * const data, std::size_t const size)
+        : RegularDataSection(data, size)
+    {}
+
+};
+
+class RoDataSection: public RegularDataSection {
+
+public: /* Methods: */
+
+    RoDataSection(void const * const data, std::size_t const size)
+        : RegularDataSection(data, size)
+    {}
+
+    bool isWritable() const noexcept final override { return false; }
 
 };
 
