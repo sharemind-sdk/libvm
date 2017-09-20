@@ -27,17 +27,18 @@
 #include <cstddef>
 #include <limits>
 #include <list>
+#include <memory>
 #include <sharemind/extern_c.h>
 #include <sharemind/libsoftfloat/softfloat.h>
 #include <sharemind/recursive_locks.h>
 #include <sharemind/stringmap.h>
 #include <sharemind/tag.h>
+#include <unordered_map>
 #include "datasectionsvector.h"
 #include "lasterror.h"
 #include "libvm.h"
 #include "memorymap.h"
 #include "pdpicache.h"
-#include "privatememorymap.h"
 #include "processfacilitymap.h"
 #include "stackframe.h"
 
@@ -52,6 +53,37 @@ struct SharemindProcess_ {
         std::size_t usage = 0u;
         std::size_t max = 0u;
         std::size_t upperLimit = std::numeric_limits<std::size_t>::max();
+    };
+
+    class PrivateMemoryMap {
+
+    public: /* Methods: */
+
+        ~PrivateMemoryMap() noexcept {
+            for (auto const & vp : m_data)
+                ::operator delete(vp.first);
+        }
+
+        void * allocate(std::size_t const nBytes) {
+            assert(nBytes > 0u);
+            return m_data.emplace(::operator new(nBytes), nBytes).first->first;
+        }
+
+        std::size_t free(void * const ptr) noexcept {
+            auto it(m_data.find(ptr));
+            if (it == m_data.end())
+                return 0u;
+            auto const r(it->second);
+            assert(r > 0u);
+            m_data.erase(it);
+            ::operator delete(ptr);
+            return r;
+        }
+
+    private: /* Fields: */
+
+        std::unordered_map<void *, std::size_t> m_data;
+
     };
 
 /* Methods: */
@@ -80,7 +112,7 @@ struct SharemindProcess_ {
 
     sharemind::MemoryMap memoryMap;
     uint64_t memorySlotNext;
-    SharemindPrivateMemoryMap privateMemoryMap;
+    PrivateMemoryMap privateMemoryMap;
 
     SharemindCodeBlock returnValue;
     int64_t exceptionValue;

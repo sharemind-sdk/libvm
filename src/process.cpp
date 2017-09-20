@@ -166,8 +166,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->fpuState = (sf_fpu_state) (sf_float_tininess_after_rounding |
                                   sf_float_round_nearest_even);
 
-    SharemindPrivateMemoryMap_init(&p->privateMemoryMap);
-
     /* Initialize section pointers: */
     try {
         p->memoryMap.insertDataSection(
@@ -258,7 +256,6 @@ void SharemindProcess_free(SharemindProcess * p) {
 
     p->frames.clear();
     SharemindProcessFacilityMap_destroy(&p->facilityMap);
-    SharemindPrivateMemoryMap_destroy(&p->privateMemoryMap);
     SharemindPdpiCache_destroy(&p->pdpiCache);
 
     SHAREMIND_TAG_DESTROY(p);
@@ -464,12 +461,11 @@ std::uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
         /* Update memory statistics: */
         p->memPublicHeap.usage += nBytes;
         p->memTotal.usage += nBytes;
-
         if (p->memPublicHeap.usage > p->memPublicHeap.max)
             p->memPublicHeap.max = p->memPublicHeap.usage;
-
         if (p->memTotal.usage > p->memTotal.max)
             p->memTotal.max = p->memTotal.usage;
+
         return index;
     } catch (...) {
         return 0u;
@@ -575,36 +571,21 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     /** \todo Check any other memory limits? */
 
     /* Allocate the memory: */
-    void * ptr = malloc(nBytes);
-    if (unlikely(!ptr))
-        return nullptr;
+    try {
+        auto const ptr = p->privateMemoryMap.allocate(nBytes);
 
-    /* Add pointer to private memory map: */
-#ifndef NDEBUG
-    size_t const oldSize = p->privateMemoryMap.size;
-#endif
-    SharemindPrivateMemoryMap_value * const v =
-            SharemindPrivateMemoryMap_insertNew(&p->privateMemoryMap, ptr);
-    if (unlikely(!v)) {
-        free(ptr);
+        /* Update memory statistics: */
+        p->memPrivate.usage += nBytes;
+        p->memTotal.usage += nBytes;
+        if (p->memPrivate.usage > p->memPrivate.max)
+            p->memPrivate.max = p->memPrivate.usage;
+        if (p->memTotal.usage > p->memTotal.max)
+            p->memTotal.max = p->memTotal.usage;
+
+        return ptr;
+    } catch (...) {
         return nullptr;
     }
-    assert(oldSize < p->privateMemoryMap.size);
-    v->value = nBytes;
-
-    /* Update memory statistics: */
-    p->memPrivate.usage += nBytes;
-    p->memTotal.usage += nBytes;
-
-    if (p->memPrivate.usage > p->memPrivate.max)
-        p->memPrivate.max = p->memPrivate.usage;
-
-    if (p->memTotal.usage > p->memTotal.max)
-        p->memTotal.max = p->memTotal.usage;
-
-    /** \todo Update any other memory statistics? */
-
-    return ptr;
 }
 
 static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
@@ -619,33 +600,13 @@ static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
 
-    /* Check if pointer is in private memory map: */
-    SharemindPrivateMemoryMap_value * const v =
-            SharemindPrivateMemoryMap_get(&p->privateMemoryMap, ptr);
-    if (unlikely(!v))
-        return;
-
-    /* Get allocated size: */
-    size_t const nBytes = v->value;
-    assert(nBytes > 0u);
-
-    /* Free the memory: */
-    free(ptr);
-
-    /* Remove pointer from valid list: */
-    #ifndef NDEBUG
-    bool const r =
-    #endif
-        SharemindPrivateMemoryMap_remove(&p->privateMemoryMap, ptr);
-    assert(r);
-
-    /* Update memory statistics: */
-    assert(p->memPrivate.usage >= nBytes);
-    assert(p->memTotal.usage >= nBytes);
-    p->memPrivate.usage -= nBytes;
-    p->memTotal.usage -= nBytes;
-
-    /** \todo Update any other memory statistics? */
+    if (auto const bytesDeleted = p->privateMemoryMap.free(ptr)) {
+        /* Update memory statistics: */
+        assert(p->memPrivate.usage >= bytesDeleted);
+        assert(p->memTotal.usage >= bytesDeleted);
+        p->memPrivate.usage -= bytesDeleted;
+        p->memTotal.usage -= bytesDeleted;
+    }
 }
 
 static bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
@@ -666,20 +627,13 @@ static bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
                      < nBytes)))
         return false;
 
-    /** \todo Check any other memory limits? */
-
     /* Update memory statistics */
     p->memReserved.usage += nBytes;
     p->memTotal.usage += nBytes;
-
     if (p->memReserved.usage > p->memReserved.max)
         p->memReserved.max = p->memReserved.usage;
-
     if (p->memTotal.usage > p->memTotal.max)
         p->memTotal.max = p->memTotal.usage;
-
-    /** \todo Update any other memory statistics? */
-
     return true;
 }
 
