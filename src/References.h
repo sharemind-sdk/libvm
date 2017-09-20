@@ -24,6 +24,7 @@
 #error including an internal header!
 #endif
 
+#include <cstddef>
 #include <sharemind/module-apis/api_0x1.h>
 #include <vector>
 #include "MemorySlot.h"
@@ -33,43 +34,26 @@ namespace sharemind {
 
 template <typename Base, typename DataType>
 struct ReferenceBase: Base {
-    ReferenceBase(ReferenceBase && move) noexcept
-        : Base(std::move(move))
-    {
-        move.pData = nullptr;
-        move.size = 0u;
-        move.internal = nullptr;
-    }
 
+    ReferenceBase(ReferenceBase && move) noexcept;
     ReferenceBase(ReferenceBase const &) = delete;
 
     ReferenceBase(void * const internal,
                   DataType * const data,
-                  std::size_t const size)
-        : Base{internal, data, size}
-    {}
+                  std::size_t const size);
 
-    ReferenceBase & operator=(ReferenceBase && move) noexcept {
-        if (auto * const s = this->internal)
-            static_cast<sharemind::MemorySlot *>(s)->deref();
-        this->internal = move.internal;
-        this->pData = move.pData;
-        this->size = move.size;
-        move.pData = nullptr;
-        move.size = 0u;
-        move.internal = nullptr;
-        return *this;
-    }
+    ~ReferenceBase() noexcept;
 
+    ReferenceBase & operator=(ReferenceBase && move) noexcept;
     ReferenceBase & operator=(ReferenceBase const &) = delete;
 
-    ~ReferenceBase() noexcept {
-        if (auto * const s = this->internal)
-            static_cast<sharemind::MemorySlot *>(s)->deref();
-    }
 };
 
+extern template struct ReferenceBase<::SharemindModuleApi0x1Reference, void>;
 using Reference = ReferenceBase<::SharemindModuleApi0x1Reference, void>;
+
+extern template struct ReferenceBase<::SharemindModuleApi0x1CReference,
+                                     void const>;
 using CReference = ReferenceBase<::SharemindModuleApi0x1CReference, void const>;
 
 using ReferenceVector = std::vector<Reference>;
