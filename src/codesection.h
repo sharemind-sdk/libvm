@@ -42,6 +42,9 @@ class CodeSection {
 
 public: /* Methods: */
 
+    CodeSection(CodeSection &&) = default;
+    CodeSection(CodeSection const &) = delete;
+
     CodeSection(SharemindCodeBlock const * const code,
                 std::size_t const codeSize)
     {
@@ -51,6 +54,9 @@ public: /* Methods: */
         m_data.resize(codeSize + 1u);
         std::copy(code, code + codeSize, m_data.data());
     }
+
+    CodeSection & operator=(CodeSection &&) = default;
+    CodeSection & operator=(CodeSection const &) = delete;
 
     bool isInstructionAtOffset(std::size_t const offset) const noexcept
     { return (offset < m_instrmap.size()) && m_instrmap[offset]; }
