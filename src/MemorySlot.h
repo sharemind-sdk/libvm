@@ -24,7 +24,6 @@
 #error including an internal header!
 #endif
 
-
 #include <cstddef>
 
 
@@ -34,20 +33,23 @@ class MemorySlot {
 
 public: /* Methods: */
 
-    MemorySlot() noexcept {}
     MemorySlot(MemorySlot &&) = delete;
     MemorySlot(MemorySlot const &) = delete;
     MemorySlot & operator=(MemorySlot &&) = delete;
     MemorySlot & operator=(MemorySlot const &) = delete;
 
-    virtual ~MemorySlot() noexcept {}
+    virtual ~MemorySlot() noexcept;
 
     virtual void * data() const noexcept = 0;
     virtual std::size_t size() const noexcept = 0;
     virtual bool ref() noexcept = 0;
     virtual void deref() noexcept = 0;
     virtual bool canFree() const noexcept = 0;
-    virtual bool isWritable() const noexcept { return true; }
+    virtual bool isWritable() const noexcept;
+
+protected: /* Methods: */
+
+    MemorySlot() noexcept {}
 
 };
 
