@@ -48,6 +48,7 @@ public: /* Types: */
     public: /* Methods: */
 
         PdpiStartupException(SharemindPd * const pd);
+        ~PdpiStartupException() noexcept final override;
 
         char const * what() const noexcept final override;
 

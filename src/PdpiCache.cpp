@@ -35,6 +35,8 @@ PdpiCache::PdpiStartupException::PdpiStartupException(SharemindPd * const pd)
                        "\"!"))
 {}
 
+PdpiCache::PdpiStartupException::~PdpiStartupException() noexcept {}
+
 char const * PdpiCache::PdpiStartupException::what() const noexcept
 { return m_message.c_str(); }
 
