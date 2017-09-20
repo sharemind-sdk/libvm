@@ -25,13 +25,11 @@
 #endif
 
 
-#include <cassert>
 #include <cstddef>
-#include <sharemind/Concat.h>
 #include <sharemind/Exception.h>
 #include <sharemind/libmodapi/libmodapi.h>
-#include <sharemind/MakeUnique.h>
 #include <sharemind/module-apis/api_0x1.h>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -39,73 +37,42 @@
 
 namespace sharemind {
 
-class PdpiCache {
+class PdpiCache final {
 
 public: /* Types: */
 
-    SHAREMIND_DEFINE_EXCEPTION(std::exception, Exception);
-    SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING(Exception,
-                                               PdpiStartupExceptionBase);
-    class PdpiStartupException: public PdpiStartupExceptionBase {
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(std::exception, Exception);
+
+    class PdpiStartupException final: public Exception {
 
     public: /* Methods: */
 
-        PdpiStartupException(SharemindPd * const pd)
-            : PdpiStartupExceptionBase(concat("Failed to start PDPI for PD \"",
-                                              ::SharemindPd_name(pd), "\"!"))
-        {}
+        PdpiStartupException(SharemindPd * const pd);
+
+        char const * what() const noexcept final override;
+
+    private: /* Methods: */
+
+        std::string const m_message;
 
     };
 
 private: /* Types: */
 
-    class Item {
+    class Item final {
 
     public: /* Methods: */
 
-        Item(SharemindPd * const pd)
-            : m_startException(pd)
-        {
-            assert(pd);
-
-            m_pdpi = ::SharemindPd_newPdpi(pd);
-            if (!m_pdpi)
-                throw std::bad_alloc();
-
-            m_info.pdpiHandle = nullptr;
-            m_info.pdHandle = ::SharemindPd_handle(pd);
-            SharemindPdk * pdk = ::SharemindPd_pdk(pd);
-            assert(pdk);
-            m_info.pdkIndex = ::SharemindPdk_index(pdk);
-            SharemindModule * module = ::SharemindPdk_module(pdk);
-            assert(module);
-            m_info.moduleHandle = ::SharemindModule_handle(module);
-        }
-
-        ~Item() noexcept {
-            assert(m_pdpi);
-            ::SharemindPdpi_free(m_pdpi);
-        }
+        Item(SharemindPd * const pd);
+        ~Item() noexcept;
 
         SharemindPdpi * pdpi() const noexcept { return m_pdpi; }
 
         SharemindModuleApi0x1PdpiInfo const & info() const noexcept
         { return m_info; }
 
-        void start() {
-            assert(!m_info.pdpiHandle);
-            bool const r =
-                    (::SharemindPdpi_start(m_pdpi) == SHAREMIND_MODULE_API_OK);
-            if (!r)
-                throw m_startException;
-            m_info.pdpiHandle = ::SharemindPdpi_handle(m_pdpi);
-        }
-
-        void stop() noexcept {
-            assert(m_info.pdpiHandle);
-            ::SharemindPdpi_stop(m_pdpi);
-            m_info.pdpiHandle = nullptr;
-        }
+        void start();
+        void stop() noexcept;
 
     private: /* Fields: */
 
@@ -121,7 +88,7 @@ private: /* Types: */
 
 public: /* Methods: */
 
-    ~PdpiCache() noexcept { destroy(); }
+    ~PdpiCache() noexcept;
 
     SharemindPdpi * pdpi(std::size_t const index) const noexcept
     { return (index < m_size) ? getItemPtr(index)->pdpi() : nullptr; }
@@ -132,54 +99,10 @@ public: /* Methods: */
 
     std::size_t size() const noexcept { return m_size; }
 
-    void reinitialize(std::vector<SharemindPd *> const & pdBindings) {
-        auto const newSize = pdBindings.size();
-        if (newSize) {
-            auto newStorage(makeUnique<ItemStorage[]>(newSize));
-
-            std::size_t i = 0u;
-            try {
-                for (auto * const pd : pdBindings) {
-                    new (getItemPtr(newStorage, i)) Item(pd);
-                    ++i;
-                }
-            } catch (...) {
-                while (i)
-                    getItemPtr(newStorage, --i)->~Item();
-                throw;
-            }
-            destroy();
-            m_storage = std::move(newStorage);
-            m_size = newSize;
-        } else {
-            clear();
-        }
-    }
-
-    void clear() noexcept {
-        destroy();
-        m_storage.reset();
-        m_size = 0u;
-    }
-
-    void startPdpis() {
-        std::size_t i = 0u;
-        try {
-            for (; i < m_size; ++i) {
-                getItemPtr(i)->start();
-            }
-        } catch (...) {
-            while (i)
-                getItemPtr(--i)->stop();
-            throw;
-        }
-    }
-
-    void stopPdpis() noexcept {
-        auto i = m_size;
-        while (i)
-            getItemPtr(--i)->stop();
-    }
+    void reinitialize(std::vector<SharemindPd *> const & pdBindings);
+    void clear() noexcept;
+    void startPdpis();
+    void stopPdpis() noexcept;
 
 private: /* Methods: */
 
