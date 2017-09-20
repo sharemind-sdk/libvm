@@ -930,8 +930,8 @@ SharemindVmError sharemind_vm_run(
                                                       &_func_impl_trap};
 #endif
 
-        SharemindPreparationBlock * pb =
-                (SharemindPreparationBlock *) sharemind_vm_run_data;
+        sharemind::PreparationBlock * pb =
+                (sharemind::PreparationBlock *) sharemind_vm_run_data;
         switch (pb->type) {
             case 0:
                 pb->block->SHAREMIND_CBPTR[0] =

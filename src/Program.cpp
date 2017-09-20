@@ -523,7 +523,7 @@ static SharemindVmError SharemindProgram_addCodeSection(
 #define SHAREMIND_PREPARE_END_AS(index,numargs) \
     do { \
         c[SHAREMIND_PREPARE_CURRENT_I].uint64[0] = (index); \
-        SharemindPreparationBlock pb = \
+        sharemind::PreparationBlock pb = \
                 { .block = &c[SHAREMIND_PREPARE_CURRENT_I], .type = 0 }; \
         if (runner(nullptr, SHAREMIND_I_GET_IMPL_LABEL, (void *) &pb) \
                 != SHAREMIND_VM_OK) \
@@ -585,7 +585,7 @@ static SharemindVmError SharemindProgram_endPrepare(
     assert(p);
     assert(!p->ready);
 
-    SharemindPreparationBlock pb;
+    sharemind::PreparationBlock pb;
 
     assert(!p->codeSections.empty());
 

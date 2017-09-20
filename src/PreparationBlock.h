@@ -25,16 +25,15 @@
 #endif
 
 #include <sharemind/codeblock.h>
-#include <sharemind/extern_c.h>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-typedef struct {
+struct PreparationBlock {
     SharemindCodeBlock * block;
     unsigned type;
-} SharemindPreparationBlock;
+};
 
-SHAREMIND_EXTERN_C_END
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PREPARATIONBLOCK_H */
