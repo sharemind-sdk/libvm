@@ -119,7 +119,7 @@ struct SharemindProcess_ {
     SharemindModuleApi0x1Error syscallException;
 
     SharemindModuleApi0x1SyscallContext syscallContext;
-    SharemindProcessFacilityMap facilityMap;
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
 
     MemoryInfo memPublicHeap;
     MemoryInfo memPrivate;

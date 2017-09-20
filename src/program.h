@@ -68,7 +68,7 @@ struct SharemindProgram_ {
     SyscallBindingsVector bindings;
     PdBindingsVector pdBindings;
 
-    SharemindProcessFacilityMap processFacilityMap;
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
     SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
     SHAREMIND_LIBVM_LASTERROR_FIELDS;
     SHAREMIND_TAG_DECLARE_FIELDS;

@@ -58,20 +58,25 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
     }
 
     if (context && context->processFacility) {
-        SharemindProcessFacilityMap_init_with_getter(
-                    &vm->processFacilityMap,
-                    (SharemindProcessFacilityMapNextGetter) context->processFacility,
-                    context);
-    } else {
-        SharemindProcessFacilityMap_init_with_getter(&vm->processFacilityMap,
-                                                     nullptr,
-                                                     nullptr);
+        try {
+            vm->processFacilityMap->setNextGetter(
+                        [context](char const * const name) noexcept {
+                            assert(context->processFacility);
+                            return context->processFacility(context, name);
+                        });
+        } catch (...) {
+            goto SharemindVm_new_error_2;
+        }
     }
 
     SHAREMIND_LIBVM_LASTERROR_INIT(vm);
     SHAREMIND_TAG_INIT(vm);
     vm->context = context;
     return vm;
+
+SharemindVm_new_error_2:
+
+    SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
 
 SharemindVm_new_error_1:
 
@@ -88,10 +93,9 @@ void SharemindVm_free(SharemindVm * vm) {
         (*(vm->context->destructor))(vm->context);
     SHAREMIND_TAG_DESTROY(vm);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
-    SharemindProcessFacilityMap_destroy(&vm->processFacilityMap);
     delete vm;
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindVm)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindVm,)
-SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS(SharemindVm,process,Process)
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS(SharemindVm)

@@ -184,8 +184,12 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
     p->syscallContext.vm_internal = p;
     p->syscallContext.process_internal = nullptr;
 
-    SharemindProcessFacilityMap_init(&p->facilityMap,
-                                     &program->processFacilityMap);
+    try {
+        SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*p, *program);
+    } catch (...) {
+        SharemindProgram_setErrorOom(program);
+        goto SharemindProgram_newProcess_fail_framestack;
+    }
 
     /* Initialize the frame stack */
     try {
@@ -211,7 +215,6 @@ SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
 SharemindProgram_newProcess_fail_framestack:
 
     p->frames.clear();
-    SharemindProcessFacilityMap_destroy(&p->facilityMap);
 
 SharemindProgram_newProcess_fail_memslots:
 SharemindProgram_newProcess_fail_pdpiCache:
@@ -245,7 +248,6 @@ void SharemindProcess_free(SharemindProcess * p) {
         SharemindProcess_stop_pdpis(p);
 
     p->frames.clear();
-    SharemindProcessFacilityMap_destroy(&p->facilityMap);
     p->pdpiCache.clear();
 
     SHAREMIND_TAG_DESTROY(p);
@@ -663,10 +665,9 @@ static void * sharemind_processFacility(
 
     SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
     assert(p);
-    return SharemindProcessFacilityMap_get(&p->facilityMap, facilityName);
+    return SharemindProcess_facility(p, facilityName);
 }
 
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProcess)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProcess,)
-
-SHAREMIND_DEFINE_SELF_FACILITYMAP_ACCESSORS(SharemindProcess)
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_SELF_ACCESSORS(SharemindProcess)

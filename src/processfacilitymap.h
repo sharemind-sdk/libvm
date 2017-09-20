@@ -25,181 +25,106 @@
 #endif
 
 #include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <sharemind/comma.h>
+#include <functional>
+#include <memory>
+#include <sharemind/Exception.h>
 #include <sharemind/extern_c.h>
-#include <sharemind/stringmap.h>
+#include <string>
+#include <unordered_map>
 #include "libvm.h"
 
 
-typedef void * SharemindProcessFacility;
+namespace sharemind {
 
-SHAREMIND_STRINGMAP_DECLARE_BODY(SharemindProcessFacilityMapInner,
-                                 SharemindProcessFacility)
-SHAREMIND_STRINGMAP_DECLARE_init(SharemindProcessFacilityMapInner,
-                                 inline,
-                                 SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_init(SharemindProcessFacilityMapInner, inline)
-SHAREMIND_STRINGMAP_DECLARE_destroy(SharemindProcessFacilityMapInner,
-                                    inline,,
-                                    SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_destroy(SharemindProcessFacilityMapInner,
-                                   inline,
-                                   SharemindProcessFacility,,
-                                   free,)
-SHAREMIND_STRINGMAP_DECLARE_get(SharemindProcessFacilityMapInner,
-                                inline,
-                                SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_get(SharemindProcessFacilityMapInner, inline)
-SHAREMIND_STRINGMAP_DECLARE_insertHint(SharemindProcessFacilityMapInner,
-                                       inline,
-                                       SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_insertHint(SharemindProcessFacilityMapInner, inline)
-SHAREMIND_STRINGMAP_DECLARE_emplaceAtHint(
-        SharemindProcessFacilityMapInner,
-        inline,
-        SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_emplaceAtHint(SharemindProcessFacilityMapInner,
-                                         inline)
-SHAREMIND_STRINGMAP_DECLARE_insertAtHint(SharemindProcessFacilityMapInner,
-                                         inline,
-                                         SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_insertAtHint(SharemindProcessFacilityMapInner,
-                                        inline,
-                                        strdup,
-                                        malloc,
-                                        free)
-SHAREMIND_STRINGMAP_DECLARE_take(SharemindProcessFacilityMapInner,
-                                 inline,
-                                 SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_take(SharemindProcessFacilityMapInner, inline)
-SHAREMIND_STRINGMAP_DECLARE_remove(SharemindProcessFacilityMapInner,
-                                   inline,
-                                   SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_STRINGMAP_DEFINE_remove(SharemindProcessFacilityMapInner,
-                                  inline,
-                                  SharemindProcessFacility,
-                                  free,)
+using ProcessFacility = void *;
 
-SHAREMIND_EXTERN_C_BEGIN
+class ProcessFacilityMap {
 
-typedef SharemindProcessFacility (* SharemindProcessFacilityMapNextGetter)(
-        void * context,
-        const char * name);
+private: /* Types: */
 
-typedef struct SharemindProcessFacilityMap_ {
-    SharemindProcessFacilityMapInner realMap;
-    SharemindProcessFacilityMapNextGetter nextGetter;
-    void * nextContext;
-} SharemindProcessFacilityMap;
+    using Inner = std::unordered_map<std::string, ProcessFacility>;
 
-inline SharemindProcessFacility SharemindProcessFacilityMap_get(
-            const SharemindProcessFacilityMap * fm,
-            const char * name)
-        __attribute__ ((nonnull(1, 2), visibility("internal")));
-inline SharemindProcessFacility SharemindProcessFacilityMap_get(
-        const SharemindProcessFacilityMap * fm,
-        const char * name)
-{
-    assert(fm);
-    assert(name);
-    assert(name[0]);
-    const SharemindProcessFacilityMapInner_value * const v =
-            SharemindProcessFacilityMapInner_get(&fm->realMap, name);
-    if (v)
-        return v->value;
-    if (fm->nextGetter)
-        return (*(fm->nextGetter))(fm->nextContext, name);
-    return NULL;
-}
+public: /* Types: */
 
-SharemindProcessFacility SharemindProcessFacilityMap_nextMapGetter(
-        void * context,
-        const char * name)
-        __attribute__ ((nonnull(1, 2), visibility("internal")));
+    using NextGetter = std::function<ProcessFacility (char const *) noexcept>;
 
-inline void SharemindProcessFacilityMap_init(
-        SharemindProcessFacilityMap * fm,
-        SharemindProcessFacilityMap * nextMap)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindProcessFacilityMap_init(
-        SharemindProcessFacilityMap * fm,
-        SharemindProcessFacilityMap * nextMap)
-{
-    assert(fm);
-    if (nextMap) {
-        fm->nextGetter = &SharemindProcessFacilityMap_nextMapGetter;
-        fm->nextContext = nextMap;
-    } else {
-        fm->nextGetter = nullptr;
-        fm->nextContext = nullptr;
+    SHAREMIND_DEFINE_EXCEPTION(std::exception, Exception);
+    SHAREMIND_DEFINE_EXCEPTION_CONST_MSG(
+            Exception,
+            FacilityNameClashException,
+            "Facility with this name already exists!");
+
+public: /* Methods: */
+
+    void setFacility(std::string name, ProcessFacility facility) {
+        auto const rp(m_inner.emplace(std::move(name), std::move(facility)));
+        if (!rp.second)
+            throw FacilityNameClashException();
     }
-    SharemindProcessFacilityMapInner_init(&fm->realMap);
-}
 
-inline void SharemindProcessFacilityMap_init_with_getter(
-        SharemindProcessFacilityMap * fm,
-        SharemindProcessFacilityMapNextGetter nextGetter,
-        void * context)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindProcessFacilityMap_init_with_getter(
-        SharemindProcessFacilityMap * fm,
-        SharemindProcessFacilityMapNextGetter nextGetter,
-        void * context)
-{
-    assert(fm);
-    fm->nextGetter = nextGetter;
-    fm->nextContext = context;
-    SharemindProcessFacilityMapInner_init(&fm->realMap);
-}
+    template <typename NewGetter>
+    void setNextGetter(NewGetter && newGetter)
+            noexcept(noexcept(std::declval<NextGetter &>() =
+                                        std::forward<NewGetter>(newGetter)))
+    { m_nextGetter = std::forward<NewGetter>(newGetter); }
 
-inline void SharemindProcessFacilityMap_destroy(
-        SharemindProcessFacilityMap * fm)
-        __attribute__ ((nonnull(1), visibility("internal")));
-inline void SharemindProcessFacilityMap_destroy(
-        SharemindProcessFacilityMap * fm)
-{
-    assert(fm);
-    SharemindProcessFacilityMapInner_destroy(&fm->realMap);
-}
+    template <typename Name>
+    ProcessFacility facility(Name && name) const noexcept {
+        auto const it(m_inner.find(name));
+        if (it != m_inner.end())
+            return it->second;
+        if (m_nextGetter)
+            return m_nextGetter(std::forward<Name>(name));
+        return nullptr;
+    }
 
-SHAREMIND_EXTERN_C_END
+    template <typename Name>
+    bool unsetFacility(Name && name) noexcept
+    { return m_inner.erase(std::forward<Name>(name)); }
 
-#define SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS_(CN,fF,FF) \
+private: /* Fields: */
+
+    Inner m_inner;
+    NextGetter m_nextGetter;
+
+};
+
+} /* namespace sharemind { */
+
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS \
+    std::shared_ptr<::sharemind::ProcessFacilityMap> \
+            processFacilityMap{ \
+                std::make_shared<::sharemind::ProcessFacilityMap>()}
+
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(self, other) \
+    do { \
+        auto const & smartPtr = (other).processFacilityMap; \
+        (self).processFacilityMap->setNextGetter( \
+                [smartPtr](char const * const name) noexcept \
+                { return smartPtr->facility(name); }); \
+    } while(false)
+
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS_(CN,cF,fF,FF) \
     SHAREMIND_EXTERN_C_BEGIN \
     SharemindVmError CN ## _set ## FF( \
             CN * c, \
             const char * name, \
-            SharemindProcessFacility const facility) \
+            sharemind::ProcessFacility const facility) \
     { \
         assert(c); \
         assert(name); \
         assert(name[0]); \
         SharemindVmError r = SHAREMIND_VM_OK; \
         CN ## _lock(c); \
-        SharemindProcessFacility const f = \
-                SharemindProcessFacilityMap_get(&c->fF ## Map, name); \
-        if (likely(!f)) { \
-            void * const insertHint = \
-                    SharemindProcessFacilityMapInner_insertHint(\
-                            &c->fF ## Map.realMap, \
-                            name); \
-            assert(insertHint); \
-            SharemindProcessFacilityMapInner_value * const v = \
-                    SharemindProcessFacilityMapInner_insertAtHint( \
-                            &c->fF ## Map.realMap, \
-                            name, \
-                            insertHint); \
-            if (likely(v)) { \
-                v->value = facility; \
-            } else { \
-                r = SHAREMIND_VM_OUT_OF_MEMORY; \
-                CN ## _setErrorOom(c); \
-            } \
-        } else { \
+        using FNCE = sharemind::ProcessFacilityMap::FacilityNameClashException;\
+        try { \
+            c->cF setFacility(name, facility); \
+        } catch (FNCE const & e) { \
             r = SHAREMIND_VM_FACILITY_ALREADY_EXISTS; \
-            CN ## _setError(c, r, "Facility with this name already exists!"); \
+            CN ## _setError(c, r, e.what()); \
+        } catch (...) { \
+            r = SHAREMIND_VM_OUT_OF_MEMORY; \
+            CN ## _setErrorOom(c); \
         } \
         CN ## _unlock(c); \
         return r; \
@@ -209,31 +134,32 @@ SHAREMIND_EXTERN_C_END
         assert(name); \
         assert(name[0]); \
         CN ## _lock(c); \
-        const bool r = \
-                SharemindProcessFacilityMapInner_remove(&c->fF ## Map.realMap, \
-                                                        name); \
+        const bool r = c->cF unsetFacility(name); \
         CN ## _unlock(c); \
         return r; \
     } \
-    SharemindProcessFacility \
+    sharemind::ProcessFacility \
     CN ## _ ## fF(const CN * c, const char * name) { \
         assert(c); \
         assert(name); \
         assert(name[0]); \
         CN ## _lockConst(c); \
-        SharemindProcessFacility const r = \
-                SharemindProcessFacilityMap_get(&c->fF ## Map, name); \
+        auto const r = c->cF facility(name); \
         CN ## _unlockConst(c); \
         return r; \
     } \
     SHAREMIND_EXTERN_C_END
 
-#define SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS(ClassName,fN,FN) \
-    SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS_(ClassName, \
-                                             fN ## Facility, \
-                                             FN ## Facility)
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS(CN) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS_(CN, \
+                                                   processFacilityMap->, \
+                                                   processFacility, \
+                                                   ProcessFacility)
 
-#define SHAREMIND_DEFINE_SELF_FACILITYMAP_ACCESSORS(ClassName) \
-    SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS_(ClassName, facility, Facility)
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_SELF_ACCESSORS(CN) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS_(CN, \
+                                                   processFacilityMap->, \
+                                                   facility, \
+                                                   Facility)
 
 #endif /* SHAREMIND_LIBVM_FACILITYMAP_H */

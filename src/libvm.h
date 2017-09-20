@@ -52,10 +52,10 @@ SHAREMIND_EXTERN_C_BEGIN
     void * ClassName ## _ ## fF(ClassName const * c, char const * name) \
             __attribute__ ((nonnull(1,2))) \
 
-#define SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(ClassName,fN,FN) \
+#define SHAREMIND_LIBVM_DECLARE_PROCESS_FACILITY_FUNCTIONS(ClassName) \
     SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS_(ClassName, \
-                                                fN ## Facility, \
-                                                FN ## Facility)
+                                                processFacility, \
+                                                ProcessFacility)
 
 #define SHAREMIND_LIBVM_DECLARE_SELF_FACILITY_FUNCTIONS(ClassName) \
     SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS_(ClassName, \
@@ -204,7 +204,7 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
                               char const ** errorStr);
 void SharemindVm_free(SharemindVm * vm);
 
-SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(SharemindVm,process,Process);
+SHAREMIND_LIBVM_DECLARE_PROCESS_FACILITY_FUNCTIONS(SharemindVm);
 SHAREMIND_LIBVM_DECLARE_ERROR_FUNCTIONS(SharemindVm)
 SHAREMIND_TAG_FUNCTIONS_DECLARE(SharemindVm,,)
 
@@ -222,7 +222,7 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm)
   SharemindProgram
 *******************************************************************************/
 
-SHAREMIND_LIBVM_DECLARE_FACILITY_FUNCTIONS(SharemindProgram,process,Process);
+SHAREMIND_LIBVM_DECLARE_PROCESS_FACILITY_FUNCTIONS(SharemindProgram);
 
 /**
  * \brief Deallocates a SharemindProgram instance.

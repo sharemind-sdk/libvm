@@ -137,8 +137,13 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
         goto SharemindProgram_new_error_1;
     }
 
-    SharemindProcessFacilityMap_init(&p->processFacilityMap,
-                                     &vm->processFacilityMap);
+    try {
+        SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*p, *vm);
+    } catch (...) {
+        SharemindVm_setErrorOom(vm);
+        goto SharemindProgram_new_error_2;
+    }
+
     SHAREMIND_LIBVM_LASTERROR_INIT(p);
     SHAREMIND_TAG_INIT(p);
 
@@ -146,6 +151,10 @@ SharemindProgram * SharemindVm_newProgram(SharemindVm * vm) {
     p->ready = false;
     p->lastParsePosition = nullptr;
     return p;
+
+SharemindProgram_new_error_2:
+
+    SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
 
 SharemindProgram_new_error_1:
 
@@ -162,7 +171,6 @@ void SharemindProgram_free(SharemindProgram * const p) {
     p->dataSections.clear();
     p->rodataSections.clear();
 
-    SharemindProcessFacilityMap_destroy(&p->processFacilityMap);
     SHAREMIND_TAG_DESTROY(p);
     SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
     delete p;
@@ -699,4 +707,4 @@ SharemindPd * SharemindProgram_pd(SharemindProgram const * program, size_t i) {
 SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DEFINE(SharemindProgram,)
 SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProgram)
 SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProgram,)
-SHAREMIND_DEFINE_FACILITYMAP_ACCESSORS(SharemindProgram,process,Process)
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS(SharemindProgram)
