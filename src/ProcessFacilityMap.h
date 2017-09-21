@@ -46,21 +46,16 @@ private: /* Types: */
 
 public: /* Types: */
 
-    using NextGetter = std::function<ProcessFacility (char const *) noexcept>;
+    using NextGetter =
+            std::function<ProcessFacility (std::string const &) noexcept>;
 
-    SHAREMIND_DEFINE_EXCEPTION(std::exception, Exception);
-    SHAREMIND_DEFINE_EXCEPTION_CONST_MSG(
-            Exception,
-            FacilityNameClashException,
-            "Facility with this name already exists!");
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(std::exception, Exception);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(Exception,
+                                                   FacilityNameClashException);
 
 public: /* Methods: */
 
-    void setFacility(std::string name, ProcessFacility facility) {
-        auto const rp(m_inner.emplace(std::move(name), std::move(facility)));
-        if (!rp.second)
-            throw FacilityNameClashException();
-    }
+    void setFacility(std::string name, ProcessFacility facility);
 
     template <typename NewGetter>
     void setNextGetter(NewGetter && newGetter)
@@ -68,19 +63,9 @@ public: /* Methods: */
                                         std::forward<NewGetter>(newGetter)))
     { m_nextGetter = std::forward<NewGetter>(newGetter); }
 
-    template <typename Name>
-    ProcessFacility facility(Name && name) const noexcept {
-        auto const it(m_inner.find(name));
-        if (it != m_inner.end())
-            return it->second;
-        if (m_nextGetter)
-            return m_nextGetter(std::forward<Name>(name));
-        return nullptr;
-    }
+    ProcessFacility facility(std::string const & name) const noexcept;
 
-    template <typename Name>
-    bool unsetFacility(Name && name) noexcept
-    { return m_inner.erase(std::forward<Name>(name)); }
+    bool unsetFacility(std::string const & name) noexcept;
 
 private: /* Fields: */
 
@@ -100,7 +85,7 @@ private: /* Fields: */
     do { \
         auto const & smartPtr = (other).processFacilityMap; \
         (self).processFacilityMap->setNextGetter( \
-                [smartPtr](char const * const name) noexcept \
+                [smartPtr](std::string const & name) noexcept \
                 { return smartPtr->facility(name); }); \
     } while(false)
 

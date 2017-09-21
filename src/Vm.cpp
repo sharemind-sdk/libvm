@@ -60,9 +60,10 @@ SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
     if (context && context->processFacility) {
         try {
             vm->processFacilityMap->setNextGetter(
-                        [context](char const * const name) noexcept {
+                        [context](std::string const & name) noexcept {
                             assert(context->processFacility);
-                            return context->processFacility(context, name);
+                            return context->processFacility(context,
+                                                            name.c_str());
                         });
         } catch (...) {
             goto SharemindVm_new_error_2;
