@@ -64,6 +64,7 @@ private: /* Methods: */
 
 private: /* Fields: */
 
+    ValueType const m_notFound;
     std::unordered_map<KeyType, ValueType> m_inner;
     mutable KeyType m_nextTryPtr = numReservedPointers;
 

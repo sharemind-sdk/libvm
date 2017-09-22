@@ -30,9 +30,8 @@
 namespace sharemind {
 
 MemoryMap::ValueType const & MemoryMap::get(KeyType const ptr) const noexcept {
-    static ValueType const notFound;
     auto const it(m_inner.find(ptr));
-    return (it != m_inner.end()) ? it->second : notFound;
+    return (it != m_inner.end()) ? it->second : m_notFound;
 }
 
 void MemoryMap::insertDataSection(KeyType ptr,
