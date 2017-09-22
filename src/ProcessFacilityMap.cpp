@@ -50,5 +50,7 @@ ProcessFacility ProcessFacilityMap::facility(std::string const & name)
     return nullptr;
 }
 
-bool unsetFacility(std::string const & name) noexcept
+bool ProcessFacilityMap::unsetFacility(std::string const & name) noexcept {
 { return m_inner.erase(name); }
+
+} // namespace sharemind {
