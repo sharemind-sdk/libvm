@@ -31,26 +31,43 @@ SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(
         FacilityNameClashException,
         "Facility with this name already exists!");
 
+#define GUARD std::lock_guard<decltype(m_mutex)> const guard(m_mutex)
+
 void ProcessFacilityMap::setFacility(std::string name,
                                      ProcessFacility facility)
 {
+    GUARD;
     auto const rp(m_inner.emplace(std::move(name), std::move(facility)));
     if (!rp.second)
         throw FacilityNameClashException();
 }
 
+void ProcessFacilityMap::setNextGetter(std::shared_ptr<NextGetter> nextGetter)
+        noexcept
+{
+    GUARD;
+    m_nextGetter = nextGetter;
+}
+
 ProcessFacility ProcessFacilityMap::facility(std::string const & name)
         const noexcept
 {
-    auto const it(m_inner.find(name));
-    if (it != m_inner.end())
-        return it->second;
-    if (m_nextGetter)
-        return m_nextGetter(name.c_str());
-    return nullptr;
+    decltype(m_nextGetter) nextGetter;
+    {
+        GUARD;
+        auto const it(m_inner.find(name));
+        if (it != m_inner.end())
+            return it->second;
+        if (!m_nextGetter)
+            return nullptr;
+        nextGetter = m_nextGetter;
+    }
+    return (*nextGetter)(name.c_str());
 }
 
 bool ProcessFacilityMap::unsetFacility(std::string const & name) noexcept {
-{ return m_inner.erase(name); }
+    GUARD;
+    return m_inner.erase(name);
+}
 
 } // namespace sharemind {

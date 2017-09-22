@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <sharemind/Exception.h>
 #include <sharemind/extern_c.h>
 #include <string>
@@ -57,11 +58,13 @@ public: /* Methods: */
 
     void setFacility(std::string name, ProcessFacility facility);
 
-    template <typename NewGetter>
-    void setNextGetter(NewGetter && newGetter)
-            noexcept(noexcept(std::declval<NextGetter &>() =
-                                        std::forward<NewGetter>(newGetter)))
-    { m_nextGetter = std::forward<NewGetter>(newGetter); }
+    void setNextGetter(std::shared_ptr<NextGetter> nextGetter) noexcept;
+
+    template <typename ... Args>
+    void setNextGetter(Args && ... args) {
+        return setNextGetter(
+                    std::make_shared<NextGetter>(std::forward<Args>(args)...));
+    }
 
     ProcessFacility facility(std::string const & name) const noexcept;
 
@@ -69,8 +72,9 @@ public: /* Methods: */
 
 private: /* Fields: */
 
+    mutable std::mutex m_mutex;
     Inner m_inner;
-    NextGetter m_nextGetter;
+    std::shared_ptr<NextGetter> m_nextGetter;
 
 };
 
@@ -78,13 +82,38 @@ private: /* Fields: */
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS \
     std::shared_ptr<::sharemind::ProcessFacilityMap> \
-            processFacilityMap{ \
+            m_processFacilityMap{ \
                 std::make_shared<::sharemind::ProcessFacilityMap>()}
+
+#define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(fNF,FN) \
+    void set ## FN ## Facility(std::string name, ProcessFacility facility); \
+    ProcessFacility fNF(std::string const & name) const noexcept; \
+    bool unset ## FN ## Facility(std::string const & name) noexcept;
+#define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS \
+    SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(processFacility, Process)
+#define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_SELF \
+    SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(facility,)
+
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,fNF,FN) \
+    void CN::set ## FN ## Facility(std::string name, \
+                                   ProcessFacility facility) \
+    { \
+        return m_processFacilityMap->setFacility(std::move(name), \
+                                                 std::move(facility));\
+    } \
+    ProcessFacility CN::fNF(std::string const & name) const noexcept \
+    { return m_processFacilityMap->facility(name); } \
+    bool CN::unset ## FN ## Facility(std::string const & name) noexcept \
+    { return m_processFacilityMap->unsetFacility(name); }
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(CN) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,processFacility, Process)
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(CN) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,facility,)
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(self, other) \
     do { \
-        auto const & smartPtr = (other).processFacilityMap; \
-        (self).processFacilityMap->setNextGetter( \
+        auto const & smartPtr = (other).m_processFacilityMap; \
+        (self).m_processFacilityMap->setNextGetter( \
                 [smartPtr](std::string const & name) noexcept \
                 { return smartPtr->facility(name); }); \
     } while(false)
@@ -137,13 +166,13 @@ private: /* Fields: */
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS(CN) \
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS_(CN, \
-                                                   processFacilityMap->, \
+                                                   m_processFacilityMap->, \
                                                    processFacility, \
                                                    ProcessFacility)
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_SELF_ACCESSORS(CN) \
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS_(CN, \
-                                                   processFacilityMap->, \
+                                                   m_processFacilityMap->, \
                                                    facility, \
                                                    Facility)
 
