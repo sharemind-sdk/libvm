@@ -27,18 +27,29 @@
 
 namespace sharemind {
 
-SHAREMIND_DEFINE_EXCEPTION_NOINLINE(std::exception, PdpiCache::, Exception)
+SHAREMIND_DEFINE_EXCEPTION_NOINLINE(sharemind::Exception,
+                                    PdpiCache::,
+                                    Exception)
 
 
 PdpiCache::PdpiStartupException::PdpiStartupException(SharemindPd * const pd)
-    : m_message(concat("Failed to start PDPI for PD \"", ::SharemindPd_name(pd),
-                       "\"!"))
+    : m_message(
+          std::make_shared<std::string>(
+              concat("Failed to start PDPI for PD \"", ::SharemindPd_name(pd),
+                     "\"!")))
+{}
+
+PdpiCache::PdpiStartupException::PdpiStartupException(
+        PdpiStartupException const & copy)
+        noexcept(std::is_nothrow_copy_constructible<Exception>::value)
+    : Exception(copy)
+    , m_message(copy.m_message)
 {}
 
 PdpiCache::PdpiStartupException::~PdpiStartupException() noexcept {}
 
 char const * PdpiCache::PdpiStartupException::what() const noexcept
-{ return m_message.c_str(); }
+{ return m_message->c_str(); }
 
 
 PdpiCache::Item::Item(SharemindPd * const pd)

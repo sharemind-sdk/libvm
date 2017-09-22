@@ -26,7 +26,9 @@
 
 
 #include <cstddef>
+#include <memory>
 #include <sharemind/Exception.h>
+#include <sharemind/ExceptionMacros.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/module-apis/api_0x1.h>
 #include <string>
@@ -41,20 +43,22 @@ class PdpiCache final {
 
 public: /* Types: */
 
-    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(std::exception, Exception);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(sharemind::Exception, Exception);
 
     class PdpiStartupException final: public Exception {
 
     public: /* Methods: */
 
         PdpiStartupException(SharemindPd * const pd);
+        PdpiStartupException(PdpiStartupException const &)
+                noexcept(std::is_nothrow_copy_constructible<Exception>::value);
         ~PdpiStartupException() noexcept final override;
 
         char const * what() const noexcept final override;
 
     private: /* Methods: */
 
-        std::string const m_message;
+        std::shared_ptr<std::string const> m_message;
 
     };
 
