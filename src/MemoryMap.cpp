@@ -74,6 +74,16 @@ std::pair<SharemindVmProcessException, std::size_t> MemoryMap::free(
     return r;
 }
 
+std::size_t MemoryMap::slotSize(KeyType const ptr) const noexcept {
+    auto const it(m_inner.find(ptr));
+    return (it == m_inner.end()) ? 0u : it->second->size();
+}
+
+void * MemoryMap::slotPtr(KeyType const ptr) const noexcept {
+    auto const it(m_inner.find(ptr));
+    return (it == m_inner.end()) ? nullptr : it->second->data();
+}
+
 MemoryMap::KeyType MemoryMap::findUnusedPtr() const noexcept {
     assert(m_nextTryPtr >= numReservedPointers);
     assert(m_inner.size() < std::numeric_limits<std::size_t>::max());

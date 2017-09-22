@@ -58,6 +58,9 @@ public: /* Methods: */
 
     std::pair<SharemindVmProcessException, std::size_t> free(KeyType const ptr);
 
+    std::size_t slotSize(KeyType const ptr) const noexcept;
+    void * slotPtr(KeyType const ptr) const noexcept;
+
 private: /* Methods: */
 
     KeyType findUnusedPtr() const noexcept;
