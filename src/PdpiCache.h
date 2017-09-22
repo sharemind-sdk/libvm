@@ -98,6 +98,10 @@ public: /* Methods: */
     SharemindPdpi * pdpi(std::size_t const index) const noexcept
     { return (index < m_size) ? getItemPtr(index)->pdpi() : nullptr; }
 
+    void setPdpiFacility(char const * const name,
+                         void * const facility,
+                         void * const context);
+
     SharemindModuleApi0x1PdpiInfo const * info(std::size_t const index)
             const noexcept
     { return (index < m_size) ? &getItemPtr(index)->info() : nullptr; }

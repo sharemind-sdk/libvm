@@ -117,6 +117,18 @@ void PdpiCache::reinitialize(std::vector<SharemindPd *> const & pdBindings) {
     }
 }
 
+void PdpiCache::setPdpiFacility(char const * const name,
+                                void * const facility,
+                                void * const context)
+{
+    for (std::size_t i = 0u; i < m_size; ++i)
+        if (SharemindPdpi_setFacility(getItemPtr(i)->pdpi(),
+                                      name,
+                                      facility,
+                                      context) != SHAREMIND_MODULE_API_OK)
+            throw std::bad_alloc();
+}
+
 void PdpiCache::clear() noexcept {
     destroy();
     m_storage.reset();
