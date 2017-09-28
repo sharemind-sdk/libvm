@@ -31,42 +31,51 @@
 #include <sharemind/Exception.h>
 #include <sharemind/extern_c.h>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
-#include "libvm.h"
+#include "Vm.h"
 
 
 namespace sharemind {
+namespace Detail {
 
-using ProcessFacility = void *;
-
-class ProcessFacilityMap {
+class __attribute__((visibility("internal"))) ProcessFacilityMap {
 
 private: /* Types: */
 
-    using Inner = std::unordered_map<std::string, ProcessFacility>;
+    using Inner = std::unordered_map<std::string, void *>;
 
 public: /* Types: */
 
-    using NextGetter =
-            std::function<ProcessFacility (std::string const &) noexcept>;
-
-    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(std::exception, Exception);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(sharemind::Exception, Exception);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(Exception,
                                                    FacilityNameClashException);
 
+    using NextGetter = Vm::ProcessFacilityFinder;
+    using NextGetterFun = Vm::ProcessFacilityFinderFun;
+    using NextGetterFunPtr = Vm::ProcessFacilityFinderFunPtr;
+
 public: /* Methods: */
 
-    void setFacility(std::string name, ProcessFacility facility);
+    void setFacility(std::string name, void * const facility);
 
-    void setNextGetter(std::shared_ptr<NextGetter> nextGetter) noexcept;
+    void setNextGetter(NextGetterFunPtr nextGetter) noexcept;
 
-    template <typename ... Args>
-    void setNextGetter(Args && ... args) {
+    template <typename F>
+    auto setNextGetter(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        NextGetterFunPtr
+                    >::value,
+                    void
+                >::type
+    {
         return setNextGetter(
-                    std::make_shared<NextGetter>(std::forward<Args>(args)...));
+                    std::make_shared<NextGetterFun>(std::forward<F>(f)));
     }
 
-    ProcessFacility facility(std::string const & name) const noexcept;
+    void * facility(std::string const & name) const noexcept;
 
     bool unsetFacility(std::string const & name) noexcept;
 
@@ -74,41 +83,40 @@ private: /* Fields: */
 
     mutable std::mutex m_mutex;
     Inner m_inner;
-    std::shared_ptr<NextGetter> m_nextGetter;
+    NextGetterFunPtr m_nextGetter;
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS \
-    std::shared_ptr<::sharemind::ProcessFacilityMap> \
+    std::shared_ptr<::sharemind::Detail::ProcessFacilityMap> \
             m_processFacilityMap{ \
-                std::make_shared<::sharemind::ProcessFacilityMap>()}
+                std::make_shared<::sharemind::Detail::ProcessFacilityMap>()}
 
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(fNF,FN) \
-    void set ## FN ## Facility(std::string name, ProcessFacility facility); \
-    ProcessFacility fNF(std::string const & name) const noexcept; \
+    void set ## FN ## Facility(std::string name, void * facility); \
+    void * fNF(std::string const & name) const noexcept; \
     bool unset ## FN ## Facility(std::string const & name) noexcept;
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS \
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(processFacility, Process)
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_SELF \
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(facility,)
 
-#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,fNF,FN) \
-    void CN::set ## FN ## Facility(std::string name, \
-                                   ProcessFacility facility) \
-    { \
-        return m_processFacilityMap->setFacility(std::move(name), \
-                                                 std::move(facility));\
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,fNF,FN,prefix) \
+    void CN::set ## FN ## Facility(std::string name, void * facility) { \
+        return prefix m_processFacilityMap->setFacility(std::move(name), \
+                                                        std::move(facility)); \
     } \
-    ProcessFacility CN::fNF(std::string const & name) const noexcept \
-    { return m_processFacilityMap->facility(name); } \
+    void * CN::fNF(std::string const & name) const noexcept \
+    { return prefix m_processFacilityMap->facility(name); } \
     bool CN::unset ## FN ## Facility(std::string const & name) noexcept \
-    { return m_processFacilityMap->unsetFacility(name); }
-#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(CN) \
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,processFacility, Process)
-#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(CN) \
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,facility,)
+    { return prefix m_processFacilityMap->unsetFacility(name); }
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(CN,pfx) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,processFacility,Process,pfx)
+#define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(CN,prefix) \
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,facility,,prefix)
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(self, other) \
     do { \
@@ -123,14 +131,15 @@ private: /* Fields: */
     SharemindVmError CN ## _set ## FF( \
             CN * c, \
             const char * name, \
-            sharemind::ProcessFacility const facility) \
+            ::sharemind::Detail::ProcessFacility const facility) \
     { \
         assert(c); \
         assert(name); \
         assert(name[0]); \
         SharemindVmError r = SHAREMIND_VM_OK; \
         CN ## _lock(c); \
-        using FNCE = sharemind::ProcessFacilityMap::FacilityNameClashException;\
+        using PFM = ::sharemind::Detail::ProcessFacilityMap; \
+        using FNCE = PFM::FacilityNameClashException; \
         try { \
             c->cF setFacility(name, facility); \
         } catch (FNCE const & e) { \
@@ -152,8 +161,7 @@ private: /* Fields: */
         CN ## _unlock(c); \
         return r; \
     } \
-    sharemind::ProcessFacility \
-    CN ## _ ## fF(const CN * c, const char * name) { \
+    void * CN ## _ ## fF(const CN * c, const char * name) { \
         assert(c); \
         assert(name); \
         assert(name[0]); \

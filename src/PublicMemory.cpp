@@ -26,6 +26,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 PublicMemory::PublicMemory(std::size_t const size) noexcept
     : m_data(::operator new(size))
@@ -50,4 +51,5 @@ bool PublicMemory::canFree() const noexcept { return m_nrefs == 0u; }
 void * PublicMemory::data() const noexcept { return m_data; }
 std::size_t PublicMemory::size() const noexcept { return m_size; }
 
+} // namespace Detail {
 } // namespace sharemind {

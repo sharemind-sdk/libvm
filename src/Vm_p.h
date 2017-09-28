@@ -17,24 +17,46 @@
  * For further information, please contact us at sharemind@cyber.ee.
  */
 
-#ifndef SHAREMIND_LIBVM_DATASECTIONSVECTOR_H
-#define SHAREMIND_LIBVM_DATASECTIONSVECTOR_H
+#ifndef SHAREMIND_LIBVM_VM_P_H
+#define SHAREMIND_LIBVM_VM_P_H
 
 #ifndef SHAREMIND_INTERNAL_
 #error including an internal header!
 #endif
 
+#include "Vm.h"
+
 #include <memory>
-#include <vector>
-#include "DataSection.h"
+#include <mutex>
+#include <sharemind/libmodapi/libmodapi.h>
+#include "ProcessFacilityMap.h"
 
 
 namespace sharemind {
-namespace Detail {
 
-using DataSectionsVector = std::vector<std::shared_ptr<DataSection> >;
+struct __attribute__((visibility("internal"))) Vm::Inner {
 
-} /* namespace Detail { */
+/* Methods: */
+
+    Inner();
+    ~Inner() noexcept;
+
+    SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS
+
+    SharemindSyscallWrapper findSyscall(std::string const & signature)
+            const noexcept;
+
+    SharemindPd * findPd(std::string const & pdName) const noexcept;
+
+/* Fields: */
+
+    mutable std::recursive_mutex m_mutex;
+    std::shared_ptr<std::function<Vm::SyscallFinder> > m_syscallFinder;
+    std::shared_ptr<std::function<Vm::PdFinder> > m_pdFinder;
+    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
+
+};
+
 } /* namespace sharemind { */
 
-#endif /* SHAREMIND_LIBVM_DATASECTIONSVECTOR_H */
+#endif /* SHAREMIND_LIBVM_VM_P_H */

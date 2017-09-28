@@ -28,8 +28,9 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-class PublicMemory: public MemorySlot {
+class __attribute__((visibility("internal"))) PublicMemory: public MemorySlot {
 
 public: /* Methods: */
 
@@ -50,6 +51,7 @@ private: /* Fields: */
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PUBLICMEMORY_H */

@@ -25,6 +25,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 DataSection::~DataSection() noexcept {}
 bool DataSection::ref() noexcept { return true; }
@@ -65,4 +66,5 @@ RoDataSection::~RoDataSection() noexcept {}
 
 bool RoDataSection::isWritable() const noexcept { return false; }
 
-} /* namespace sharemind { */
+} // namespace Detail {
+} // namespace sharemind {

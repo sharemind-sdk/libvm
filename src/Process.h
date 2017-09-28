@@ -20,137 +20,172 @@
 #ifndef SHAREMIND_LIBVM_PROCESS_H
 #define SHAREMIND_LIBVM_PROCESS_H
 
-#ifndef SHAREMIND_INTERNAL_
-#error including an internal header!
-#endif
-
 #include <cstddef>
-#include <limits>
-#include <list>
+#include <cstdint>
 #include <memory>
-#include <sharemind/extern_c.h>
-#include <sharemind/libsoftfloat/softfloat.h>
-#include <sharemind/recursive_locks.h>
-#include <sharemind/tag.h>
-#include <unordered_map>
-#include "DataSectionsVector.h"
-#include "LastError.h"
-#include "libvm.h"
-#include "MemoryMap.h"
-#include "PdpiCache.h"
-#include "ProcessFacilityMap.h"
-#include "StackFrame.h"
+#include <sharemind/module-apis/api_0x1.h>
+#include <sharemind/Exception.h>
+#include <string>
+#include <type_traits>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-struct SharemindProcess_ {
+class Program;
 
-/* Types: */
+class Process {
 
-    struct MemoryInfo {
-        std::size_t usage = 0u;
-        std::size_t max = 0u;
-        std::size_t upperLimit = std::numeric_limits<std::size_t>::max();
-    };
+private: /* Types: */
 
-    class PrivateMemoryMap {
+    struct Inner;
+
+public: /* Types: */
+
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(std::exception, Exception);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, InvalidInputStateException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            InvalidInputStateException,
+            NotInInitializedStateException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(InvalidInputStateException,
+                                                   NotInTrappedStateException);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, RuntimeException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(RuntimeException,
+                                                   TrapException);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(RuntimeException,
+                                         RegularRuntimeException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(RegularRuntimeException,
+                                                   InvalidStackIndexException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidRegisterIndexException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidReferenceIndexException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidConstReferenceIndexException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidSyscallIndexException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidMemoryHandleException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            OutOfBoundsReadException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            OutOfBoundsWriteException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            WriteDeniedException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            JumpToInvalidAddressException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            SystemCallErrorException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            InvalidArgumentException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            OutOfBoundsReferenceOffsetException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            OutOfBoundsReferenceSizeException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            IntegerDivideByZeroException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            IntegerOverflowException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            RegularRuntimeException,
+            MemoryInUseException);
+
+    class UserDefinedException: public RegularRuntimeException {
 
     public: /* Methods: */
 
-        ~PrivateMemoryMap() noexcept {
-            for (auto const & vp : m_data)
-                ::operator delete(vp.first);
-        }
+        UserDefinedException();
+        UserDefinedException(UserDefinedException && move)
+                noexcept(std::is_nothrow_move_constructible<
+                                RegularRuntimeException>::value);
+        UserDefinedException(UserDefinedException const & copy)
+                noexcept(std::is_nothrow_copy_constructible<
+                                RegularRuntimeException>::value);
 
-        void * allocate(std::size_t const nBytes) {
-            assert(nBytes > 0u);
-            return m_data.emplace(::operator new(nBytes), nBytes).first->first;
-        }
+        ~UserDefinedException() noexcept override;
 
-        std::size_t free(void * const ptr) noexcept {
-            auto it(m_data.find(ptr));
-            if (it == m_data.end())
-                return 0u;
-            auto const r(it->second);
-            assert(r > 0u);
-            m_data.erase(it);
-            ::operator delete(ptr);
-            return r;
-        }
+        UserDefinedException & operator=(UserDefinedException && move)
+                noexcept(std::is_nothrow_move_assignable<
+                                RegularRuntimeException>::value);
 
-    private: /* Fields: */
+        UserDefinedException & operator=(UserDefinedException const & copy)
+                noexcept(std::is_nothrow_copy_assignable<
+                                RegularRuntimeException>::value);
 
-        std::unordered_map<void *, std::size_t> m_data;
+        std::uint64_t errorCode() const noexcept;
+        void setErrorCode(std::uint64_t const value) noexcept;
+
+        const char * what() const noexcept final override;
+
+    private: /* Methods: */
+
+        std::shared_ptr<void> m_data;
 
     };
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, FloatingPointException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            FloatingPointDivideByZeroException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            FloatingPointOverflowException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            FloatingPointUnderflowException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            FloatingPointInexactResultException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            FloatingPointInvalidOperationException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            FloatingPointException,
+            UnknownFloatingPointException);
 
-/* Methods: */
+public: /* Methods: */
 
-    std::uint64_t publicAlloc(std::uint64_t size);
-    void publicFree(std::uint64_t ptr);
+    Process(Program & program);
+    virtual ~Process() noexcept;
 
-/* Fields: */
+    void setPdpiFacility(char const * const name,
+                         void * const facility,
+                         void * const context = nullptr);
 
-    SharemindProgram * program;
+    void setInternal(void * const value);
 
-    SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
-    SHAREMIND_LIBVM_LASTERROR_FIELDS;
-    SHAREMIND_TAG_DECLARE_FIELDS;
+    void run();
+    void resume();
+    void pause() noexcept;
 
-    sharemind::DataSectionsVector dataSections;
-    sharemind::DataSectionsVector bssSections;
+    SharemindCodeBlock returnValue() const noexcept;
+    SharemindModuleApi0x1Error syscallException() const noexcept;
+    std::size_t currentCodeSectionIndex() const noexcept;
+    std::uintptr_t currentIp() const noexcept;
 
-    sharemind::PdpiCache pdpiCache;
+    void setFacility(std::string name, void * facility);
+    void * facility(std::string const & name) const noexcept;
+    bool unsetFacility(std::string const & name) noexcept;
 
-    size_t currentCodeSectionIndex;
-    uintptr_t currentIp;
-    bool trapCond;
+private: /* Fields: */
 
-    sf_fpu_state fpuState;
+    std::shared_ptr<Inner> m_inner;
 
-    sharemind::MemoryMap memoryMap;
-    uint64_t memorySlotNext;
-    PrivateMemoryMap privateMemoryMap;
+}; /* class Process */
 
-    SharemindCodeBlock returnValue;
-    int64_t exceptionValue;
-    SharemindModuleApi0x1Error syscallException;
-
-    SharemindModuleApi0x1SyscallContext syscallContext;
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
-
-    MemoryInfo memPublicHeap;
-    MemoryInfo memPrivate;
-    MemoryInfo memReserved;
-    MemoryInfo memTotal;
-
-    std::list<sharemind::StackFrame> frames;
-    sharemind::StackFrame * globalFrame;
-    sharemind::StackFrame * nextFrame;
-    sharemind::StackFrame * thisFrame;
-
-    SharemindVmProcessState state;
-};
-
-SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
-        SharemindProcess,
-        inline,
-        SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProcess)
-
-uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
-                                       uint64_t const nBytes)
-        __attribute__ ((visibility("internal"),
-                        nonnull(1),
-                        warn_unused_result));
-SharemindVmProcessException SharemindProcess_public_free(
-        SharemindProcess * const p,
-        uint64_t const ptr)
-        __attribute__ ((visibility("internal"),
-                        nonnull(1),
-                        warn_unused_result));
-
-SHAREMIND_EXTERN_C_END
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PROCESS_H */

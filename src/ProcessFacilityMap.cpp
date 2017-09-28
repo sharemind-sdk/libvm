@@ -21,6 +21,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(std::exception,
                                     ProcessFacilityMap::,
@@ -33,25 +34,19 @@ SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(
 
 #define GUARD std::lock_guard<decltype(m_mutex)> const guard(m_mutex)
 
-void ProcessFacilityMap::setFacility(std::string name,
-                                     ProcessFacility facility)
-{
+void ProcessFacilityMap::setFacility(std::string name, void * facility) {
     GUARD;
     auto const rp(m_inner.emplace(std::move(name), std::move(facility)));
     if (!rp.second)
         throw FacilityNameClashException();
 }
 
-void ProcessFacilityMap::setNextGetter(std::shared_ptr<NextGetter> nextGetter)
-        noexcept
-{
+void ProcessFacilityMap::setNextGetter(NextGetterFunPtr nextGetter) noexcept {
     GUARD;
-    m_nextGetter = nextGetter;
+    m_nextGetter = std::move(nextGetter);
 }
 
-ProcessFacility ProcessFacilityMap::facility(std::string const & name)
-        const noexcept
-{
+void * ProcessFacilityMap::facility(std::string const & name) const noexcept {
     decltype(m_nextGetter) nextGetter;
     {
         GUARD;
@@ -70,4 +65,5 @@ bool ProcessFacilityMap::unsetFacility(std::string const & name) noexcept {
     return m_inner.erase(name);
 }
 
+} // namespace Detail {
 } // namespace sharemind {

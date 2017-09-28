@@ -32,8 +32,9 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-class CodeSection {
+class __attribute__((visibility("internal"))) CodeSection {
 
 public: /* Methods: */
 
@@ -72,6 +73,7 @@ private: /* Fields: */
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind */
 
 #endif /* SHAREMIND_LIBVM_CODESECTION_H */

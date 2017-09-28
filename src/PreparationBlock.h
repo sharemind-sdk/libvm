@@ -28,12 +28,15 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-struct PreparationBlock {
+struct __attribute__((visibility("internal"))) PreparationBlock {
+    enum LabelType { InstructionLabel, EofLabel };
     SharemindCodeBlock * block;
-    unsigned type;
+    LabelType labelType;
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PREPARATIONBLOCK_H */

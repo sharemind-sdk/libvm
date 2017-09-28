@@ -18,434 +18,505 @@
  */
 
 #include "Process.h"
+#include "Process_p.h"
 
 #include <cassert>
-#include <cstdio>
-#include <cstring>
-#include <limits.h>
-#include <sharemind/comma.h>
-#include "Core.h"
+#include <cinttypes>
+#include <limits>
+#include <new>
+#include <sharemind/AssertReturn.h>
+#include <sharemind/MakeUnique.h>
 #include "Program.h"
 
 
-/*******************************************************************************
- *  Public enum methods
-*******************************************************************************/
+#define SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c) \
+    do { assert((c)); assert((c)->vm_internal); } while (false)
+#define SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c) \
+    (*static_cast<::sharemind::Detail::ProcessState *>( \
+            ::sharemind::assertReturn((c)->vm_internal)))
 
-SHAREMIND_ENUM_DEFINE_TOSTRING(SharemindVmProcessState,
-                               SHAREMIND_VM_PROCESS_STATE_ENUM)
-SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmProcessException,
-                                      SHAREMIND_VM_PROCESS_EXCEPTION_ENUM)
-
-
-/*******************************************************************************
- *  Forward declarations:
-*******************************************************************************/
-
-static uint64_t sharemind_public_alloc(
+extern "C"
+SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
         SharemindModuleApi0x1SyscallContext * c,
-        uint64_t nBytes) __attribute__ ((nonnull(1), warn_unused_result));
-static bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
-                                  uint64_t ptr) __attribute__ ((nonnull(1)));
-static size_t sharemind_public_get_size(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t ptr) __attribute__ ((nonnull(1)));
-static void * sharemind_public_get_ptr(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t ptr) __attribute__ ((nonnull(1)));
-
-static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
-                                      size_t nBytes)
-        __attribute__ ((nonnull(1), warn_unused_result));
-static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
-                                   void * ptr) __attribute__ ((nonnull(1)));
-static bool sharemind_private_reserve(
-        SharemindModuleApi0x1SyscallContext * c,
-        size_t nBytes) __attribute__ ((nonnull(1)));
-static bool sharemind_private_release(
-        SharemindModuleApi0x1SyscallContext * c,
-        size_t nBytes) __attribute__ ((nonnull(1), warn_unused_result));
-
-static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t pd_index) __attribute__ ((nonnull(1)));
-
-static void * sharemind_processFacility(
-        SharemindModuleApi0x1SyscallContext const * c,
-        char const * facilityName) __attribute__ ((nonnull(1, 2)));
-
-
-
-/*******************************************************************************
- *  SharemindProcess:
-*******************************************************************************/
-
-static inline bool SharemindProcess_start_pdpis(SharemindProcess * p);
-static inline void SharemindProcess_stop_pdpis(SharemindProcess * p);
-
-SharemindProcess * SharemindProgram_newProcess(SharemindProgram * program) {
-    assert(program);
-    assert(SharemindProgram_isReady(program));
-
-    SharemindProcess * p;
-    try {
-        p = new SharemindProcess();
-    } catch (...) {
-        SharemindProgram_setErrorOom(program);
-        goto SharemindProcess_new_fail_0;
-    }
-
-    p->program = program;
-
-    SharemindProgram_lock(program);
-    if (!SHAREMIND_RECURSIVE_LOCK_INIT(p)) {
-        SharemindProgram_setErrorMie(program);
-        goto SharemindProgram_newProcess_fail_mutex;
-    }
-
-    SHAREMIND_LIBVM_LASTERROR_INIT(p);
-    SHAREMIND_TAG_INIT(p);
-
-    /* Copy DATA section */
-    for (std::size_t i = 0u; i < program->dataSections.size(); i++) {
-        auto const & originalSection = program->dataSections[i];
-        try {
-            p->dataSections.emplace_back(
-                        std::make_shared<sharemind::RwDataSection>(
-                            originalSection->data(),
-                            originalSection->size()));
-        } catch (...) {
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_data_sections;
-        }
-    }
-    assert(p->dataSections.size() == program->dataSections.size());
-
-    /* Initialize BSS sections */
-    for (std::size_t i = 0u; i < program->bssSectionSizes.size(); i++) {
-        try {
-            static_assert(sizeof(program->bssSectionSizes[i])
-                          <= sizeof(std::size_t), "");
-            p->bssSections.emplace_back(
-                        std::make_shared<sharemind::BssDataSection>(
-                            program->bssSectionSizes[i]));
-        } catch (...) {
-            SharemindProgram_setErrorOom(program);
-            goto SharemindProgram_newProcess_fail_bss_sections;
-        }
-    }
-    assert(p->bssSections.size() == program->bssSectionSizes.size());
-
-
-    /* Initialize PDPI cache: */
-    try {
-        p->pdpiCache.reinitialize(program->pdBindings);
-    } catch (...) {
-        SharemindProgram_setErrorOom(program);
-        goto SharemindProgram_newProcess_fail_pdpiCache;
-    }
-
-    /* Set currentCodeSectionIndex before initializing memory slots: */
-    p->currentCodeSectionIndex = program->activeLinkingUnit;
-    p->currentIp = 0u;
-
-    p->trapCond = false;
-
-    // This state replicates default AMD64 behaviour.
-    // NB! By default, we ignore any fpu exceptions.
-    p->fpuState = (sf_fpu_state) (sf_float_tininess_after_rounding |
-                                  sf_float_round_nearest_even);
-
-    /* Initialize section pointers: */
-    try {
-        p->memoryMap.insertDataSection(
-                    1u,
-                    p->program->rodataSections[p->currentCodeSectionIndex]);
-        p->memoryMap.insertDataSection(
-                    2u,
-                    p->dataSections[p->currentCodeSectionIndex]);
-        p->memoryMap.insertDataSection(
-                    3u,
-                    p->bssSections[p->currentCodeSectionIndex]);
-    } catch (...) {
-        goto SharemindProgram_newProcess_fail_memslots;
-    }
-
-    p->syscallContext.get_pdpi_info = &sharemind_get_pdpi_info;
-    p->syscallContext.processFacility = &sharemind_processFacility;
-    p->syscallContext.publicAlloc = &sharemind_public_alloc;
-    p->syscallContext.publicFree = &sharemind_public_free;
-    p->syscallContext.publicMemPtrSize = &sharemind_public_get_size;
-    p->syscallContext.publicMemPtrData = &sharemind_public_get_ptr;
-    p->syscallContext.allocPrivate = &sharemind_private_alloc;
-    p->syscallContext.freePrivate = &sharemind_private_free;
-    p->syscallContext.reservePrivate = &sharemind_private_reserve;
-    p->syscallContext.releasePrivate = &sharemind_private_release;
-    p->syscallContext.vm_internal = p;
-    p->syscallContext.process_internal = nullptr;
-
-    try {
-        SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*p, *program);
-    } catch (...) {
-        SharemindProgram_setErrorOom(program);
-        goto SharemindProgram_newProcess_fail_framestack;
-    }
-
-    /* Initialize the frame stack */
-    try {
-        p->frames.emplace_back();
-    } catch (...) {
-        SharemindProgram_setErrorOom(program);
-        goto SharemindProgram_newProcess_fail_framestack;
-    }
-
-    /* Initialize global frame: */
-    p->globalFrame = &p->frames.back();
-    p->globalFrame->returnAddr = nullptr; /* Triggers halt on return. */
-    /* p->globalFrame->returnValueAddr = &(p->returnValue); is not needed. */
-    p->thisFrame = p->globalFrame;
-    p->nextFrame = nullptr;
-
-    p->state = SHAREMIND_VM_PROCESS_INITIALIZED;
-
-    SharemindProgram_unlock(program);
-
-    return p;
-
-SharemindProgram_newProcess_fail_framestack:
-
-    p->frames.clear();
-
-SharemindProgram_newProcess_fail_memslots:
-SharemindProgram_newProcess_fail_pdpiCache:
-
-    p->pdpiCache.clear();
-
-SharemindProgram_newProcess_fail_bss_sections:
-
-    p->bssSections.clear();
-
-SharemindProgram_newProcess_fail_data_sections:
-
-    p->dataSections.clear();
-    SHAREMIND_TAG_DESTROY(p);
-    SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
-
-SharemindProgram_newProcess_fail_mutex:
-
-    SharemindProgram_unlock(program);
-    delete p;
-
-SharemindProcess_new_fail_0:
-
-    return nullptr;
-}
-
-void SharemindProcess_free(SharemindProcess * p) {
-    assert(p);
-    assert(p->state != SHAREMIND_VM_PROCESS_RUNNING);
-    if (p->state == SHAREMIND_VM_PROCESS_TRAPPED)
-        SharemindProcess_stop_pdpis(p);
-
-    p->frames.clear();
-    p->pdpiCache.clear();
-
-    SHAREMIND_TAG_DESTROY(p);
-    SHAREMIND_RECURSIVE_LOCK_DEINIT(p);
-    delete p;
-}
-
-SharemindProgram * SharemindProcess_program(SharemindProcess const * const p) {
-    // No locking, program is const after SharemindProcess_new():
-    return p->program;
-}
-
-SharemindVm * SharemindProcess_vm(SharemindProcess const * const p) {
-    // No locking, program is const after SharemindProcess_new():
-    return SharemindProgram_vm(p->program);
-}
-
-size_t SharemindProcess_pdpiCount(SharemindProcess const * process) {
-    assert(process);
-    // No locking, program is const after SharemindProcess_new():
-    return process->program->pdBindings.size();
-}
-
-SharemindPdpi * SharemindProcess_pdpi(SharemindProcess const * process,
-                                      size_t pdpiIndex)
+        uint64_t pd_index)
 {
-    assert(process);
-    SharemindProcess_lockConst(process);
-    auto * const r = process->pdpiCache.pdpi(pdpiIndex);
-    SharemindProcess_unlockConst(process);
-    return r;
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (pd_index > SIZE_MAX)
+        return nullptr;
+
+    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.pdpiInfo(pd_index);
 }
 
-SharemindVmError SharemindProcess_setPdpiFacility(
-        SharemindProcess * const process,
-        char const * const name,
-        void * const facility,
-        void * const context)
+extern "C"
+void * sharemind_processFacility(SharemindModuleApi0x1SyscallContext const * c,
+                                 char const * facilityName)
 {
-    assert(process);
-    assert(name);
-    SharemindProcess_lock(process);
-    auto const numPdpis(process->pdpiCache.size());
-    auto const & cache = process->pdpiCache;
-    for (std::size_t i = 0u; i < numPdpis; i++)
-        if (SharemindPdpi_setFacility(cache.pdpi(i),
-                                      name,
-                                      facility,
-                                      context) != SHAREMIND_MODULE_API_OK)
-        {
-            SharemindProcess_setErrorOom(process);
-            SharemindProcess_unlock(process);
-            return SHAREMIND_VM_OUT_OF_MEMORY;
-        }
-    SharemindProcess_unlock(process);
-    return SHAREMIND_VM_OK;
-}
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+    assert(facilityName);
 
-void SharemindProcess_setInternal(SharemindProcess * const process,
-                                  void * const value)
-{
-    assert(process);
-    SharemindProcess_lock(process);
-    process->syscallContext.process_internal = value;
-    SharemindProcess_unlock(process);
-}
-
-static inline bool SharemindProcess_start_pdpis(SharemindProcess * p) {
-    assert(p);
+    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
     try {
-        p->pdpiCache.startPdpis();
+        return ps.processFacility(facilityName);
+    } catch (...) { // std::string constructor may throw
+        return nullptr;
+    }
+}
+
+extern "C"
+std::uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
+                                     std::uint64_t nBytes)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.publicAlloc(nBytes);
+}
+
+extern "C"
+bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
+                           std::uint64_t ptr)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+
+    auto const r = ps.publicFree(ptr);
+    assert(r == sharemind::Detail::MemoryMap::Ok
+           || r == sharemind::Detail::MemoryMap::MemorySlotInUse
+           || r == sharemind::Detail::MemoryMap::InvalidMemoryHandle);
+    return r != sharemind::Detail::MemoryMap::MemorySlotInUse;
+}
+
+extern "C"
+std::size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
+                                      std::uint64_t ptr)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(ptr == 0u))
+        return 0u;
+
+    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.publicSlotSize(ptr);
+}
+
+extern "C"
+void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
+                                std::uint64_t ptr)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(ptr == 0u))
+        return nullptr;
+
+    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.publicSlotPtr(ptr);
+}
+
+extern "C"
+void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
+                               std::size_t nBytes)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(nBytes == 0))
+        return nullptr;
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.privateAlloc(nBytes);
+}
+
+extern "C"
+void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
+                            void * ptr)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(!ptr))
+        return;
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.privateFree(ptr);
+}
+
+extern "C"
+bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
+                               std::size_t nBytes)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(nBytes == 0u))
         return true;
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.privateReserve(nBytes);
+}
+
+extern "C"
+bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
+                               std::size_t nBytes)
+{
+    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
+
+    if (unlikely(nBytes == 0u))
+        return true;
+
+    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
+    return ps.privateRelease(nBytes);
+}
+
+namespace sharemind {
+
+#define GUARD_(g) std::lock_guard<decltype(g)> const guard(g)
+#define GUARD GUARD_(m_mutex)
+#define RUNSTATEGUARD GUARD_(m_runStateMutex)
+#define DEFINE_BASE_EXCEPTION(base,e) \
+    SHAREMIND_DEFINE_EXCEPTION_NOINLINE(base, Process::, e)
+#define DEFINE_CONSTMSG_EXCEPTION(base,e,msg) \
+    SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(base, Process::, e, msg)
+
+DEFINE_BASE_EXCEPTION(std::exception, Exception);
+DEFINE_BASE_EXCEPTION(Exception, InvalidInputStateException);
+DEFINE_CONSTMSG_EXCEPTION(
+        InvalidInputStateException,
+        NotInInitializedStateException,
+        "Process not in initialized (pre-run) state!");
+DEFINE_CONSTMSG_EXCEPTION(
+        InvalidInputStateException,
+        NotInTrappedStateException,
+        "Process not in trapped state!");
+DEFINE_BASE_EXCEPTION(Exception, RuntimeException);
+DEFINE_CONSTMSG_EXCEPTION(RuntimeException, TrapException, "Process trapped!");
+DEFINE_BASE_EXCEPTION(RuntimeException, RegularRuntimeException);
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidStackIndexException,
+                          "Invalid stack index!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidRegisterIndexException,
+                          "Invalid register index!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidReferenceIndexException,
+                          "Invalid reference index!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidConstReferenceIndexException,
+                          "Invalid constant reference index!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidSyscallIndexException,
+                          "Invalid system call index!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidMemoryHandleException,
+                          "Invalid memory handle!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          OutOfBoundsReadException,
+                          "Read out of bounds!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          OutOfBoundsWriteException,
+                          "Write out of bounds!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          WriteDeniedException,
+                          "Write denied!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          JumpToInvalidAddressException,
+                          "Jump to invalid address!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          SystemCallErrorException,
+                          "System call error!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          InvalidArgumentException,
+                          "Invalid argument!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          OutOfBoundsReferenceOffsetException,
+                          "Out of bounds reference offset!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          OutOfBoundsReferenceSizeException,
+                          "Out of bounds reference size!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          IntegerDivideByZeroException,
+                          "Integer divide by zero!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          IntegerOverflowException,
+                          "Integer overflow!");
+DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
+                          MemoryInUseException,
+                          "Attempted to free memory which is in use!");
+
+#define SharemindUserDefinedExceptionMessage \
+        "User-defined exception with (unsigned) value of %" PRIu64 "!"
+
+namespace {
+
+struct UserDefinedExceptionData {
+
+/* Methods: */
+
+    UserDefinedExceptionData() { setErrorCode(0u); }
+
+    void setErrorCode(std::uint64_t const value) noexcept {
+        errorCode = value;
+        std::sprintf(message.get(),
+                     SharemindUserDefinedExceptionMessage,
+                     value);
+    }
+
+    static UserDefinedExceptionData & fromPtr(std::shared_ptr<void> const & ptr)
+    { return *static_cast<UserDefinedExceptionData *>(ptr.get()); }
+
+/* Fields: */
+
+    std::unique_ptr<char[]> message{
+            makeUnique<char[]>(
+                        sizeof(SharemindUserDefinedExceptionMessage) + 21u)};
+    std::uint64_t errorCode = 0u;
+};
+
+} // anonymous namespace
+
+Process::UserDefinedException::UserDefinedException()
+    : m_data(std::make_shared<UserDefinedExceptionData>())
+{}
+
+Process::UserDefinedException::UserDefinedException(
+        UserDefinedException &&)
+        noexcept(std::is_nothrow_move_constructible<
+                        RegularRuntimeException>::value) = default;
+
+Process::UserDefinedException::UserDefinedException(
+        UserDefinedException const &)
+        noexcept(std::is_nothrow_copy_constructible<
+                        RegularRuntimeException>::value) = default;
+
+Process::UserDefinedException::~UserDefinedException() noexcept = default;
+
+Process::UserDefinedException & Process::UserDefinedException::operator=(
+        UserDefinedException &&)
+        noexcept(std::is_nothrow_move_assignable<
+                        RegularRuntimeException>::value) = default;
+
+Process::UserDefinedException & Process::UserDefinedException::operator=(
+        UserDefinedException const &)
+        noexcept(std::is_nothrow_copy_assignable<
+                        RegularRuntimeException>::value) = default;
+
+std::uint64_t Process::UserDefinedException::errorCode() const noexcept
+{ return UserDefinedExceptionData::fromPtr(m_data).errorCode; }
+
+void Process::UserDefinedException::setErrorCode(std::uint64_t const value)
+        noexcept
+{ return UserDefinedExceptionData::fromPtr(m_data).setErrorCode(value); }
+
+char const * Process::UserDefinedException::what() const noexcept
+{ return UserDefinedExceptionData::fromPtr(m_data).message.get(); }
+
+DEFINE_BASE_EXCEPTION(Exception, FloatingPointException);
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        FloatingPointDivideByZeroException,
+        "Floating point division by zero!");
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        FloatingPointOverflowException,
+        "Floating point overflow!");
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        FloatingPointUnderflowException,
+        "Floating point underflow!");
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        FloatingPointInexactResultException,
+        "Inexact floating point result!");
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        FloatingPointInvalidOperationException,
+        "Invalid floating point operation!");
+DEFINE_CONSTMSG_EXCEPTION(
+        FloatingPointException,
+        UnknownFloatingPointException,
+        "Unknown floating point exception!");
+
+namespace Detail {
+
+PrivateMemoryMap::~PrivateMemoryMap() noexcept {
+    for (auto const & vp : m_data)
+        ::operator delete(vp.first);
+}
+
+void * PrivateMemoryMap::allocate(std::size_t const nBytes) {
+    assert(nBytes > 0u);
+    auto const r = ::operator new(nBytes);
+    try {
+        m_data.emplace(r, nBytes);
     } catch (...) {
-        return false;
+        ::operator delete(r);
+        throw;
     }
-}
-
-static inline void SharemindProcess_stop_pdpis(SharemindProcess * p) {
-    assert(p);
-    p->pdpiCache.stopPdpis();
-}
-
-SharemindVmError SharemindProcess_run(SharemindProcess * p) {
-    assert(p);
-    SharemindProcess_lock(p);
-    /** \todo Add support for continue/restart */
-    if (unlikely(p->state != SHAREMIND_VM_PROCESS_INITIALIZED)) {
-        SharemindProcess_setError(p,
-                                  SHAREMIND_VM_INVALID_INPUT_STATE,
-                                  "Process already initialized!");
-        SharemindProcess_unlock(p);
-        return SHAREMIND_VM_INVALID_INPUT_STATE;
-    }
-
-    if (unlikely(!SharemindProcess_start_pdpis(p))) {
-        SharemindProcess_setError(p,
-                                  SHAREMIND_VM_PDPI_STARTUP_FAILED,
-                                  "Failed to start PDPIs!");
-        SharemindProcess_unlock(p);
-        return SHAREMIND_VM_PDPI_STARTUP_FAILED;
-    }
-
-    p->state = SHAREMIND_VM_PROCESS_RUNNING;
-    SharemindVmError const e = sharemind_vm_run(p, SHAREMIND_I_RUN, nullptr);
-    if (e != SHAREMIND_VM_RUNTIME_TRAP)
-        SharemindProcess_stop_pdpis(p);
-    SharemindProcess_unlock(p);
-    return e;
-}
-
-SharemindVmError SharemindProcess_continue(SharemindProcess * p) {
-    assert(p);
-    SharemindProcess_lock(p);
-    /** \todo Add support for continue/restart */
-    if (unlikely(p->state != SHAREMIND_VM_PROCESS_TRAPPED)) {
-        SharemindProcess_setError(p,
-                                  SHAREMIND_VM_INVALID_INPUT_STATE,
-                                  "Process not in trapped state!");
-        SharemindProcess_unlock(p);
-        return SHAREMIND_VM_INVALID_INPUT_STATE;
-    }
-
-    SharemindVmError const e =
-            sharemind_vm_run(p, SHAREMIND_I_CONTINUE, nullptr);
-    if (e != SHAREMIND_VM_RUNTIME_TRAP)
-        SharemindProcess_stop_pdpis(p);
-    SharemindProcess_unlock(p);
-    return e;
-}
-
-void SharemindProcess_pause(SharemindProcess * p) {
-    assert(p);
-    __atomic_store_n(&p->trapCond, true, __ATOMIC_RELEASE);
-}
-
-int64_t SharemindProcess_returnValue(SharemindProcess const * p) {
-    assert(p);
-    SharemindProcess_lockConst(p);
-    int64_t const r = p->returnValue.int64[0];
-    SharemindProcess_unlockConst(p);
     return r;
 }
 
-SharemindVmProcessException SharemindProcess_exception(
-        SharemindProcess const * p)
+std::size_t PrivateMemoryMap::free(void * const ptr) noexcept {
+    auto it(m_data.find(ptr));
+    if (it == m_data.end())
+        return 0u;
+    auto const r(it->second);
+    assert(r > 0u);
+    m_data.erase(it);
+    ::operator delete(ptr);
+    return r;
+}
+
+ProcessState::DataSections::DataSections(
+        DataSectionsVector & originalDataSections)
 {
-    assert(p);
-    SharemindProcess_lockConst(p);
-    assert(p->exceptionValue >= INT_MIN && p->exceptionValue <= INT_MAX);
-    SharemindVmProcessException const r =
-            (SharemindVmProcessException) p->exceptionValue;
-    SharemindProcess_unlockConst(p);
-    assert(SharemindVmProcessException_toString(r));
-    return r;
+    for (auto const & s : originalDataSections)
+        emplace_back(std::make_shared<RwDataSection>(s->data(),
+                                                     s->size()));
 }
 
-void const * SharemindProcess_syscallException(SharemindProcess const * p) {
-    assert(p);
-    return &p->syscallException;
+ProcessState::BssSections::BssSections(DataSectionSizesVector & sizes) {
+    for (auto const size : sizes) {
+        static_assert(std::numeric_limits<decltype(size)>::max()
+                      <= std::numeric_limits<std::size_t>::max(), "");
+        emplace_back(std::make_shared<BssDataSection>(size));
+    }
 }
 
-size_t SharemindProcess_currentCodeSection(SharemindProcess const * p) {
-    assert(p);
-    SharemindProcess_lockConst(p);
-    size_t const r = p->currentCodeSectionIndex;
-    SharemindProcess_unlockConst(p);
-    return r;
-}
-
-uintptr_t SharemindProcess_currentIp(SharemindProcess const * p) {
-    assert(p);
-    SharemindProcess_lockConst(p);
-    uintptr_t const r = p->currentIp;
-    SharemindProcess_unlockConst(p);
-    return r;
-}
-
-std::uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
-                                            std::uint64_t const nBytes)
+ProcessState::SimpleMemoryMap::SimpleMemoryMap(
+        std::shared_ptr<DataSection> rodataSection,
+        std::shared_ptr<DataSection> dataSection,
+        std::shared_ptr<DataSection> bssSection)
 {
-    assert(p);
+    insertDataSection(1u, std::move(rodataSection));
+    insertDataSection(2u, std::move(dataSection));
+    insertDataSection(3u, std::move(bssSection));
+}
 
+ProcessState::ProcessState(std::shared_ptr<ParseData> parseData)
+    : m_staticProgramData(assertReturn(assertReturn(parseData)->staticData))
+    , m_dataSections(parseData->dataSections)
+    , m_bssSections(parseData->bssSectionSizes)
+    , m_pdpiCache(parseData->staticData->pdBindings)
+    , m_currentCodeSectionIndex(parseData->staticData->activeLinkingUnit)
+    , m_memoryMap(
+          parseData->staticData->rodataSections[m_currentCodeSectionIndex],
+          m_dataSections[m_currentCodeSectionIndex],
+          m_bssSections[m_currentCodeSectionIndex])
+    , m_syscallContext{this,    // vm_internal
+                       nullptr, // process_internal
+                       nullptr, // module_handle
+                       &sharemind_get_pdpi_info,
+                       &sharemind_processFacility,
+                       &sharemind_public_alloc,
+                       &sharemind_public_free,
+                       &sharemind_public_get_size,
+                       &sharemind_public_get_ptr,
+                       &sharemind_private_alloc,
+                       &sharemind_private_free,
+                       &sharemind_private_reserve,
+                       &sharemind_private_release}
+{}
+
+ProcessState::~ProcessState() noexcept {
+    assert(m_state != State::Starting);
+    assert(m_state != State::Running);
+    if (m_state == State::Trapped)
+        m_pdpiCache.stopPdpis();
+
+    m_frames.clear();
+    m_pdpiCache.clear();
+}
+
+void ProcessState::setPdpiFacility(char const * const name,
+                                   void * const facility,
+                                   void * const context)
+{
+    assert(name);
+    GUARD;
+    m_pdpiCache.setPdpiFacility(name, facility, context);
+}
+
+void ProcessState::setInternal(void * const value) {
+    GUARD;
+    m_syscallContext.process_internal = value;
+}
+
+void ProcessState::run() {
+    {
+        RUNSTATEGUARD;
+        if (unlikely(m_state != State::Initialized))
+            throw Process::NotInInitializedStateException();
+        m_state = State::Starting;
+    }
+
+    try {
+        m_pdpiCache.startPdpis();
+    } catch (...) {
+        RUNSTATEGUARD;
+        assert(m_state == State::Starting);
+        m_state = State::Initialized;
+        throw;
+    }
+
+    {
+        RUNSTATEGUARD;
+        assert(m_state == State::Starting);
+        m_state = State::Running;
+    }
+    return execute(ExecuteMethod::Run);
+}
+
+void ProcessState::resume() {
+    {
+        RUNSTATEGUARD;
+        if (unlikely(m_state != State::Trapped))
+            throw Process::NotInTrappedStateException();
+        m_state = State::Running;
+    }
+    return execute(ExecuteMethod::Continue);
+}
+
+void ProcessState::execute(ExecuteMethod const executeMethod) {
+    auto const setState =
+            [this](State const newState) {
+                RUNSTATEGUARD;
+                assert(m_state == State::Running);
+                m_state = newState;
+            };
+
+    try {
+        vmRun(executeMethod, this);
+    } catch (Process::TrapException const &) {
+        setState(State::Trapped);
+        throw;
+    } catch (...) {
+        m_pdpiCache.stopPdpis();
+        setState(State::Crashed);
+        throw;
+    }
+    m_pdpiCache.stopPdpis();
+    setState(State::Finished);
+}
+
+void ProcessState::pause() noexcept
+{ m_trapCond.store(true, std::memory_order_release); }
+
+std::uint64_t ProcessState::publicAlloc(std::uint64_t const nBytes) {
     /* Check memory limits: */
-    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
-                 || (p->memPublicHeap.upperLimit - p->memPublicHeap.usage
+    if (unlikely((m_memTotal.upperLimit - m_memTotal.usage < nBytes)
+                 || (m_memPublicHeap.upperLimit - m_memPublicHeap.usage
                      < nBytes)))
         return 0u;
 
     try {
-        auto const index(p->memoryMap.allocate(nBytes));
+        auto const index(m_memoryMap.allocate(nBytes));
 
         /* Update memory statistics: */
-        p->memPublicHeap.usage += nBytes;
-        p->memTotal.usage += nBytes;
-        if (p->memPublicHeap.usage > p->memPublicHeap.max)
-            p->memPublicHeap.max = p->memPublicHeap.usage;
-        if (p->memTotal.usage > p->memTotal.max)
-            p->memTotal.max = p->memTotal.usage;
+        m_memPublicHeap.usage += nBytes;
+        m_memTotal.usage += nBytes;
+        if (m_memPublicHeap.usage > m_memPublicHeap.max)
+            m_memPublicHeap.max = m_memPublicHeap.usage;
+        if (m_memTotal.usage > m_memTotal.max)
+            m_memTotal.max = m_memTotal.usage;
 
         return index;
     } catch (...) {
@@ -453,115 +524,47 @@ std::uint64_t SharemindProcess_public_alloc(SharemindProcess * const p,
     }
 }
 
-SharemindVmProcessException SharemindProcess_public_free(
-        SharemindProcess * const p,
-        uint64_t const ptr)
+MemoryMap::ErrorCode ProcessState::publicFree(std::uint64_t const ptr) noexcept
 {
-    assert(p);
-    auto const r(p->memoryMap.free(ptr));
-    if (r.first == SHAREMIND_VM_PROCESS_OK) {
+    auto const r(m_memoryMap.free(ptr));
+    if (r.first == MemoryMap::Ok) {
         /* Update memory statistics: */
-        assert(p->memPublicHeap.usage >= r.second);
-        assert(p->memTotal.usage >= r.second);
-        p->memPublicHeap.usage -= r.second;
-        p->memTotal.usage -= r.second;
+        assert(m_memPublicHeap.usage >= r.second);
+        assert(m_memTotal.usage >= r.second);
+        m_memPublicHeap.usage -= r.second;
+        m_memTotal.usage -= r.second;
     }
     return r.first;
 }
 
-/*******************************************************************************
- *  Other procedures:
-*******************************************************************************/
+std::size_t ProcessState::publicSlotSize(std::uint64_t const ptr)
+        const noexcept
+{ return m_memoryMap.slotSize(ptr); }
 
-static uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
-                                       uint64_t nBytes)
-{
-    assert(c);
-    assert(c->vm_internal);
+void * ProcessState::publicSlotPtr(std::uint64_t const ptr) const noexcept
+{ return m_memoryMap.slotPtr(ptr); }
 
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-    return SharemindProcess_public_alloc(p, nBytes);
-}
-
-static bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
-                                  uint64_t ptr)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-
-    SharemindVmProcessException const r = SharemindProcess_public_free(p, ptr);
-    assert(r == SHAREMIND_VM_PROCESS_OK
-           || r == SHAREMIND_VM_PROCESS_MEMORY_IN_USE
-           || r == SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE);
-    return r != SHAREMIND_VM_PROCESS_MEMORY_IN_USE;
-}
-
-static size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
-                                        uint64_t ptr)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(ptr == 0u))
-        return 0u;
-
-    SharemindProcess const * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-
-    auto const & v = p->memoryMap.get(ptr);
-    return v ? v->size() : 0u;
-}
-
-static void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
-                                       uint64_t ptr)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(ptr == 0u))
-        return nullptr;
-
-    SharemindProcess const * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-
-    auto const & v = p->memoryMap.get(ptr);
-    return v ? v->data() : nullptr;
-}
-
-static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
-                                      size_t nBytes)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(nBytes == 0))
-        return nullptr;
-
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
+void * ProcessState::privateAlloc(std::size_t const nBytes) {
+    assert(nBytes > 0u);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
-                 || (p->memPrivate.upperLimit - p->memPrivate.usage < nBytes)))
+    if (unlikely((m_memTotal.upperLimit - m_memTotal.usage < nBytes)
+                 || (m_memPrivate.upperLimit - m_memPrivate.usage < nBytes)))
         return nullptr;
 
     /** \todo Check any other memory limits? */
 
     /* Allocate the memory: */
     try {
-        auto const ptr = p->privateMemoryMap.allocate(nBytes);
+        auto const ptr = m_privateMemoryMap.allocate(nBytes);
 
         /* Update memory statistics: */
-        p->memPrivate.usage += nBytes;
-        p->memTotal.usage += nBytes;
-        if (p->memPrivate.usage > p->memPrivate.max)
-            p->memPrivate.max = p->memPrivate.usage;
-        if (p->memTotal.usage > p->memTotal.max)
-            p->memTotal.max = p->memTotal.usage;
+        m_memPrivate.usage += nBytes;
+        m_memTotal.usage += nBytes;
+        if (m_memPrivate.usage > m_memPrivate.max)
+            m_memPrivate.max = m_memPrivate.usage;
+        if (m_memTotal.usage > m_memTotal.max)
+            m_memTotal.max = m_memTotal.usage;
 
         return ptr;
     } catch (...) {
@@ -569,105 +572,92 @@ static void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
     }
 }
 
-static void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
-                                   void * ptr)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(!ptr))
-        return;
-
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-
-    if (auto const bytesDeleted = p->privateMemoryMap.free(ptr)) {
+void ProcessState::privateFree(void * const ptr) {
+    if (auto const bytesDeleted = m_privateMemoryMap.free(ptr)) {
         /* Update memory statistics: */
-        assert(p->memPrivate.usage >= bytesDeleted);
-        assert(p->memTotal.usage >= bytesDeleted);
-        p->memPrivate.usage -= bytesDeleted;
-        p->memTotal.usage -= bytesDeleted;
+        assert(m_memPrivate.usage >= bytesDeleted);
+        assert(m_memTotal.usage >= bytesDeleted);
+        m_memPrivate.usage -= bytesDeleted;
+        m_memTotal.usage -= bytesDeleted;
     }
 }
 
-static bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
-                                      size_t nBytes)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(nBytes == 0u))
-        return true;
-
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
+bool ProcessState::privateReserve(std::size_t const nBytes) {
+    assert(nBytes > 0u);
 
     /* Check memory limits: */
-    if (unlikely((p->memTotal.upperLimit - p->memTotal.usage < nBytes)
-                 || (p->memReserved.upperLimit - p->memReserved.usage
+    if (unlikely((m_memTotal.upperLimit - m_memTotal.usage < nBytes)
+                 || (m_memReserved.upperLimit - m_memReserved.usage
                      < nBytes)))
         return false;
 
     /* Update memory statistics */
-    p->memReserved.usage += nBytes;
-    p->memTotal.usage += nBytes;
-    if (p->memReserved.usage > p->memReserved.max)
-        p->memReserved.max = p->memReserved.usage;
-    if (p->memTotal.usage > p->memTotal.max)
-        p->memTotal.max = p->memTotal.usage;
+    m_memReserved.usage += nBytes;
+    m_memTotal.usage += nBytes;
+    if (m_memReserved.usage > m_memReserved.max)
+        m_memReserved.max = m_memReserved.usage;
+    if (m_memTotal.usage > m_memTotal.max)
+        m_memTotal.max = m_memTotal.usage;
     return true;
 }
 
-static bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
-                                      size_t nBytes)
-{
-    assert(c);
-    assert(c->vm_internal);
-
-    if (unlikely(nBytes == 0u))
-        return true;
-
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
+extern "C"
+bool ProcessState::privateRelease(std::size_t const nBytes) {
+    assert(nBytes > 0u);
 
     /* Check for underflow: */
-    if (p->memReserved.usage < nBytes)
+    if (m_memReserved.usage < nBytes)
         return false;
 
-    assert(p->memTotal.usage >= nBytes);
-    p->memReserved.usage -= nBytes;
-    p->memTotal.usage -= nBytes;
+    assert(m_memTotal.usage >= nBytes);
+    m_memReserved.usage -= nBytes;
+    m_memTotal.usage -= nBytes;
     return true;
 }
 
-static SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t pd_index)
-{
-    assert(c);
-    assert(c->vm_internal);
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(ProcessState,)
 
-    if (pd_index > SIZE_MAX)
-        return nullptr;
+} /* namespace Detail { */
 
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-    return p->pdpiCache.info(pd_index);
-}
+Process::Inner::Inner(std::shared_ptr<Program::Inner> programInner)
+    : ProcessState(assertReturn(programInner->m_parseData)) /// \todo throw instead of assert?
+{ SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *programInner); }
 
-static void * sharemind_processFacility(
-        SharemindModuleApi0x1SyscallContext const * c,
-        char const * facilityName)
-{
-    assert(c);
-    assert(c->vm_internal);
-    assert(facilityName);
+Process::Inner::~Inner() noexcept {}
 
-    SharemindProcess * const p = (SharemindProcess *) c->vm_internal;
-    assert(p);
-    return SharemindProcess_facility(p, facilityName);
-}
 
-SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindProcess)
-SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindProcess,)
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_SELF_ACCESSORS(SharemindProcess)
+Process::Process(Program & program)
+    : m_inner(std::make_shared<Inner>(assertReturn(program.m_inner)))
+{}
+
+Process::~Process() noexcept {}
+
+void Process::run() { return m_inner->run(); }
+
+void Process::resume() { return m_inner->resume(); }
+
+void Process::pause() noexcept { return m_inner->pause(); }
+
+SharemindCodeBlock Process::returnValue() const noexcept
+{ return m_inner->m_returnValue; }
+
+SharemindModuleApi0x1Error Process::syscallException() const noexcept
+{ return m_inner->m_syscallException; }
+
+std::size_t Process::currentCodeSectionIndex() const noexcept
+{ return m_inner->m_currentCodeSectionIndex; }
+
+std::size_t Process::currentIp() const noexcept
+{ return m_inner->m_currentIp; }
+
+void Process::setPdpiFacility(char const * const name,
+                              void * const facility,
+                              void * const context)
+{ return m_inner->setPdpiFacility(name, facility, context); }
+
+void Process::setInternal(void * const value)
+{ return m_inner->setInternal(value); }
+
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(Process,m_inner->)
+
+} // namespace sharemind {

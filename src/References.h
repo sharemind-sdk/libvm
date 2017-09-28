@@ -31,9 +31,10 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 template <typename Base, typename DataType>
-struct ReferenceBase: Base {
+struct __attribute__((visibility("internal"))) ReferenceBase: Base {
 
     ReferenceBase(ReferenceBase && move) noexcept;
     ReferenceBase(ReferenceBase const &) = delete;
@@ -59,6 +60,7 @@ using CReference = ReferenceBase<::SharemindModuleApi0x1CReference, void const>;
 using ReferenceVector = std::vector<Reference>;
 using CReferenceVector = std::vector<CReference>;
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_REFERENCES_H */

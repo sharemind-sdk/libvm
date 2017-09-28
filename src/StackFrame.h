@@ -30,8 +30,9 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-struct StackFrame {
+struct __attribute__((visibility("internal"))) StackFrame {
 
 /* Types: */
 
@@ -40,13 +41,14 @@ struct StackFrame {
 /* Fields: */
 
     RegisterVector stack;
-    sharemind::ReferenceVector refstack;
-    sharemind::CReferenceVector crefstack;
+    ReferenceVector refstack;
+    CReferenceVector crefstack;
 
     SharemindCodeBlock const * returnAddr;
     SharemindCodeBlock * returnValueAddr;
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_STACKFRAME_H */

@@ -23,6 +23,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 template <typename Base, typename DataType>
 ReferenceBase<Base, DataType>::ReferenceBase(ReferenceBase && move) noexcept
@@ -45,7 +46,7 @@ ReferenceBase<Base, DataType> & ReferenceBase<Base, DataType>::operator=(
         ReferenceBase && move) noexcept
 {
     if (auto * const s = this->internal)
-        static_cast<sharemind::MemorySlot *>(s)->deref();
+        static_cast<MemorySlot *>(s)->deref();
     this->internal = move.internal;
     this->pData = move.pData;
     this->size = move.size;
@@ -58,10 +59,11 @@ ReferenceBase<Base, DataType> & ReferenceBase<Base, DataType>::operator=(
 template <typename Base, typename DataType>
 ReferenceBase<Base, DataType>::~ReferenceBase() noexcept {
     if (auto * const s = this->internal)
-        static_cast<sharemind::MemorySlot *>(s)->deref();
+        static_cast<MemorySlot *>(s)->deref();
 }
 
 template struct ReferenceBase<::SharemindModuleApi0x1Reference, void>;
 template struct ReferenceBase<::SharemindModuleApi0x1CReference, void const>;
 
+} /* namespace Detail { */
 } /* namespace sharemind { */

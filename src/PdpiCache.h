@@ -38,8 +38,9 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-class PdpiCache final {
+class __attribute__((visibility("internal"))) PdpiCache final {
 
 public: /* Types: */
 
@@ -93,6 +94,7 @@ private: /* Types: */
 
 public: /* Methods: */
 
+    PdpiCache(std::vector<SharemindPd *> const & pdBindings);
     ~PdpiCache() noexcept;
 
     SharemindPdpi * pdpi(std::size_t const index) const noexcept
@@ -108,7 +110,6 @@ public: /* Methods: */
 
     std::size_t size() const noexcept { return m_size; }
 
-    void reinitialize(std::vector<SharemindPd *> const & pdBindings);
     void clear() noexcept;
     void startPdpis();
     void stopPdpis() noexcept;
@@ -135,6 +136,7 @@ private: /* Fields: */
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PDPICACHE_H */

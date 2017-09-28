@@ -21,9 +21,11 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 MemorySlot::~MemorySlot() noexcept {}
 
 bool MemorySlot::isWritable() const noexcept { return true; }
 
+} // namespace Detail {
 } // namespace sharemind {

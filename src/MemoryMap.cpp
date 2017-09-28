@@ -28,6 +28,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 MemoryMap::ValueType const & MemoryMap::get(KeyType const ptr) const noexcept {
     auto const it(m_inner.find(ptr));
@@ -40,6 +41,8 @@ void MemoryMap::insertDataSection(KeyType ptr,
     assert(ptr);
     assert(ptr < numReservedPointers);
     assert(m_inner.find(ptr) == m_inner.end());
+    if (!section)
+        return;
     m_inner.emplace(std::move(ptr), std::move(section));
 }
 
@@ -55,21 +58,17 @@ MemoryMap::KeyType MemoryMap::allocate(std::size_t const size) {
     return ptr;
 }
 
-std::pair<SharemindVmProcessException, std::size_t> MemoryMap::free(
-        KeyType const ptr)
+std::pair<MemoryMap::ErrorCode, std::size_t> MemoryMap::free(KeyType const ptr)
 {
-    using R = std::pair<SharemindVmProcessException, std::size_t>;
+    using R = std::pair<ErrorCode, std::size_t>;
     if (ptr < numReservedPointers)
-        return R(ptr
-                 ? SHAREMIND_VM_PROCESS_OK
-                 : SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE,
-                 0u);
+        return R(ptr ? Ok : InvalidMemoryHandle, 0u);
     auto const it(m_inner.find(ptr));
     if (it == m_inner.end())
-        return R(SHAREMIND_VM_PROCESS_INVALID_MEMORY_HANDLE, 0u);
+        return R(InvalidMemoryHandle, 0u);
     if (!it->second->canFree())
-        return R(SHAREMIND_VM_PROCESS_MEMORY_IN_USE, 0u);
-    R r(SHAREMIND_VM_PROCESS_OK, it->second->size());
+        return R(MemorySlotInUse, 0u);
+    R r(Ok, it->second->size());
     m_inner.erase(it);
     return r;
 }
@@ -104,4 +103,5 @@ MemoryMap::KeyType MemoryMap::findUnusedPtr() const noexcept {
     return index;
 }
 
-} /* namespace sharemind { */
+} // namespace Detail {
+} // namespace sharemind {

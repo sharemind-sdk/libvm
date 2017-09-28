@@ -30,8 +30,9 @@
 
 
 namespace sharemind {
+namespace Detail {
 
-class DataSection: public MemorySlot {
+class __attribute__((visibility("internal"))) DataSection: public MemorySlot {
 
 public: /* Methods: */
 
@@ -58,7 +59,9 @@ private: /* Fields: */
 
 };
 
-class BssDataSection: public DataSection {
+class __attribute__((visibility("internal"))) BssDataSection
+    : public DataSection
+{
 
 public: /* Methods: */
 
@@ -67,7 +70,9 @@ public: /* Methods: */
 
 };
 
-class RegularDataSection: public DataSection {
+class __attribute__((visibility("internal"))) RegularDataSection
+    : public DataSection
+{
 
 public: /* Methods: */
 
@@ -79,7 +84,9 @@ protected: /* Methods: */
 
 };
 
-class RwDataSection: public RegularDataSection {
+class __attribute__((visibility("internal"))) RwDataSection
+    : public RegularDataSection
+{
 
 public: /* Methods: */
 
@@ -88,7 +95,9 @@ public: /* Methods: */
 
 };
 
-class RoDataSection: public RegularDataSection {
+class __attribute__((visibility("internal"))) RoDataSection
+    : public RegularDataSection
+{
 
 public: /* Methods: */
 
@@ -99,6 +108,7 @@ public: /* Methods: */
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_DATASECTION_H */

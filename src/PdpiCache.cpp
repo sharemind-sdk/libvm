@@ -26,11 +26,11 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(sharemind::Exception,
                                     PdpiCache::,
-                                    Exception)
-
+                                    Exception);
 
 PdpiCache::PdpiStartupException::PdpiStartupException(SharemindPd * const pd)
     : m_message(
@@ -59,7 +59,7 @@ PdpiCache::Item::Item(SharemindPd * const pd)
 
     m_pdpi = ::SharemindPd_newPdpi(pd);
     if (!m_pdpi)
-        throw std::bad_alloc();
+        throw std::bad_alloc(); /// \todo Throw specific error
 
     m_info.pdpiHandle = nullptr;
     m_info.pdHandle = ::SharemindPd_handle(pd);
@@ -91,31 +91,27 @@ void PdpiCache::Item::stop() noexcept {
 }
 
 
-PdpiCache::~PdpiCache() noexcept { destroy(); }
-
-void PdpiCache::reinitialize(std::vector<SharemindPd *> const & pdBindings) {
-    auto const newSize = pdBindings.size();
-    if (newSize) {
-        auto newStorage(makeUnique<ItemStorage[]>(newSize));
+PdpiCache::PdpiCache(std::vector<SharemindPd *> const & pdBindings)
+    : m_size(pdBindings.size())
+{
+    if (m_size) {
+        m_storage = makeUnique<ItemStorage[]>(m_size);
 
         std::size_t i = 0u;
         try {
             for (auto * const pd : pdBindings) {
-                new (getItemPtr(newStorage, i)) Item(pd);
+                new (getItemPtr(i)) Item(pd);
                 ++i;
             }
         } catch (...) {
             while (i)
-                getItemPtr(newStorage, --i)->~Item();
+                getItemPtr(--i)->~Item();
             throw;
         }
-        destroy();
-        m_storage = std::move(newStorage);
-        m_size = newSize;
-    } else {
-        clear();
     }
 }
+
+PdpiCache::~PdpiCache() noexcept { destroy(); }
 
 void PdpiCache::setPdpiFacility(char const * const name,
                                 void * const facility,
@@ -154,4 +150,5 @@ void PdpiCache::stopPdpis() noexcept {
         getItemPtr(--i)->stop();
 }
 
+} /* namespace Detail { */
 } /* namespace sharemind { */

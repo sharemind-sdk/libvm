@@ -28,20 +28,22 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include "libvm.h"
 
 
 namespace sharemind {
+namespace Detail {
 
 class DataSection;
 class MemorySlot;
 
-class MemoryMap {
+class __attribute__((visibility("internal"))) MemoryMap {
 
 public: /* Types: */
 
     using KeyType = std::uint64_t;
     using ValueType = std::shared_ptr<MemorySlot>;
+
+    enum ErrorCode { Ok, MemorySlotInUse, InvalidMemoryHandle };
 
 private: /* Constants: */
 
@@ -56,7 +58,7 @@ public: /* Methods: */
 
     KeyType allocate(std::size_t const size);
 
-    std::pair<SharemindVmProcessException, std::size_t> free(KeyType const ptr);
+    std::pair<ErrorCode, std::size_t> free(KeyType const ptr);
 
     std::size_t slotSize(KeyType const ptr) const noexcept;
     void * slotPtr(KeyType const ptr) const noexcept;
@@ -73,6 +75,7 @@ private: /* Fields: */
 
 };
 
+} /* namespace Detail { */
 } /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_MEMORYMAP_H */

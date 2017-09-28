@@ -27,6 +27,7 @@
 
 
 namespace sharemind {
+namespace Detail {
 
 CodeSection::CodeSection(SharemindCodeBlock const * const code,
                          std::size_t const codeSize)
@@ -62,4 +63,5 @@ SharemindVmInstruction const * CodeSection::instructionDescriptionAtOffset(
     return (it != m_blockmap.end()) ? it->second : nullptr;
 }
 
-} // namespace sharemind
+} // namespace Detail {
+} // namespace sharemind {

@@ -20,74 +20,103 @@
 #ifndef SHAREMIND_LIBVM_VM_H
 #define SHAREMIND_LIBVM_VM_H
 
-#ifndef SHAREMIND_INTERNAL_
-#error including an internal header!
-#endif
+#include <functional>
 
-#include "libvm.h"
-
-#include <cassert>
-#include <sharemind/comma.h>
-#include <sharemind/extern_c.h>
-#include <sharemind/recursive_locks.h>
-#include <sharemind/tag.h>
-#include "LastError.h"
-#include "ProcessFacilityMap.h"
+#include <memory>
+#include <sharemind/libmodapi/libmodapi.h>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
 
-struct SharemindVm_ {
+class Program;
 
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
-    SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
-    SHAREMIND_LIBVM_LASTERROR_FIELDS;
-    SHAREMIND_TAG_DECLARE_FIELDS;
+class Vm {
 
-    SharemindVirtualMachineContext * context;
+    friend class Program;
 
-};
+private: /* Types: */
 
-SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE_DEFINE(
-        SharemindVm,
-        inline,
-        SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindVm)
+    struct Inner;
 
-static inline SharemindSyscallWrapper SharemindVm_findSyscall(
-        SharemindVm * const vm,
-        char const * const signature)
-        __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindSyscallWrapper SharemindVm_findSyscall(
-        SharemindVm * const vm,
-        char const * const signature)
-{
-    assert(vm);
-    assert(signature);
-    assert(signature[0u]);
-    if (!vm->context || !vm->context->find_syscall) {
-        static SharemindSyscallWrapper const nullWrapper = { nullptr, nullptr };
-        return nullWrapper;
+public: /* Methods: */
+
+    using SyscallFinder = SharemindSyscallWrapper (std::string const &);
+    using SyscallFinderFun = std::function<SyscallFinder>;
+    using SyscallFinderFunPtr = std::shared_ptr<SyscallFinderFun>;
+
+    using PdFinder = SharemindPd * (std::string const &);
+    using PdFinderFun = std::function<PdFinder>;
+    using PdFinderFunPtr = std::shared_ptr<PdFinderFun>;
+
+    using ProcessFacilityFinder = void * (char const *);
+    using ProcessFacilityFinderFun = std::function<ProcessFacilityFinder>;
+    using ProcessFacilityFinderFunPtr =
+            std::shared_ptr<ProcessFacilityFinderFun>;
+
+public: /* Methods: */
+
+    Vm();
+    virtual ~Vm() noexcept;
+
+    void setSyscallFinder(SyscallFinderFunPtr f) noexcept;
+    void setPdFinder(PdFinderFunPtr f) noexcept;
+    void setProcessFacilityFinder(ProcessFacilityFinderFunPtr f) noexcept;
+
+    template <typename F>
+    auto setSyscallFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        SyscallFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    {
+        return setSyscallFinder(
+                    std::make_shared<SyscallFinderFun>(std::forward<F>(f)));
     }
 
-    return (*(vm->context->find_syscall))(vm->context, signature);
-}
+    template <typename F>
+    auto setPdFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        PdFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    { return setPdFinder(std::make_shared<PdFinderFun>(std::forward<F>(f))); }
 
-static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
-                                               char const * const pdName)
-        __attribute__ ((nonnull(1, 2), warn_unused_result));
-static inline SharemindPd * SharemindVm_findPd(SharemindVm * const vm,
-                                               char const * const pdName)
-{
-    assert(vm);
-    assert(pdName);
-    assert(pdName[0u]);
-    if (!vm->context || !vm->context->find_pd)
-        return nullptr;
+    template <typename F>
+    auto setProcessFacilityFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        ProcessFacilityFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    {
+        return setProcessFacilityFinder(
+                    std::make_shared<ProcessFacilityFinderFun>(
+                        std::forward<F>(f)));
+    }
 
-    return (*(vm->context->find_pd))(vm->context, pdName);
-}
+    SharemindSyscallWrapper findSyscall(std::string const & signature)
+            const noexcept;
 
-SHAREMIND_EXTERN_C_END
+    SharemindPd * findPd(std::string const & pdName) const noexcept;
+
+    void setProcessFacility(std::string name, void * facility);
+    void * processFacility(std::string const & name) const noexcept;
+    bool unsetProcessFacility(std::string const & name) noexcept;
+
+private: /* Fields: */
+
+    std::shared_ptr<Inner> m_inner;
+
+}; /* class Vm */
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_VM_H */

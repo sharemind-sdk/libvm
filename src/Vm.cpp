@@ -18,85 +18,67 @@
  */
 
 #include "Vm.h"
+#include "Vm_p.h"
 
+#include <cassert>
 #include <cstdlib>
-#include <sharemind/likely.h>
+#include <sharemind/AssertReturn.h>
+#include <utility>
 
 
-/*******************************************************************************
- *  Public enum methods
-*******************************************************************************/
+namespace sharemind {
 
-SHAREMIND_ENUM_CUSTOM_DEFINE_TOSTRING(SharemindVmError, SHAREMIND_VM_ERROR_ENUM)
+#define GUARD_(g) std::lock_guard<decltype(g)> const guard(g)
+#define INNERGUARD GUARD_(m_mutex)
+#define GUARD GUARD_(m_inner->m_mutex)
 
+Vm::Inner::Inner() {}
 
-/*******************************************************************************
- *  SharemindVm
-*******************************************************************************/
+Vm::Inner::~Inner() noexcept {}
 
-SharemindVm * SharemindVm_new(SharemindVirtualMachineContext * context,
-                              SharemindVmError * error,
-                              char const ** errorStr)
+SharemindSyscallWrapper Vm::Inner::findSyscall(std::string const & signature)
+        const noexcept
 {
-    SharemindVm * vm;
-    try {
-        vm = new SharemindVm();
-    } catch (...) {
-        if (error)
-            (*error) = SHAREMIND_VM_OUT_OF_MEMORY;
-        if (errorStr)
-            (*errorStr) = "Out of memory!";
-        goto SharemindVm_new_error_0;
-    }
-
-    if (!SHAREMIND_RECURSIVE_LOCK_INIT(vm)) {
-        if (error)
-            (*error) = SHAREMIND_VM_MUTEX_ERROR;
-        if (errorStr)
-            (*errorStr) = "Mutex initialization error!";
-        goto SharemindVm_new_error_1;
-    }
-
-    if (context && context->processFacility) {
-        try {
-            vm->processFacilityMap->setNextGetter(
-                        [context](std::string const & name) noexcept {
-                            assert(context->processFacility);
-                            return context->processFacility(context,
-                                                            name.c_str());
-                        });
-        } catch (...) {
-            goto SharemindVm_new_error_2;
-        }
-    }
-
-    SHAREMIND_LIBVM_LASTERROR_INIT(vm);
-    SHAREMIND_TAG_INIT(vm);
-    vm->context = context;
-    return vm;
-
-SharemindVm_new_error_2:
-
-    SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
-
-SharemindVm_new_error_1:
-
-    delete vm;
-
-SharemindVm_new_error_0:
-
-    return NULL;
+    INNERGUARD;
+    if (m_syscallFinder && *m_syscallFinder)
+        return (*m_syscallFinder)(signature);
+    return SharemindSyscallWrapper{nullptr, nullptr};
 }
 
-void SharemindVm_free(SharemindVm * vm) {
-    assert(vm);
-    if (vm->context && vm->context->destructor)
-        (*(vm->context->destructor))(vm->context);
-    SHAREMIND_TAG_DESTROY(vm);
-    SHAREMIND_RECURSIVE_LOCK_DEINIT(vm);
-    delete vm;
+SharemindPd * Vm::Inner::findPd(std::string const & pdName) const noexcept {
+    INNERGUARD;
+    if (m_pdFinder && *m_pdFinder)
+        return (*m_pdFinder)(pdName);
+    return nullptr;
 }
 
-SHAREMIND_LIBVM_LASTERROR_FUNCTIONS_DEFINE(SharemindVm)
-SHAREMIND_TAG_FUNCTIONS_DEFINE(SharemindVm,)
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_ACCESSORS(SharemindVm)
+
+Vm::Vm() : m_inner(std::make_shared<Inner>()) {}
+
+Vm::~Vm() noexcept {}
+
+void Vm::setSyscallFinder(SyscallFinderFunPtr f) noexcept {
+    GUARD;
+    m_inner->m_syscallFinder = std::move(f);
+}
+
+void Vm::setPdFinder(PdFinderFunPtr f) noexcept {
+    GUARD;
+    m_inner->m_pdFinder = std::move(f);
+}
+
+void Vm::setProcessFacilityFinder(ProcessFacilityFinderFunPtr f) noexcept {
+    GUARD;
+    m_inner->m_processFacilityMap->setNextGetter(std::move(f));
+}
+
+SharemindSyscallWrapper Vm::findSyscall(std::string const & signature)
+        const noexcept
+{ return m_inner->findSyscall(signature); }
+
+SharemindPd * Vm::findPd(std::string const & pdName) const noexcept
+{ return m_inner->findPd(pdName); }
+
+SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(Vm,m_inner->)
+
+} // namespace sharemind {

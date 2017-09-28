@@ -20,76 +20,92 @@
 #ifndef SHAREMIND_LIBVM_PROGRAM_H
 #define SHAREMIND_LIBVM_PROGRAM_H
 
-#ifndef SHAREMIND_INTERNAL_
-#error including an internal header!
-#endif
-
-
-#include <cassert>
-#include <sharemind/comma.h>
-#include <sharemind/extern_c.h>
-#include <sharemind/libexecutable/libexecutable_0x0.h>
+#include <cstddef>
+#include <memory>
+#include <sharemind/Exception.h>
+#include <sharemind/ExceptionMacros.h>
 #include <sharemind/libmodapi/libmodapi.h>
-#include <sharemind/recursive_locks.h>
-#include <sharemind/tag.h>
-#include <sharemind/vector.h>
-#include <vector>
-#include "CodeSection.h"
-#include "DataSectionsVector.h"
-#include "LastError.h"
-#include "ProcessFacilityMap.h"
-#include "Vm.h"
+#include <sharemind/libvmi/instr.h>
 
 
-SHAREMIND_EXTERN_C_BEGIN
+namespace sharemind {
+class Vm;
 
+class Program {
 
-/*******************************************************************************
- *  SharemindProgram
-*******************************************************************************/
+    friend class Process;
 
-struct SharemindProgram_ {
+private: /* Types: */
 
-/* Types: */
+    struct Inner;
 
-    using DataSectionSizesVector =
-            std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
-    using CodeSectionsVector = std::vector<sharemind::CodeSection>;
-    using SyscallBindingsVector = std::vector<SharemindSyscallWrapper>;
-    using PdBindingsVector = std::vector<SharemindPd *>;
+public: /* Types: */
 
-/* Fields: */
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(sharemind::Exception, Exception);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, IoException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(IoException,
+                                                   FileOpenException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(IoException,
+                                                   FileNoException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(IoException,
+                                                   FileFstatException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(IoException,
+                                                   FileReadException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            Exception,
+            ImplementationLimitsReachedException);
+    SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, PrepareException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   InvalidHeaderException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   VersionMismatchException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   InvalidInputFileException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            PrepareException,
+            UndefinedSyscallBindException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   UndefinedPdBindException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   DuplicatePdBindException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   NoCodeSectionsException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
+                                                   InvalidInstructionException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            PrepareException,
+            InvalidInstructionArgumentsException);
 
-    CodeSectionsVector codeSections;
-    sharemind::DataSectionsVector rodataSections;
-    sharemind::DataSectionsVector dataSections;
-    DataSectionSizesVector bssSectionSizes;
+public: /* Methods: */
 
-    SyscallBindingsVector bindings;
-    PdBindingsVector pdBindings;
+    Program(Vm & vm);
+    virtual ~Program() noexcept;
 
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
-    SHAREMIND_RECURSIVE_LOCK_DECLARE_FIELDS;
-    SHAREMIND_LIBVM_LASTERROR_FIELDS;
-    SHAREMIND_TAG_DECLARE_FIELDS;
+    bool isReady() const noexcept;
 
-    size_t activeLinkingUnit;
+    void loadFromFile(char const * const filename);
+    void loadFromCFile(FILE * const file);
+    void loadFromFileDescriptor(int const fd);
+    void loadFromMemory(void const * data, std::size_t dataSize);
 
-    size_t prepareCodeSectionIndex;
-    uintptr_t prepareIp;
+    SharemindVmInstruction const * instruction(std::size_t codeSection,
+                                               std::size_t instructionIndex)
+            const noexcept;
 
-    SharemindVm * vm;
+    std::size_t pdCount() const noexcept;
 
-    bool ready;
-    void const * lastParsePosition;
+    SharemindPd * pd(std::size_t const i) const noexcept;
 
-};
+    void setProcessFacility(std::string name, void * facility);
+    void * processFacility(std::string const & name) const noexcept;
+    bool unsetProcessFacility(std::string const & name) noexcept;
 
-SHAREMIND_RECURSIVE_LOCK_FUNCTIONS_DECLARE(
-        SharemindProgram,,
-        SHAREMIND_COMMA visibility("internal"))
-SHAREMIND_LIBVM_LASTERROR_PRIVATE_FUNCTIONS_DECLARE(SharemindProgram)
+private: /* Fields: */
 
-SHAREMIND_EXTERN_C_END
+    std::shared_ptr<Inner> m_inner;
+
+}; /* class Program */
+
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_PROGRAM_H */

@@ -18,7 +18,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION "3.0")
-PROJECT(SharemindLibVm VERSION "0.5.0" LANGUAGES "CXX")
+PROJECT(SharemindLibVm VERSION "0.6.0" LANGUAGES "CXX")
 
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
@@ -43,7 +43,9 @@ FIND_PACKAGE(SharemindVmM4 REQUIRED)
 ################################################################################
 
 # Headers:
-INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/libvm.h"
+INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Process.h"
+              "${CMAKE_CURRENT_SOURCE_DIR}/src/Vm.h"
+              "${CMAKE_CURRENT_SOURCE_DIR}/src/Program.h"
         DESTINATION "include/sharemind/libvm"
         COMPONENT "dev")
 FILE(GLOB_RECURSE SharemindLibVm_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
@@ -100,7 +102,6 @@ SharemindCreateCMakeFindFiles(
         ${SharemindLibSoftfloat_LIBRARIES}
         ${SharemindLibVmi_LIBRARIES}
         "m"
-        "pthread"
         "-L${CMAKE_INSTALL_PREFIX}/lib"
         "-lsharemind_vm"
 )

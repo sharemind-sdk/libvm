@@ -24,39 +24,18 @@
 #error including an internal header!
 #endif
 
-#include <cstdint>
-#include <sharemind/extern_c.h>
-#include "libvm.h"
 
+namespace sharemind {
+namespace Detail {
 
-SHAREMIND_EXTERN_C_BEGIN
+enum class ExecuteMethod { GetInstruction, Run, Continue };
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
-#define SHAREMIND_NOCLONE_ noclone,
-#else
-#define SHAREMIND_NOCLONE_
-#endif
-
-enum SharemindInnerCommand {
-    SHAREMIND_I_GET_IMPL_LABEL,
-    SHAREMIND_I_RUN,
-    SHAREMIND_I_CONTINUE
-};
-
-using SharemindCoreVmRunner =
-        SharemindVmError (*)(SharemindProcess * p,
-                             SharemindInnerCommand const c,
-                             void * d);
-
-SharemindVmError sharemind_vm_run(
-        SharemindProcess * p,
-        SharemindInnerCommand const c,
-        void * d)
-    __attribute__
-    ((
-         SHAREMIND_NOCLONE_
+void vmRun(ExecuteMethod const c, void * d)
+    __attribute__((
+         #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
+         noclone,
+         #endif
          noinline,
-         warn_unused_result,
          #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
          optimize("-fno-gcse",
                   "-fno-reorder-blocks",
@@ -66,24 +45,7 @@ SharemindVmError sharemind_vm_run(
          visibility("internal")
     ));
 
-SharemindVmError sharemind_vm_profile(
-        SharemindProcess * p,
-        SharemindInnerCommand const c,
-        void * d)
-    __attribute__
-    ((
-         SHAREMIND_NOCLONE_
-         noinline,
-         warn_unused_result,
-         #if !defined(SHAREMIND_FAST_BUILD) && !defined(__clang__)
-         optimize("-fno-gcse",
-                  "-fno-reorder-blocks",
-                  "-fno-reorder-blocks-and-partition"),
-         #endif
-         hot,
-         visibility("internal")
-    ));
-
-SHAREMIND_EXTERN_C_END
+} /* namespace Detail { */
+} /* namespace sharemind { */
 
 #endif /* SHAREMIND_LIBVM_CORE_H */
