@@ -117,6 +117,7 @@ SharemindAddComponentPackage("lib"
         "libsharemind-vmi (>= 0.1.0)"
         "libsharemind-executable (>= 0.1.0)"
         "libsharemind-modapi (>= 0.3.0)"
+        "libsharemind-softfloat (>= 0.1.0)"
         "libc6 (>= 2.19)"
 )
 SharemindAddComponentPackage("dev"
