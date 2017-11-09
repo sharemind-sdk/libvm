@@ -48,7 +48,10 @@ RegularDataSection::~RegularDataSection() noexcept
 RegularDataSection::RegularDataSection(void const * const data,
                                        std::size_t const size)
     : DataSection(::operator new(size), size)
-{ std::memcpy(this->data(), data, size); }
+{
+    if (size > 0u)
+        std::memcpy(this->data(), data, size);
+}
 
 
 RwDataSection::RwDataSection(void const * const data, std::size_t const size)
