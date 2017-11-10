@@ -30,9 +30,9 @@
 #include <mutex>
 #include <sharemind/Exception.h>
 #include <sharemind/extern_c.h>
+#include <sharemind/SimpleUnorderedStringMap.h>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include "Vm.h"
 
 
@@ -43,7 +43,7 @@ class __attribute__((visibility("internal"))) ProcessFacilityMap {
 
 private: /* Types: */
 
-    using Inner = std::unordered_map<std::string, void *>;
+    using Inner = SimpleUnorderedStringMap<void *>;
 
 public: /* Types: */
 
@@ -75,6 +75,7 @@ public: /* Methods: */
                     std::make_shared<NextGetterFun>(std::forward<F>(f)));
     }
 
+    void * facility(char const * const name) const noexcept;
     void * facility(std::string const & name) const noexcept;
 
     bool unsetFacility(std::string const & name) noexcept;
@@ -97,6 +98,7 @@ private: /* Fields: */
 
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(fNF,FN) \
     void set ## FN ## Facility(std::string name, void * facility); \
+    void * fNF(char const * const name) const noexcept; \
     void * fNF(std::string const & name) const noexcept; \
     bool unset ## FN ## Facility(std::string const & name) noexcept;
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS \
@@ -109,6 +111,8 @@ private: /* Fields: */
         return prefix m_processFacilityMap->setFacility(std::move(name), \
                                                         std::move(facility)); \
     } \
+    void * CN::fNF(char const * const name) const noexcept \
+    { return prefix m_processFacilityMap->facility(name); } \
     void * CN::fNF(std::string const & name) const noexcept \
     { return prefix m_processFacilityMap->facility(name); } \
     bool CN::unset ## FN ## Facility(std::string const & name) noexcept \

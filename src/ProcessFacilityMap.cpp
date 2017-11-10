@@ -60,6 +60,20 @@ void * ProcessFacilityMap::facility(std::string const & name) const noexcept {
     return (*nextGetter)(name.c_str());
 }
 
+void * ProcessFacilityMap::facility(char const * const name) const noexcept {
+    decltype(m_nextGetter) nextGetter;
+    {
+        GUARD;
+        auto const it(m_inner.find(name));
+        if (it != m_inner.end())
+            return it->second;
+        if (!m_nextGetter)
+            return nullptr;
+        nextGetter = m_nextGetter;
+    }
+    return (*nextGetter)(name);
+}
+
 bool ProcessFacilityMap::unsetFacility(std::string const & name) noexcept {
     GUARD;
     return m_inner.erase(name);

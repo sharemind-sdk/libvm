@@ -177,6 +177,7 @@ public: /* Methods: */
     std::uintptr_t currentIp() const noexcept;
 
     void setFacility(std::string name, void * facility);
+    void * facility(char const * const name) const noexcept;
     void * facility(std::string const & name) const noexcept;
     bool unsetFacility(std::string const & name) noexcept;
 

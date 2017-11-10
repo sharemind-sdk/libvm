@@ -55,13 +55,7 @@ void * sharemind_processFacility(SharemindModuleApi0x1SyscallContext const * c,
 {
     SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
     assert(facilityName);
-
-    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    try {
-        return ps.processFacility(facilityName);
-    } catch (...) { // std::string constructor may throw
-        return nullptr;
-    }
+    return SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c).processFacility(facilityName);
 }
 
 extern "C"
