@@ -43,7 +43,7 @@ class __attribute__((visibility("internal"))) ProcessFacilityMap {
 
 private: /* Types: */
 
-    using Inner = SimpleUnorderedStringMap<void *>;
+    using Inner = sharemind::SimpleUnorderedStringMap<void *>;
 
 public: /* Types: */
 
