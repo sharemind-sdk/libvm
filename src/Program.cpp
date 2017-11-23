@@ -254,11 +254,10 @@ void Program::loadFromFileDescriptor(int const fd) {
         if (r < 0) {
             if (errno == EINTR)
                 continue;
-            throw FileReadException();
+        } else if (signedToUnsigned(r) == fileSize) {
+            break;
         }
-        if (signedToUnsigned(r) != fileSize)
-            throw FileReadException();
-        break;
+        throw FileReadException();
     }
 
     return loadFromMemory(fileData.get(), fileSize);
