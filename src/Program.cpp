@@ -258,6 +258,7 @@ void Program::loadFromFileDescriptor(int const fd) {
         }
         if (signedToUnsigned(r) != fileSize)
             throw FileReadException();
+        break;
     }
 
     return loadFromMemory(fileData.get(), fileSize);
