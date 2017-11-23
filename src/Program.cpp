@@ -31,6 +31,7 @@
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
 #include <sharemind/PotentiallyVoidTypeInfo.h>
+#include <sharemind/SignedToUnsigned.h>
 #include <sys/stat.h>
 #include <type_traits>
 #include <unistd.h>
@@ -227,20 +228,6 @@ void Program::loadFromCFile(FILE * const file) {
     return loadFromFileDescriptor(fd);
 }
 
-namespace {
-
-template <typename T>
-inline auto signedToUnsigned(T && v) noexcept
-        -> typename std::make_unsigned<typename std::decay<T>::type>::type
-{
-    static_assert(std::is_signed<typename std::decay<T>::type>::value, "");
-    assert(v >= 0);
-    using U = typename std::make_unsigned<typename std::decay<T>::type>::type;
-    return static_cast<U>(std::forward<T>(v));
-}
-
-}
-
 void Program::loadFromFileDescriptor(int const fd) {
     assert(fd >= 0);
 
@@ -262,8 +249,16 @@ void Program::loadFromFileDescriptor(int const fd) {
 
     /* Read file to memory: */
     std::unique_ptr<void, GlobalDeleter> fileData(::operator new(fileSize));
-    if (signedToUnsigned(::read(fd, fileData.get(), fileSize)) != fileSize)
-        throw FileReadException();
+    for (;;) {
+        auto const r = ::read(fd, fileData.get(), fileSize);
+        if (r < 0) {
+            if (errno == EINTR)
+                continue;
+            throw FileReadException();
+        }
+        if (signedToUnsigned(r) != fileSize)
+            throw FileReadException();
+    }
 
     return loadFromMemory(fileData.get(), fileSize);
 }
