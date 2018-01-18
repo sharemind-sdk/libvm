@@ -23,7 +23,7 @@
 namespace sharemind {
 namespace Detail {
 
-SHAREMIND_DEFINE_EXCEPTION_NOINLINE(std::exception,
+SHAREMIND_DEFINE_EXCEPTION_NOINLINE(sharemind::Exception,
                                     ProcessFacilityMap::,
                                     Exception);
 SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(
