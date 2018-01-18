@@ -29,6 +29,7 @@
 #include <memory>
 #include <mutex>
 #include <sharemind/Exception.h>
+#include <sharemind/ExceptionMacros.h>
 #include <sharemind/extern_c.h>
 #include <sharemind/SimpleUnorderedStringMap.h>
 #include <string>
