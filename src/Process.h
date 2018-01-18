@@ -25,6 +25,7 @@
 #include <memory>
 #include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/Exception.h>
+#include <sharemind/ExceptionMacros.h>
 #include <string>
 #include <type_traits>
 
