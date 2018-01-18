@@ -171,7 +171,7 @@ namespace sharemind {
 #define DEFINE_CONSTMSG_EXCEPTION(base,e,msg) \
     SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(base, Process::, e, msg)
 
-DEFINE_BASE_EXCEPTION(std::exception, Exception);
+DEFINE_BASE_EXCEPTION(sharemind::Exception, Exception);
 DEFINE_BASE_EXCEPTION(Exception, InvalidInputStateException);
 DEFINE_CONSTMSG_EXCEPTION(
         InvalidInputStateException,
