@@ -61,13 +61,15 @@ public: /* Types: */
                                                    VersionMismatchException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    InvalidInputFileException);
-    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+    SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
             PrepareException,
             UndefinedSyscallBindException);
-    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
-                                                   UndefinedPdBindException);
-    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
-                                                   DuplicatePdBindException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
+            PrepareException,
+            UndefinedPdBindException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
+            PrepareException,
+            DuplicatePdBindException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    NoCodeSectionsException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,

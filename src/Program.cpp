@@ -172,9 +172,18 @@ SHAREMIND_DEFINE_EXCEPTION_NOINLINE(Exception, Program::,PrepareException);
 EC(Prepare, InvalidHeader, "Invalid executable file header!");
 EC(Prepare, VersionMismatch, "Executable file format version not supported!");
 EC(Prepare, InvalidInputFile, "Invalid or absent data in executable file!");
-EC(Prepare, UndefinedSyscallBind, "Binding for missing system call found!");
-EC(Prepare, UndefinedPdBind, "Binding for missing protection domain found!");
-EC(Prepare, DuplicatePdBind, "Duplicate protection domain bindings found!");
+SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
+        PrepareException,
+        Program::,
+        UndefinedSyscallBindException)
+SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
+        PrepareException,
+        Program::,
+        UndefinedPdBindException)
+SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
+        PrepareException,
+        Program::,
+        DuplicatePdBindException)
 EC(Prepare, NoCodeSections, "No code sections found!");
 EC(Prepare, InvalidInstruction, "Invalid instruction found!");
 EC(Prepare, InvalidInstructionArguments,
@@ -355,28 +364,35 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
                     break;
 
                 LOAD_BINDSECTION_CASE(BIND,
-                    if (static_cast<char const *>(pos)[0u] == '\0')
+                    auto const syscallName = static_cast<char const *>(pos);
+                    if (syscallName[0u] == '\0')
                         throw InvalidInputFileException();
                     ::SharemindSyscallWrapper const w =
-                            m_inner->m_vmInner->findSyscall(
-                                    static_cast<char const *>(pos));
+                            m_inner->m_vmInner->findSyscall(syscallName);
                     if (!w.callable)
-                        throw UndefinedSyscallBindException();
+                        throw UndefinedSyscallBindException(
+                                    std::string("Binding found for missing "
+                                                "system call: ") + syscallName);
                     d->staticData->syscallBindings.emplace_back(w);)
 
                 LOAD_BINDSECTION_CASE(PDBIND,
-                    if (static_cast<char const *>(pos)[0u] == '\0')
+                    auto const pdName = static_cast<char const *>(pos);
+                    if (pdName[0u] == '\0')
                         throw InvalidInputFileException();
                     for (std::size_t i = 0; i < d->staticData->pdBindings.size(); i++)
                         if (::strcmp(
                                 SharemindPd_name(d->staticData->pdBindings[i]),
-                                static_cast<char const *>(pos)) == 0)
-                            throw DuplicatePdBindException();
+                                pdName) == 0)
+                            throw DuplicatePdBindException(
+                                    std::string("Duplicate bindings found for "
+                                                "protection domain: ")
+                                    + pdName);
                     ::SharemindPd * const w =
-                            m_inner->m_vmInner->findPd(
-                                static_cast<char const *>(pos));
+                            m_inner->m_vmInner->findPd(pdName);
                     if (!w)
-                        throw UndefinedPdBindException();
+                        throw UndefinedPdBindException(
+                                std::string("Binding found for missing "
+                                            "protection domain: ") + pdName);
                     d->staticData->pdBindings.emplace_back(w);)
 
                 default:
