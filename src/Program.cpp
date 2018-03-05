@@ -328,7 +328,7 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
                 std::make_shared<Detail::spec>(pos, sh.length)); \
         pos = ptrAdd(pos, (sh.length + extraPadding[sh.length % 8])); \
     } break;
-#define LOAD_BINDSECTION_CASE(utype,code) \
+#define LOAD_BINDSECTION_CASE(utype,e,missingBindsExceptionPrefix,...) \
     case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
         if (sh.length <= 0) \
             break; \
@@ -336,10 +336,28 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
         /* Check for 0-termination: */ \
         if (unlikely(*(static_cast<char const *>(endPos) - 1))) \
             throw InvalidInputFileException(); \
+        std::set<std::string> missingBinds; \
         do { \
-            code \
-            pos = ptrAdd(pos, ::strlen(static_cast<char const *>(pos)) + 1); \
+            std::string bindName(static_cast<char const *>(pos)); \
+            if (bindName.empty()) \
+                throw InvalidInputFileException(); \
+            pos = ptrAdd(pos, bindName.size() + 1); \
+            { __VA_ARGS__ } \
         } while (pos != endPos); \
+        if (!missingBinds.empty()) { \
+            std::ostringstream oss; \
+            oss << missingBindsExceptionPrefix; \
+            bool first = true; \
+            for (auto & missingBind : missingBinds) { \
+                if (first) { \
+                    first = false; \
+                } else { \
+                    oss << ", "; \
+                } \
+                oss << std::move(missingBind); \
+            } \
+            throw e(oss.str()); \
+        } \
         pos = ptrAdd(pos, extraPadding[sh.length % 8]); \
     } break;
 
@@ -364,36 +382,29 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
                     break;
 
                 LOAD_BINDSECTION_CASE(BIND,
-                    auto const syscallName = static_cast<char const *>(pos);
-                    if (syscallName[0u] == '\0')
-                        throw InvalidInputFileException();
+                    UndefinedSyscallBindException,
+                    "Found bindings for undefined systems calls: ",
                     ::SharemindSyscallWrapper const w =
-                            m_inner->m_vmInner->findSyscall(syscallName);
-                    if (!w.callable)
-                        throw UndefinedSyscallBindException(
-                                    std::string("Binding found for missing "
-                                                "system call: ") + syscallName);
-                    d->staticData->syscallBindings.emplace_back(w);)
+                            m_inner->m_vmInner->findSyscall(bindName);
+                    if (w.callable) {
+                        d->staticData->syscallBindings.emplace_back(w);
+                    } else {
+                        missingBinds.emplace(std::move(bindName));
+                    })
 
                 LOAD_BINDSECTION_CASE(PDBIND,
-                    auto const pdName = static_cast<char const *>(pos);
-                    if (pdName[0u] == '\0')
-                        throw InvalidInputFileException();
-                    for (std::size_t i = 0; i < d->staticData->pdBindings.size(); i++)
-                        if (::strcmp(
-                                SharemindPd_name(d->staticData->pdBindings[i]),
-                                pdName) == 0)
+                    UndefinedPdBindException,
+                    "Found bindings for undefined protection domains: ",
+                    for (auto const & pdBinding : d->staticData->pdBindings)
+                        if (SharemindPd_name(pdBinding) == bindName)
                             throw DuplicatePdBindException(
-                                    std::string("Duplicate bindings found for "
-                                                "protection domain: ")
-                                    + pdName);
-                    ::SharemindPd * const w =
-                            m_inner->m_vmInner->findPd(pdName);
-                    if (!w)
-                        throw UndefinedPdBindException(
-                                std::string("Binding found for missing "
-                                            "protection domain: ") + pdName);
-                    d->staticData->pdBindings.emplace_back(w);)
+                                    "Duplicate bindings found for protection "
+                                    "domain: " + std::move(bindName));
+                    if (auto * const w = m_inner->m_vmInner->findPd(bindName)) {
+                        d->staticData->pdBindings.emplace_back(w);
+                    } else {
+                        missingBinds.emplace(std::move(bindName));
+                    })
 
                 default:
                     /* Ignore other sections */
