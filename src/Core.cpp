@@ -32,7 +32,7 @@
 #include <sharemind/null.h>
 #include <sharemind/PotentiallyVoidTypeInfo.h>
 #include <sharemind/restrict.h>
-#include "CommonIntructionMacros.h"
+#include "CommonInstructionMacros.h"
 #include "MemorySlot.h"
 #include "PreparationBlock.h"
 #include "Process_p.h"

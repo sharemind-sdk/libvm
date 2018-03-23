@@ -36,7 +36,7 @@
 #include <type_traits>
 #include <unistd.h>
 #include <utility>
-#include "CommonIntructionMacros.h"
+#include "CommonInstructionMacros.h"
 #include "Core.h"
 #include "PreparationBlock.h"
 #include "Process.h"
