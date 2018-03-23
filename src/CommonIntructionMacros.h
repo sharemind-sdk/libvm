@@ -74,7 +74,7 @@
 
 #define SHAREMIND_PTRADD ptrAdd
 
-#define SHAREMIND_STATIC_CAST(type,value) (static_cast<type>(value))
+#define SHAREMIND_VM_STATIC_CAST(type,value) (static_cast<type>(value))
 
 #define SHAREMIND_BITS_ALL(type) (type(type(0) | ~type(0)))
 #define SHAREMIND_BITS_NONE(type) (type(~SHAREMIND_BITS_ALL(type)))
