@@ -378,6 +378,9 @@ enum class HaltCode { Continue, Halt };
 #define SHAREMIND_MI_PUSHREFPART_REF_cref(r,o,s) \
     SHAREMIND_MI_PUSHREF_REF_(CRef,crefstack, const, (r), (o), (s))
 
+std::uint8_t emptyReferenceTarget = 0u;
+std::uint8_t const emptyCReferenceTarget = 0u;
+
 #define SHAREMIND_MI_PUSHREF_MEM_(prefix,value,slot,mOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
@@ -390,7 +393,7 @@ enum class HaltCode { Continue, Halt };
                     ? (static_cast<uint8_t *>((slot)->data()) + (mOffset)) \
                     /* Non-NULL invalid pointer so as not to signal end of */ \
                     /* (c)refs: */ \
-                    : assertReturn(static_cast<uint8_t *>(nullptr) + 1u), \
+                    : &empty ## prefix ## erenceTarget, \
                     (rSize)); \
         } catch (...) { \
             (slot)->deref(); \
