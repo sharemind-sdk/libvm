@@ -47,7 +47,7 @@ bool CodeSection::isInstructionAtOffset(std::size_t const offset) const noexcept
 void CodeSection::registerInstruction(
         std::size_t const offset,
         std::size_t const instructionBlockIndex,
-        SharemindVmInstruction const * const description)
+        VmInstructionInfo const & description)
 {
     assert(!m_instrmap[offset]);
     m_instrmap[offset] = true;
@@ -56,11 +56,11 @@ void CodeSection::registerInstruction(
     assert(r.second);
 }
 
-SharemindVmInstruction const * CodeSection::instructionDescriptionAtOffset(
+VmInstructionInfo const * CodeSection::instructionDescriptionAtOffset(
         std::size_t const offset) const noexcept
 {
     auto const it(m_blockmap.find(offset));
-    return (it != m_blockmap.end()) ? it->second : nullptr;
+    return (it != m_blockmap.end()) ? &it->second : nullptr;
 }
 
 } // namespace Detail {

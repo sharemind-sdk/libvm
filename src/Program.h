@@ -90,8 +90,8 @@ public: /* Methods: */
     void loadFromFileDescriptor(int const fd);
     void loadFromMemory(void const * data, std::size_t dataSize);
 
-    SharemindVmInstruction const * instruction(std::size_t codeSection,
-                                               std::size_t instructionIndex)
+    VmInstructionInfo const * instruction(std::size_t codeSection,
+                                          std::size_t instructionIndex)
             const noexcept;
 
     std::size_t pdCount() const noexcept;

@@ -33,7 +33,7 @@ FIND_PACKAGE(SharemindCxxHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable REQUIRED)
 FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
-FIND_PACKAGE(SharemindLibVmi REQUIRED)
+FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindModuleApis REQUIRED)
 FIND_PACKAGE(SharemindVmM4 REQUIRED)
 
@@ -114,7 +114,7 @@ SharemindAddComponentPackage("lib"
     DESCRIPTION "Sharemind VM library"
     DEB_SECTION "libs"
     DEB_DEPENDS
-        "libsharemind-vmi (>= 0.1.0)"
+        "libsharemind-vmi (>= 0.2.0)"
         "libsharemind-executable (>= 0.1.0)"
         "libsharemind-modapi (>= 0.3.0)"
         "libsharemind-softfloat (>= 0.1.0)"
@@ -127,7 +127,7 @@ SharemindAddComponentPackage("dev"
     DEB_SECTION "libdevel"
     DEB_DEPENDS
         "libsharemind-vm (= ${SharemindLibVm_VERSION})"
-        "libsharemind-vmi-dev (>= 0.1.0)"
+        "libsharemind-vmi-dev (>= 0.2.0)"
         "libsharemind-modapi-dev (>= 0.3.0)"
         "libsharemind-cheaders-dev (>= 0.1.0)"
         "libc6-dev (>= 2.19)"

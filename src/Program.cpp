@@ -117,23 +117,19 @@ void endPrepare(Detail::ParseData & p) {
 
         /* Initialize instructions hashmap: */
         std::size_t numInstrs = 0u;
+        auto const & cm = instructionCodeMap();
         for (std::size_t i = 0u; i < s->size(); i++, numInstrs++) {
-            SharemindVmInstruction const * const instr =
-                    sharemind_vm_instruction_from_code(c[i].uint64[0]);
-            if (!instr)
+            auto const instrIt(cm.find(c[i].uint64[0]));
+            if (instrIt == cm.end())
                 throw Program::InvalidInstructionException();
-
-            if (i + instr->numArgs >= s->size())
+            auto const & instr = instrIt->second;
+            if (i + instr.numArgs >= s->size())
                 throw Program::InvalidInstructionArgumentsException();
             s->registerInstruction(i, numInstrs, instr);
-            i += instr->numArgs;
+            i += instr.numArgs;
         }
 
         for (std::size_t i = 0u; i < s->size(); i++) {
-            SharemindVmInstruction const * const instr =
-                    sharemind_vm_instruction_from_code(c[i].uint64[0]);
-            if (!instr)
-                throw Program::InvalidInstructionException();
             struct preprocess_pass2_function * ppf =
                     &preprocess_pass2_functions[0];
             for (;;) {
@@ -433,7 +429,7 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
     m_inner->m_parseData = std::move(d);
 }
 
-SharemindVmInstruction const * Program::instruction(
+VmInstructionInfo const * Program::instruction(
         std::size_t codeSection,
         std::size_t instructionIndex) const noexcept
 {

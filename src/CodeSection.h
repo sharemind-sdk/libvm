@@ -53,9 +53,9 @@ public: /* Methods: */
 
     void registerInstruction(std::size_t const offset,
                              std::size_t const instructionBlockIndex,
-                             SharemindVmInstruction const * const description);
+                             VmInstructionInfo const & description);
 
-    SharemindVmInstruction const * instructionDescriptionAtOffset(
+    VmInstructionInfo const * instructionDescriptionAtOffset(
             std::size_t const offset) const noexcept;
 
     SharemindCodeBlock * data() noexcept { return m_data.data(); }
@@ -69,7 +69,7 @@ private: /* Fields: */
 
     std::vector<SharemindCodeBlock> m_data;
     std::vector<bool> m_instrmap;
-    std::unordered_map<std::size_t, SharemindVmInstruction const *> m_blockmap;
+    std::unordered_map<std::size_t, VmInstructionInfo const &> m_blockmap;
 
 };
 
