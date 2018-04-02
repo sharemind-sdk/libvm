@@ -30,7 +30,7 @@ SharemindSetProjectVersion()
 
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindCxxHeaders REQUIRED)
-FIND_PACKAGE(SharemindLibExecutable REQUIRED)
+FIND_PACKAGE(SharemindLibExecutable 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
@@ -115,7 +115,7 @@ SharemindAddComponentPackage("lib"
     DEB_SECTION "libs"
     DEB_DEPENDS
         "libsharemind-vmi (>= 0.2.0)"
-        "libsharemind-executable (>= 0.1.0)"
+        "libsharemind-executable (>= 0.2.0)"
         "libsharemind-modapi (>= 0.3.0)"
         "libsharemind-softfloat (>= 0.1.0)"
         "libc6 (>= 2.19)"

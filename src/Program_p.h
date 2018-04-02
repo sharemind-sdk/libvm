@@ -39,7 +39,7 @@ namespace sharemind {
 namespace Detail {
 
 using DataSectionSizesVector =
-        std::vector<decltype(SharemindExecutableSectionHeader0x0::length)>;
+        std::vector<ExecutableSectionHeader0x0::SizeType>;
 using CodeSectionsVector = std::vector<CodeSection>;
 using SyscallBindingsVector = std::vector<SharemindSyscallWrapper>;
 using PdBindingsVector = std::vector<SharemindPd *>;

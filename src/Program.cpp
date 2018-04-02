@@ -273,62 +273,58 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
 
     auto d(std::make_shared<Detail::ParseData>());
 
-    if (dataSize < sizeof(SharemindExecutableCommonHeader))
+    if (dataSize < sizeof(ExecutableCommonHeader))
         throw InvalidHeaderException();
 
-    SharemindExecutableCommonHeader ch;
-    if (SharemindExecutableCommonHeader_read(data, &ch)
-            != SHAREMIND_EXECUTABLE_READ_OK)
+    ExecutableCommonHeader ch;
+    if (!ch.deserializeFrom(data))
         throw InvalidHeaderException();
 
-    if (ch.fileFormatVersion > 0u)
+    if (ch.fileFormatVersion() > 0u)
         throw VersionMismatchException();
 
-    auto pos = ptrAdd(data, sizeof(SharemindExecutableCommonHeader));
+    auto pos = ptrAdd(data, sizeof(ch));
 
-    SharemindExecutableHeader0x0 h;
-    if (SharemindExecutableHeader0x0_read(pos, &h)
-            != SHAREMIND_EXECUTABLE_READ_OK)
+    ExecutableHeader0x0 h;
+    if (!h.deserializeFrom(pos))
         throw InvalidHeaderException();
 
-    pos = ptrAdd(pos, sizeof(SharemindExecutableHeader0x0));
+    pos = ptrAdd(pos, sizeof(ExecutableHeader0x0));
 
     static std::size_t const extraPadding[8] =
             { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
 
-    for (unsigned ui = 0; ui <= h.numberOfUnitsMinusOne; ui++) {
-        SharemindExecutableUnitHeader0x0 uh;
-        if (SharemindExecutableUnitHeader0x0_read(pos, &uh)
-                != SHAREMIND_EXECUTABLE_READ_OK)
+    for (unsigned ui = 0; ui <= h.numberOfLinkingUnitsMinusOne(); ui++) {
+        ExecutableLinkingUnitHeader0x0 uh;
+        if (!uh.deserializeFrom(pos))
             throw InvalidHeaderException();
 
-        pos = ptrAdd(pos, sizeof(SharemindExecutableUnitHeader0x0));
-        for (unsigned si = 0; si <= uh.sectionsMinusOne; si++) {
-            SharemindExecutableSectionHeader0x0 sh;
-            if (SharemindExecutableSectionHeader0x0_read(pos, &sh)
-                    != SHAREMIND_EXECUTABLE_READ_OK)
+        pos = ptrAdd(pos, sizeof(uh));
+        for (unsigned si = 0; si <= uh.numberOfSectionsMinusOne(); si++) {
+            ExecutableSectionHeader0x0 sh;
+            if (!sh.deserializeFrom(pos))
                 throw InvalidHeaderException();
 
-            pos = ptrAdd(pos, sizeof(SharemindExecutableSectionHeader0x0));
+            pos = ptrAdd(pos, sizeof(sh));
 
-            SHAREMIND_EXECUTABLE_SECTION_TYPE const type =
-                    SharemindExecutableSectionHeader0x0_type(&sh);
-            assert(type != static_cast<SHAREMIND_EXECUTABLE_SECTION_TYPE>(-1));
+            auto const type = sh.type();
+            assert(type != ExecutableSectionHeader0x0::SectionType::Invalid);
 
-            if (unlikely(sh.length > std::numeric_limits<std::size_t>::max()))
+            auto const sectionSize = sh.size();
+            if (unlikely(sectionSize > std::numeric_limits<std::size_t>::max()))
                 throw ImplementationLimitsReachedException();
 
 #define LOAD_DATASECTION_CASE(utype,ltype,spec) \
-    case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
+    case ExecutableSectionHeader0x0::SectionType::utype: { \
         d-> ltype ## Sections.emplace_back( \
-                std::make_shared<Detail::spec>(pos, sh.length)); \
-        pos = ptrAdd(pos, (sh.length + extraPadding[sh.length % 8])); \
+                std::make_shared<Detail::spec>(pos, sectionSize)); \
+        pos = ptrAdd(pos, (sectionSize + extraPadding[sectionSize % 8])); \
     } break;
 #define LOAD_BINDSECTION_CASE(utype,e,missingBindsExceptionPrefix,...) \
-    case SHAREMIND_EXECUTABLE_SECTION_TYPE_ ## utype: { \
-        if (sh.length <= 0) \
+    case ExecutableSectionHeader0x0::SectionType::utype: { \
+        if (sectionSize <= 0) \
             break; \
-        void const * const endPos = ptrAdd(pos, sh.length); \
+        void const * const endPos = ptrAdd(pos, sectionSize); \
         /* Check for 0-termination: */ \
         if (unlikely(*(static_cast<char const *>(endPos) - 1))) \
             throw InvalidInputFileException(); \
@@ -354,30 +350,29 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
             } \
             throw e(oss.str()); \
         } \
-        pos = ptrAdd(pos, extraPadding[sh.length % 8]); \
+        pos = ptrAdd(pos, extraPadding[sectionSize % 8]); \
     } break;
 
-            SHAREMIND_STATIC_ASSERT(sizeof(type) <= sizeof(int));
-            switch (static_cast<int>(type)) {
+            switch (type) {
 
-                case SHAREMIND_EXECUTABLE_SECTION_TYPE_TEXT: {
+                case ExecutableSectionHeader0x0::SectionType::Text: {
                     assert(pos);
-                    assert(sh.length);
+                    assert(sectionSize);
                     d->staticData->codeSections.emplace_back(
                                 static_cast<::SharemindCodeBlock const *>(pos),
-                                sh.length);
+                                sectionSize);
                     pos = ptrAdd(pos,
-                                 sh.length * sizeof(::SharemindCodeBlock));
+                                 sectionSize * sizeof(::SharemindCodeBlock));
                 } break;
 
-                LOAD_DATASECTION_CASE(RODATA,staticData->rodata,RoDataSection)
-                LOAD_DATASECTION_CASE(DATA,data,RwDataSection)
+                LOAD_DATASECTION_CASE(RoData,staticData->rodata,RoDataSection)
+                LOAD_DATASECTION_CASE(Data,data,RwDataSection)
 
-                case SHAREMIND_EXECUTABLE_SECTION_TYPE_BSS:
-                    d->bssSectionSizes.emplace_back(sh.length);
+                case ExecutableSectionHeader0x0::SectionType::Bss:
+                    d->bssSectionSizes.emplace_back(sectionSize);
                     break;
 
-                LOAD_BINDSECTION_CASE(BIND,
+                LOAD_BINDSECTION_CASE(Bind,
                     UndefinedSyscallBindException,
                     "Found bindings for undefined systems calls: ",
                     ::SharemindSyscallWrapper const w =
@@ -388,7 +383,7 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
                         missingBinds.emplace(std::move(bindName));
                     })
 
-                LOAD_BINDSECTION_CASE(PDBIND,
+                LOAD_BINDSECTION_CASE(PdBind,
                     UndefinedPdBindException,
                     "Found bindings for undefined protection domains: ",
                     for (auto const & pdBinding : d->staticData->pdBindings)
@@ -422,7 +417,7 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
         if (d->bssSectionSizes.size() == ui)
             d->bssSectionSizes.emplace_back(0u);
     }
-    d->staticData->activeLinkingUnit = h.activeLinkingUnit;
+    d->staticData->activeLinkingUnit = h.activeLinkingUnitIndex();
 
     endPrepare(*d);
     GUARD;
