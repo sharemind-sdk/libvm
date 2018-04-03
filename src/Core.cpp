@@ -525,7 +525,7 @@ std::uint8_t const emptyCReferenceTarget = 0u;
         } \
     } while ((0))
 
-#define SHAREMIND_MI_GET_(d,i,source,exception,isconst) \
+#define SHAREMIND_MI_GET_(d,i,source,exception) \
     do { \
         if ((i) >= (source)->size()) \
             throw exception(); \
@@ -536,24 +536,14 @@ std::uint8_t const emptyCReferenceTarget = 0u;
     SHAREMIND_MI_GET_((d), \
                       (i), \
                       thisStack, \
-                      Process::InvalidStackIndexException,)
+                      Process::InvalidStackIndexException)
 #define SHAREMIND_MI_GET_reg(d,i) \
     SHAREMIND_MI_GET_((d), \
                       (i), \
                       globalStack, \
-                      Process::InvalidRegisterIndexException,)
-#define SHAREMIND_MI_GET_CONST_stack(d,i) \
-    SHAREMIND_MI_GET_((d), \
-                      (i), \
-                      thisStack, \
-                      Process::InvalidStackIndexException, \
-                      const_)
-#define SHAREMIND_MI_GET_CONST_reg(d,i) \
-    SHAREMIND_MI_GET_((d), \
-                      (i), \
-                      globalStack, \
-                      Process::InvalidRegisterIndexException, \
-                      const_)
+                      Process::InvalidRegisterIndexException)
+#define SHAREMIND_MI_GET_CONST_stack(...) SHAREMIND_MI_GET_stack(__VA_ARGS__)
+#define SHAREMIND_MI_GET_CONST_reg(...) SHAREMIND_MI_GET_reg(__VA_ARGS__)
 
 #define SHAREMIND_MI_GET_REF_(r,i,type,exception) \
     do { \
