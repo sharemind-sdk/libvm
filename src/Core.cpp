@@ -210,6 +210,124 @@ void SHAREMIND_MI_BNEG_FLOAT64(T & d, T2 const & s) { d = sf_float64_neg(s); }
 #define SHAREMIND_MI_TGE_FLOAT64(d,s1,s2) \
     SHAREMIND_SF_FPUF((d),sf_float64_ge((s1),(s2),p->m_fpuState))
 
+#define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_float32_to_float64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_int8(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int8_t, \
+                        sf_int32, \
+                        sf_float32_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_int16(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int16_t, \
+                        sf_int32, \
+                        sf_float32_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_int32(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int32_t, \
+                        sf_int32, \
+                        sf_float32_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_int64(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int64_t, \
+                        sf_int64, \
+                        sf_float32_to_int64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint8(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint8_t, \
+                        sf_int32, \
+                        sf_float32_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint16(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint16_t, \
+                        sf_int32, \
+                        sf_float32_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint32(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint32_t, \
+                        sf_int64, \
+                        sf_float32_to_int64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint64(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint64_t, \
+                        sf_uint64, \
+                        sf_float32_to_uint64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_float64_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_int8(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int8_t, \
+                        sf_int32, \
+                        sf_float64_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_int16(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int16_t, \
+                        sf_int32, \
+                        sf_float64_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_int32(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int32_t, \
+                        sf_int32, \
+                        sf_float64_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_int64(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        int64_t, \
+                        sf_int64, \
+                        sf_float64_to_int64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint8(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint8_t, \
+                        sf_int32, \
+                        sf_float64_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint16(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint16_t, \
+                        sf_int32, \
+                        sf_float64_to_int32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint32(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint32_t, \
+                        sf_int64, \
+                        sf_float64_to_int64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint64(a,b) \
+    SHAREMIND_SF_E_CAST((a), \
+                        uint64_t, \
+                        sf_uint64, \
+                        sf_float64_to_uint64((b),p->m_fpuState))
+
+#define SHAREMIND_MI_CONVERT_int8_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int8_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int16_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int16_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int32_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int32_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int64_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int64_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_int64_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int64_to_float64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint8_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint8_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint16_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint16_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint32_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_int64_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint32_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_int64_to_float64((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint64_TO_float32(a,b) \
+    SHAREMIND_SF_E((a),sf_uint64_to_float32((b),p->m_fpuState))
+#define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) \
+    SHAREMIND_SF_E((a),sf_uint64_to_float64((b),p->m_fpuState))
+
 #ifndef SHAREMIND_FAST_BUILD
 #define SHAREMIND_DO_HALT   do { return; } while ((0))
 #define SHAREMIND_DO_TRAP   do { throw Process::TrapException(); } while ((0))
@@ -582,123 +700,6 @@ std::uint8_t const emptyCReferenceTarget = 0u;
 #define SHAREMIND_MI_ARG_P(n)      (ip + (n))
 #define SHAREMIND_MI_ARG_AS(n,t) \
     (SHAREMIND_MI_BLOCK_AS(SHAREMIND_MI_ARG_P(n),t))
-
-#define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_float32_to_float64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_int8(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int8_t, \
-                        sf_int32, \
-                        sf_float32_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_int16(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int16_t, \
-                        sf_int32, \
-                        sf_float32_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_int32(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int32_t, \
-                        sf_int32, \
-                        sf_float32_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_int64(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int64_t, \
-                        sf_int64, \
-                        sf_float32_to_int64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint8(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint8_t, \
-                        sf_int32, \
-                        sf_float32_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint16(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint16_t, \
-                        sf_int32, \
-                        sf_float32_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint32(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint32_t, \
-                        sf_int64, \
-                        sf_float32_to_int64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint64(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint64_t, \
-                        sf_uint64, \
-                        sf_float32_to_uint64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_float64_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_int8(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int8_t, \
-                        sf_int32, \
-                        sf_float64_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_int16(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int16_t, \
-                        sf_int32, \
-                        sf_float64_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_int32(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int32_t, \
-                        sf_int32, \
-                        sf_float64_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_int64(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        int64_t, \
-                        sf_int64, \
-                        sf_float64_to_int64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint8(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint8_t, \
-                        sf_int32, \
-                        sf_float64_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint16(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint16_t, \
-                        sf_int32, \
-                        sf_float64_to_int32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint32(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint32_t, \
-                        sf_int64, \
-                        sf_float64_to_int64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint64(a,b) \
-    SHAREMIND_SF_E_CAST((a), \
-                        uint64_t, \
-                        sf_uint64, \
-                        sf_float64_to_uint64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int8_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int8_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int16_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int16_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int32_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_int64_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint8_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint8_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint16_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint16_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint32_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float64((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_uint64_to_float32((b),p->m_fpuState))
-#define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_uint64_to_float64((b),p->m_fpuState))
 
 #define SHAREMIND_MI_MEM_GET_SIZE_FROM_SLOT(slot) ((slot)->size())
 #define SHAREMIND_MI_MEM_GET_DATA_FROM_SLOT(slot) ((slot)->data())
