@@ -108,8 +108,10 @@ namespace {
 */
 #define SHAREMIND_SF_FPUF(dest,...) \
     SHAREMIND_SF_E_CAST(dest,uint64_t,sf_flag,sf_resultFlag,__VA_ARGS__)
-#define SHAREMIND_MI_UNEG_FLOAT32(d) do { (d) = sf_float32_neg(d); } while (0)
-#define SHAREMIND_MI_UNEG_FLOAT64(d) do { (d) = sf_float64_neg(d); } while (0)
+template <typename T>
+void SHAREMIND_MI_UNEG_FLOAT32(T & d) { d = sf_float32_neg(d); }
+template <typename T>
+void SHAREMIND_MI_UNEG_FLOAT64(T & d) { d = sf_float64_neg(d); }
 #define SHAREMIND_MI_UINC_FLOAT32(d) \
     SHAREMIND_SF_FPU32F((d),sf_float32_add((d),sf_float32_one,p->m_fpuState))
 #define SHAREMIND_MI_UINC_FLOAT64(d) \
@@ -118,8 +120,10 @@ namespace {
     SHAREMIND_SF_FPU32F((d),sf_float32_sub((d),sf_float32_one,p->m_fpuState))
 #define SHAREMIND_MI_UDEC_FLOAT64(d) \
     SHAREMIND_SF_FPU64F((d),sf_float64_sub((d),sf_float64_one,p->m_fpuState))
-#define SHAREMIND_MI_BNEG_FLOAT32(d,s) do { (d) = sf_float32_neg(s); } while (0)
-#define SHAREMIND_MI_BNEG_FLOAT64(d,s) do { (d) = sf_float64_neg(s); } while (0)
+template <typename T, typename T2>
+void SHAREMIND_MI_BNEG_FLOAT32(T & d, T2 const & s) { d = sf_float32_neg(s); }
+template <typename T, typename T2>
+void SHAREMIND_MI_BNEG_FLOAT64(T & d, T2 const & s) { d = sf_float64_neg(s); }
 #define SHAREMIND_MI_BINC_FLOAT32(d,s) \
     SHAREMIND_SF_FPU32F((d),sf_float32_add((s),sf_float32_one,p->m_fpuState))
 #define SHAREMIND_MI_BINC_FLOAT64(d,s) \
