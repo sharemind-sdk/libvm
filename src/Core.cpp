@@ -719,16 +719,18 @@ std::uint8_t const emptyCReferenceTarget = 0u;
         (dest) = v.get(); \
     } while ((0))
 
-#define SHAREMIND_MI_MEM_FREE(ptr) \
-    do { \
-        switch (p->publicFree((ptr)->uint64[0])) { \
-        case MemoryMap::Ok: break; \
-        case MemoryMap::MemorySlotInUse: \
-            throw Process::MemoryInUseException(); \
-        case MemoryMap::InvalidMemoryHandle: \
-            throw Process::InvalidMemoryHandleException(); \
-        } \
-    } while ((0))
+inline void publicFree(ProcessState & p, SharemindCodeBlock const & ptr) {
+    switch (p.publicFree(ptr.uint64[0])) {
+    case MemoryMap::Ok:
+        break;
+    case MemoryMap::MemorySlotInUse:
+        throw Process::MemoryInUseException();
+    case MemoryMap::InvalidMemoryHandle:
+        throw Process::InvalidMemoryHandleException();
+    }
+}
+
+#define SHAREMIND_MI_MEM_FREE(ptr) do { publicFree(*p, *(ptr)); } while(false)
 
 #define SHAREMIND_MI_MEM_GET_SIZE(ptr,sizedest) \
     do { \
