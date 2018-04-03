@@ -578,9 +578,8 @@ std::uint8_t const emptyCReferenceTarget = 0u;
 
 #define SHAREMIND_MI_REFERENCE_GET_MEMORY_PTR(r) \
     (static_cast<SHAREMIND_T_MemorySlot *>((r)->internal))
-#define SHAREMIND_MI_REFERENCE_GET_PTR(r) (static_cast<uint8_t *>((r)->pData))
-#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) \
-    (static_cast<uint8_t const *>((r)->pData))
+#define SHAREMIND_MI_REFERENCE_GET_PTR(r) ((r)->pData)
+#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) ((r)->pData)
 #define SHAREMIND_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
 #define SHAREMIND_MI_BLOCK_AS(b,t) (b->t[0])
