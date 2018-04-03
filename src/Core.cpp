@@ -66,194 +66,181 @@ namespace {
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
     do { p->m_fpuState = static_cast<sf_fpu_state>(v); } while(0)
 
-#define SHAREMIND_SF_E(dest,...) \
-    do { \
-        (dest) = p->runStatefulSoftfloatOperation(__VA_ARGS__); \
-    } while ((0))
-#define SHAREMIND_SF_E_CAST(dest,destType,immedType,...) \
-    do { \
-        immedType r_; \
-        SHAREMIND_SF_E(r_,__VA_ARGS__); \
-        (dest) = static_cast<destType>(r_); \
-    } while(0)
-/*
-#define SHAREMIND_SF_FPU32I(dest,...) \
-    SHAREMIND_SF_E((dest),__VA_ARGS__)
-#define SHAREMIND_SF_FPU64I(dest,...) \
-    SHAREMIND_SF_E((dest),__VA_ARGS__)
-*/
-#define SHAREMIND_SF_FPUF(dest,...) \
-    SHAREMIND_SF_E_CAST(dest,uint64_t,sf_flag,__VA_ARGS__)
+#define SHAREMIND_SF_E(...) p->runStatefulSoftfloatOperation(__VA_ARGS__)
+#define SHAREMIND_SF_E_CAST(destType,...) \
+    static_cast<destType>(SHAREMIND_SF_E(__VA_ARGS__))
+#define SHAREMIND_SF_FPUF(...) \
+    SHAREMIND_SF_E_CAST(uint64_t,__VA_ARGS__)
 template <typename T>
 void SHAREMIND_MI_UNEG_FLOAT32(T & d) { d = sf_float32_neg(d); }
 template <typename T>
 void SHAREMIND_MI_UNEG_FLOAT64(T & d) { d = sf_float64_neg(d); }
 #define SHAREMIND_MI_UINC_FLOAT32(d) \
-    SHAREMIND_SF_E((d),sf_float32_add,(d),sf_float32_one)
+    (d) = SHAREMIND_SF_E(sf_float32_add, (d), sf_float32_one)
 #define SHAREMIND_MI_UINC_FLOAT64(d) \
-    SHAREMIND_SF_E((d),sf_float64_add,(d),sf_float64_one)
+    (d) = SHAREMIND_SF_E(sf_float64_add, (d), sf_float64_one)
 #define SHAREMIND_MI_UDEC_FLOAT32(d) \
-    SHAREMIND_SF_E((d),sf_float32_sub,(d),sf_float32_one)
+    (d) = SHAREMIND_SF_E(sf_float32_sub, (d), sf_float32_one)
 #define SHAREMIND_MI_UDEC_FLOAT64(d) \
-    SHAREMIND_SF_E((d),sf_float64_sub,(d),sf_float64_one)
+    (d) = SHAREMIND_SF_E(sf_float64_sub, (d), sf_float64_one)
 template <typename T, typename T2>
 void SHAREMIND_MI_BNEG_FLOAT32(T & d, T2 const & s) { d = sf_float32_neg(s); }
 template <typename T, typename T2>
 void SHAREMIND_MI_BNEG_FLOAT64(T & d, T2 const & s) { d = sf_float64_neg(s); }
 #define SHAREMIND_MI_BINC_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_add,(s),sf_float32_one)
+    (d) = SHAREMIND_SF_E(sf_float32_add, (s), sf_float32_one)
 #define SHAREMIND_MI_BINC_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_add,(s),sf_float64_one)
+    (d) = SHAREMIND_SF_E(sf_float64_add, (s), sf_float64_one)
 #define SHAREMIND_MI_BDEC_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_sub,(s),sf_float32_one)
+    (d) = SHAREMIND_SF_E(sf_float32_sub, (s), sf_float32_one)
 #define SHAREMIND_MI_BDEC_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_sub,(s),sf_float64_one)
+    (d) = SHAREMIND_SF_E(sf_float64_sub, (s), sf_float64_one)
 #define SHAREMIND_MI_BADD_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_add,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float32_add, (d), (s))
 #define SHAREMIND_MI_BADD_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_add,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float64_add, (d), (s))
 #define SHAREMIND_MI_BSUB_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_sub,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float32_sub, (d), (s))
 #define SHAREMIND_MI_BSUB_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_sub,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float64_sub, (d), (s))
 #define SHAREMIND_MI_BSUB2_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_sub,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float32_sub, (s), (d))
 #define SHAREMIND_MI_BSUB2_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_sub,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float64_sub, (s), (d))
 #define SHAREMIND_MI_BMUL_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_mul,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float32_mul, (d), (s))
 #define SHAREMIND_MI_BMUL_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_mul,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float64_mul, (d), (s))
 #define SHAREMIND_MI_BDIV_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_div,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float32_div, (d), (s))
 #define SHAREMIND_MI_BDIV_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_div,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float64_div, (d), (s))
 #define SHAREMIND_MI_BDIV2_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_div,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float32_div, (s), (d))
 #define SHAREMIND_MI_BDIV2_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_div,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float64_div, (s), (d))
 #define SHAREMIND_MI_BMOD_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_rem,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float32_rem, (d), (s))
 #define SHAREMIND_MI_BMOD_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_rem,(d),(s))
+    (d) = SHAREMIND_SF_E(sf_float64_rem, (d), (s))
 #define SHAREMIND_MI_BMOD2_FLOAT32(d,s) \
-    SHAREMIND_SF_E((d),sf_float32_rem,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float32_rem, (s), (d))
 #define SHAREMIND_MI_BMOD2_FLOAT64(d,s) \
-    SHAREMIND_SF_E((d),sf_float64_rem,(s),(d))
+    (d) = SHAREMIND_SF_E(sf_float64_rem, (s), (d))
 #define SHAREMIND_MI_TADD_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float32_add,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float32_add, (s1), (s2))
 #define SHAREMIND_MI_TADD_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float64_add,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float64_add, (s1), (s2))
 #define SHAREMIND_MI_TSUB_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float32_sub,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float32_sub, (s1), (s2))
 #define SHAREMIND_MI_TSUB_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float64_sub,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float64_sub, (s1), (s2))
 #define SHAREMIND_MI_TMUL_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float32_mul,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float32_mul, (s1), (s2))
 #define SHAREMIND_MI_TMUL_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float64_mul,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float64_mul, (s1), (s2))
 #define SHAREMIND_MI_TDIV_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float32_div,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float32_div, (s1), (s2))
 #define SHAREMIND_MI_TDIV_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float64_div,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float64_div, (s1), (s2))
 #define SHAREMIND_MI_TMOD_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float32_rem,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float32_rem, (s1), (s2))
 #define SHAREMIND_MI_TMOD_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_E((d),sf_float64_rem,(s1),(s2))
+    (d) = SHAREMIND_SF_E(sf_float64_rem, (s1), (s2))
 #define SHAREMIND_MI_TEQ_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_eq,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_eq, (s1), (s2))
 #define SHAREMIND_MI_TEQ_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_eq,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_eq, (s1), (s2))
 #define SHAREMIND_MI_TNE_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_ne,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_ne, (s1), (s2))
 #define SHAREMIND_MI_TNE_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_ne,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_ne, (s1), (s2))
 #define SHAREMIND_MI_TLT_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_lt,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_lt, (s1), (s2))
 #define SHAREMIND_MI_TLT_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_lt,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_lt, (s1), (s2))
 #define SHAREMIND_MI_TLE_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_le,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_le, (s1), (s2))
 #define SHAREMIND_MI_TLE_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_le,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_le, (s1), (s2))
 #define SHAREMIND_MI_TGT_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_gt,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_gt, (s1), (s2))
 #define SHAREMIND_MI_TGT_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_gt,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_gt, (s1), (s2))
 #define SHAREMIND_MI_TGE_FLOAT32(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float32_ge,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float32_ge, (s1), (s2))
 #define SHAREMIND_MI_TGE_FLOAT64(d,s1,s2) \
-    SHAREMIND_SF_FPUF((d),sf_float64_ge,(s1),(s2))
+    (d) = SHAREMIND_SF_FPUF(sf_float64_ge, (s1), (s2))
 
-#define SHAREMIND_MI_CONVERT_float32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_float32_to_float64,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_int8(a,b) \
-    SHAREMIND_SF_E_CAST((a), int8_t, sf_int32, sf_float32_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_int16(a,b) \
-    SHAREMIND_SF_E_CAST((a), int16_t, sf_int32, sf_float32_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_int32(a,b) \
-    SHAREMIND_SF_E_CAST((a), int32_t, sf_int32, sf_float32_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_int64(a,b) \
-    SHAREMIND_SF_E_CAST((a), int64_t, sf_int64, sf_float32_to_int64,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint8(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint8_t, sf_int32, sf_float32_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint16(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint16_t, sf_int32, sf_float32_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint32(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint32_t, sf_int64, sf_float32_to_int64,(b))
-#define SHAREMIND_MI_CONVERT_float32_TO_uint64(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint64_t, sf_uint64, sf_float32_to_uint64,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_float64_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_int8(a,b) \
-    SHAREMIND_SF_E_CAST((a), int8_t, sf_int32, sf_float64_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_int16(a,b) \
-    SHAREMIND_SF_E_CAST((a), int16_t, sf_int32, sf_float64_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_int32(a,b) \
-    SHAREMIND_SF_E_CAST((a), int32_t, sf_int32, sf_float64_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_int64(a,b) \
-    SHAREMIND_SF_E_CAST((a), int64_t, sf_int64, sf_float64_to_int64,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint8(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint8_t, sf_int32, sf_float64_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint16(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint16_t, sf_int32, sf_float64_to_int32,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint32(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint32_t, sf_int64, sf_float64_to_int64,(b))
-#define SHAREMIND_MI_CONVERT_float64_TO_uint64(a,b) \
-    SHAREMIND_SF_E_CAST((a), uint64_t, sf_uint64, sf_float64_to_uint64,(b))
+#define SHAREMIND_MI_CONVERT_float32_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_float32_to_float64, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_int8(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int8_t, sf_float32_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_int16(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int16_t, sf_float32_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_int32(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int32_t, sf_float32_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_int64(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int64_t, sf_float32_to_int64, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint8(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint8_t, sf_float32_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint16(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint16_t, sf_float32_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint32(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint32_t, sf_float32_to_int64, (v))
+#define SHAREMIND_MI_CONVERT_float32_TO_uint64(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint64_t, sf_float32_to_uint64, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_float64_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_int8(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int8_t, sf_float64_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_int16(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int16_t, sf_float64_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_int32(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int32_t, sf_float64_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_int64(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(int64_t, sf_float64_to_int64, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint8(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint8_t, sf_float64_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint16(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint16_t, sf_float64_to_int32, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint32(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint32_t, sf_float64_to_int64, (v))
+#define SHAREMIND_MI_CONVERT_float64_TO_uint64(d,v) \
+    (d) = SHAREMIND_SF_E_CAST(uint64_t, sf_float64_to_uint64, (v))
 
-#define SHAREMIND_MI_CONVERT_int8_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_int8_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu,(b))
-#define SHAREMIND_MI_CONVERT_int16_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_int16_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu,(b))
-#define SHAREMIND_MI_CONVERT_int32_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_int32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu,(b))
-#define SHAREMIND_MI_CONVERT_int64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_int64_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float64,(b))
-#define SHAREMIND_MI_CONVERT_uint8_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_uint8_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu,(b))
-#define SHAREMIND_MI_CONVERT_uint16_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_uint16_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int32_to_float64_fpu,(b))
-#define SHAREMIND_MI_CONVERT_uint32_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_uint32_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_int64_to_float64,(b))
-#define SHAREMIND_MI_CONVERT_uint64_TO_float32(a,b) \
-    SHAREMIND_SF_E((a),sf_uint64_to_float32,(b))
-#define SHAREMIND_MI_CONVERT_uint64_TO_float64(a,b) \
-    SHAREMIND_SF_E((a),sf_uint64_to_float64,(b))
+#define SHAREMIND_MI_CONVERT_int8_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_int8_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float64_fpu, (v))
+#define SHAREMIND_MI_CONVERT_int16_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_int16_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float64_fpu, (v))
+#define SHAREMIND_MI_CONVERT_int32_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_int32_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float64_fpu, (v))
+#define SHAREMIND_MI_CONVERT_int64_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int64_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_int64_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int64_to_float64, (v))
+#define SHAREMIND_MI_CONVERT_uint8_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_uint8_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float64_fpu, (v))
+#define SHAREMIND_MI_CONVERT_uint16_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_uint16_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int32_to_float64_fpu, (v))
+#define SHAREMIND_MI_CONVERT_uint32_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int64_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_uint32_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_int64_to_float64, (v))
+#define SHAREMIND_MI_CONVERT_uint64_TO_float32(d,v) \
+    (d) = SHAREMIND_SF_E(sf_uint64_to_float32, (v))
+#define SHAREMIND_MI_CONVERT_uint64_TO_float64(d,v) \
+    (d) = SHAREMIND_SF_E(sf_uint64_to_float64, (v))
 
 #ifndef SHAREMIND_FAST_BUILD
 #define SHAREMIND_DO_HALT   do { return; } while ((0))
