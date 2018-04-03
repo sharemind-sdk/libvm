@@ -32,7 +32,7 @@ FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindCxxHeaders REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
-FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
+FIND_PACKAGE(SharemindLibSoftfloat 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindModuleApis REQUIRED)
 FIND_PACKAGE(SharemindVmM4 0.3.0 REQUIRED)
@@ -117,7 +117,7 @@ SharemindAddComponentPackage("lib"
         "libsharemind-vmi (>= 0.2.0)"
         "libsharemind-executable (>= 0.2.0)"
         "libsharemind-modapi (>= 0.3.0)"
-        "libsharemind-softfloat (>= 0.1.0)"
+        "libsharemind-softfloat (>= 0.2.0)"
         "libc6 (>= 2.19)"
         "libstdc++6 (>= 4.8.0)"
 )
