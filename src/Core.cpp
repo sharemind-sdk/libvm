@@ -65,30 +65,35 @@ namespace {
 #define SHAREMIND_MI_FPU_STATE (p->m_fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
     do { p->m_fpuState = static_cast<sf_fpu_state>(v); } while(0)
+
+void maybeThrowFpuException(sf_fpu_state state) {
+    sf_fpu_state const e =
+            (state & sf_fpu_state_exception_mask)
+             & ((state & sf_fpu_state_exception_crash_mask) << 5u);
+    if (unlikely(e)) {
+        if (e & sf_float_flag_divbyzero) {
+            throw Process::FloatingPointDivideByZeroException();
+        } else if (e & sf_float_flag_overflow) {
+            throw Process::FloatingPointOverflowException();
+        } else if (e & sf_float_flag_underflow) {
+            throw Process::FloatingPointUnderflowException();
+        } else if (e & sf_float_flag_inexact) {
+            throw Process::FloatingPointInexactResultException();
+        } else if (e & sf_float_flag_invalid) {
+            throw Process::FloatingPointInvalidOperationException();
+        } else {
+            throw Process::UnknownFloatingPointException();
+        }
+    }
+}
+
 #define SHAREMIND_SF_E(dest,...) \
     do { \
         p->m_fpuState = p->m_fpuState & ~sf_fpu_state_exception_mask; \
         auto const r = __VA_ARGS__; \
         (dest) = r.result; \
         p->m_fpuState = r.fpu_state; \
-        sf_fpu_state const e = \
-                (r.fpu_state & sf_fpu_state_exception_mask) \
-                 & ((r.fpu_state & sf_fpu_state_exception_crash_mask) << 5u); \
-        if (unlikely(e)) { \
-            if (e & sf_float_flag_divbyzero) { \
-                throw Process::FloatingPointDivideByZeroException(); \
-            } else if (e & sf_float_flag_overflow) { \
-                throw Process::FloatingPointOverflowException(); \
-            } else if (e & sf_float_flag_underflow) { \
-                throw Process::FloatingPointUnderflowException(); \
-            } else if (e & sf_float_flag_inexact) { \
-                throw Process::FloatingPointInexactResultException(); \
-            } else if (e & sf_float_flag_invalid) { \
-                throw Process::FloatingPointInvalidOperationException(); \
-            } else { \
-                throw Process::UnknownFloatingPointException(); \
-            } \
-        } \
+        maybeThrowFpuException(r.fpu_state); \
     } while ((0))
 #define SHAREMIND_SF_E_CAST(dest,destType,immedType,...) \
     do { \
