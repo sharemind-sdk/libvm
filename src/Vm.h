@@ -38,7 +38,7 @@ private: /* Types: */
 
     struct Inner;
 
-public: /* Methods: */
+public: /* Types: */
 
     using SyscallFinder = SharemindSyscallWrapper (std::string const &);
     using SyscallFinderFun = std::function<SyscallFinder>;
