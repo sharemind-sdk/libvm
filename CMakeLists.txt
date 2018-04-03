@@ -35,7 +35,7 @@ FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindModuleApis REQUIRED)
-FIND_PACKAGE(SharemindVmM4 REQUIRED)
+FIND_PACKAGE(SharemindVmM4 0.3.0 REQUIRED)
 
 
 ################################################################################
