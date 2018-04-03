@@ -179,6 +179,37 @@ struct __attribute__((visibility("internal"))) ProcessState {
     inline CodeSection & currentCodeSection() const noexcept
     { return m_staticProgramData->codeSections[m_currentCodeSectionIndex]; }
 
+    template <typename F, typename ... Args>
+    auto runStatefulSoftfloatOperation(F f, Args && ... args)
+            -> decltype(
+                f(std::forward<Args>(args)...,
+                  std::declval<sf_fpu_state const &>()).result)
+    {
+        m_fpuState = m_fpuState & ~sf_fpu_state_exception_mask;
+        auto r(f(std::forward<Args>(args)...,
+                 const_cast<decltype(m_fpuState) const &>(m_fpuState)));
+        m_fpuState = r.fpu_state;
+        sf_fpu_state const e =
+                (r.fpu_state & sf_fpu_state_exception_mask)
+                 & ((r.fpu_state & sf_fpu_state_exception_crash_mask) << 5u);
+        if (unlikely(e)) {
+            if (e & sf_float_flag_divbyzero) {
+                throw Process::FloatingPointDivideByZeroException();
+            } else if (e & sf_float_flag_overflow) {
+                throw Process::FloatingPointOverflowException();
+            } else if (e & sf_float_flag_underflow) {
+                throw Process::FloatingPointUnderflowException();
+            } else if (e & sf_float_flag_inexact) {
+                throw Process::FloatingPointInexactResultException();
+            } else if (e & sf_float_flag_invalid) {
+                throw Process::FloatingPointInvalidOperationException();
+            } else {
+                throw Process::UnknownFloatingPointException();
+            }
+        }
+        return r.result;
+    }
+
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS
 
 /* Fields: */
