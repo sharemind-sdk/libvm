@@ -41,7 +41,7 @@ namespace Detail {
 using DataSectionSizesVector =
         std::vector<ExecutableSectionHeader0x0::SizeType>;
 using CodeSectionsVector = std::vector<CodeSection>;
-using SyscallBindingsVector = std::vector<SharemindSyscallWrapper>;
+using SyscallBindingsVector = std::vector<std::shared_ptr<Vm::SyscallWrapper> >;
 using PdBindingsVector = std::vector<SharemindPd *>;
 struct __attribute__((visibility("internal"))) StaticData {
     CodeSectionsVector codeSections;

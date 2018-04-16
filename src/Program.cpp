@@ -72,7 +72,7 @@ static_assert(std::numeric_limits<std::uint64_t>::max()
         SHAREMIND_PREPARE_ARGUMENTS_CHECK( \
             c[(*i)+(argNum)].uint64[0] < p.staticData->syscallBindings.size());\
         c[(*i)+(argNum)].cp[0] = \
-                &p.staticData->syscallBindings[c[(*i)+(argNum)].uint64[0]]; \
+            p.staticData->syscallBindings[c[(*i)+(argNum)].uint64[0]].get(); \
     } while ((0))
 
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,...) \
@@ -375,10 +375,9 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
                 LOAD_BINDSECTION_CASE(Bind,
                     UndefinedSyscallBindException,
                     "Found bindings for undefined systems calls: ",
-                    ::SharemindSyscallWrapper const w =
-                            m_inner->m_vmInner->findSyscall(bindName);
-                    if (w.callable) {
-                        d->staticData->syscallBindings.emplace_back(w);
+                    if (auto w = m_inner->m_vmInner->findSyscall(bindName)) {
+                        d->staticData->syscallBindings.emplace_back(
+                                    std::move(w));
                     } else {
                         missingBinds.emplace(std::move(bindName));
                     })

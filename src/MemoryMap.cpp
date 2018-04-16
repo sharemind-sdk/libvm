@@ -66,8 +66,6 @@ std::pair<MemoryMap::ErrorCode, std::size_t> MemoryMap::free(KeyType const ptr)
     auto const it(m_inner.find(ptr));
     if (it == m_inner.end())
         return R(InvalidMemoryHandle, 0u);
-    if (!it->second->canFree())
-        return R(MemorySlotInUse, 0u);
     R r(Ok, it->second->size());
     m_inner.erase(it);
     return r;

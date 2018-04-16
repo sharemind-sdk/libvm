@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <vector>
 
 
 namespace sharemind {
@@ -40,7 +41,121 @@ private: /* Types: */
 
 public: /* Types: */
 
-    using SyscallFinder = SharemindSyscallWrapper (std::string const &);
+    struct Reference {
+
+        /* Methods: */
+
+        Reference() noexcept = default;
+        Reference(Reference &&) noexcept = default;
+        Reference(Reference const &) noexcept = default;
+
+        Reference(std::shared_ptr<void> data_, std::size_t size_)
+            : data(std::move(data_))
+            , size(size_)
+        {}
+
+        Reference & operator=(Reference &&) noexcept = default;
+        Reference & operator=(Reference const &) noexcept = default;
+
+    /* Fields: */
+
+        std::shared_ptr<void> data;
+        std::size_t size;
+
+    };
+    using ReferenceVector = std::vector<Reference>;
+
+    struct ConstReference {
+
+    /* Methods: */
+
+        ConstReference() noexcept = default;
+        ConstReference(ConstReference &&) noexcept = default;
+        ConstReference(ConstReference const &) noexcept = default;
+
+        ConstReference(std::shared_ptr<void const> data_, std::size_t size_)
+            : data(std::move(data_))
+            , size(std::move(size_))
+        {}
+
+        ConstReference(Reference && move) noexcept
+            : data(std::move(move.data))
+            , size(std::move(move.size))
+        {}
+
+        ConstReference(Reference const & copy) noexcept
+            : data(copy.data)
+            , size(copy.size)
+        {}
+
+        ConstReference & operator=(ConstReference &&) noexcept = default;
+        ConstReference & operator=(ConstReference const &) noexcept = default;
+
+        ConstReference & operator=(Reference && move) noexcept {
+            data = std::move(move.data);
+            size = std::move(move.size);
+            return *this;
+        }
+
+        ConstReference & operator=(Reference const & copy) noexcept {
+            data = copy.data;
+            size = copy.size;
+            return *this;
+        }
+
+    /* Fields: */
+
+        std::shared_ptr<const void> data;
+        std::size_t size;
+
+    };
+    using ConstReferenceVector = std::vector<ConstReference>;
+
+    struct SyscallContext {
+
+    /* Types: */
+
+        struct PublicMemoryPointer {
+            std::uint64_t ptr;
+        };
+
+    /* Methods: */
+
+        virtual ~SyscallContext() noexcept;
+
+        virtual void * processInternal() const noexcept = 0;
+
+        virtual SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
+                std::uint64_t pd_index) const noexcept = 0;
+
+        virtual void * processFacility(char const * facilityName)
+                const noexcept = 0;
+
+        /* Access to public dynamic memory inside the VM process: */
+        virtual PublicMemoryPointer publicAlloc(std::uint64_t nBytes) = 0;
+        virtual bool publicFree(PublicMemoryPointer ptr) = 0;
+        virtual std::size_t publicMemPtrSize(PublicMemoryPointer ptr) = 0;
+        virtual void * publicMemPtrData(PublicMemoryPointer ptr) = 0;
+
+    };
+
+    struct SyscallWrapper {
+
+    /* Methods: */
+
+        virtual ~SyscallWrapper() noexcept;
+
+        virtual void operator()(
+                std::vector<::SharemindCodeBlock> & arguments,
+                std::vector<Reference> & references,
+                std::vector<ConstReference> & constReferences,
+                ::SharemindCodeBlock * returnValue,
+                Vm::SyscallContext & context) const = 0;
+
+    };
+
+    using SyscallFinder =
+            std::shared_ptr<SyscallWrapper> (std::string const &);
     using SyscallFinderFun = std::function<SyscallFinder>;
     using SyscallFinderFunPtr = std::shared_ptr<SyscallFinderFun>;
 
@@ -102,7 +217,7 @@ public: /* Methods: */
                         std::forward<F>(f)));
     }
 
-    SharemindSyscallWrapper findSyscall(std::string const & signature)
+    std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;
 
     SharemindPd * findPd(std::string const & pdName) const noexcept;

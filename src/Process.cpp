@@ -29,138 +29,6 @@
 #include "Program.h"
 
 
-#define SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c) \
-    do { assert((c)); assert((c)->vm_internal); } while (false)
-#define SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c) \
-    (*static_cast<::sharemind::Detail::ProcessState *>( \
-            ::sharemind::assertReturn((c)->vm_internal)))
-
-extern "C"
-SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t pd_index)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (pd_index > SIZE_MAX)
-        return nullptr;
-
-    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.pdpiInfo(pd_index);
-}
-
-extern "C"
-void * sharemind_processFacility(SharemindModuleApi0x1SyscallContext const * c,
-                                 char const * facilityName)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-    assert(facilityName);
-    return SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c).processFacility(facilityName);
-}
-
-extern "C"
-std::uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
-                                     std::uint64_t nBytes)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.publicAlloc(nBytes);
-}
-
-extern "C"
-bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
-                           std::uint64_t ptr)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-
-    auto const r = ps.publicFree(ptr);
-    assert(r == sharemind::Detail::MemoryMap::Ok
-           || r == sharemind::Detail::MemoryMap::MemorySlotInUse
-           || r == sharemind::Detail::MemoryMap::InvalidMemoryHandle);
-    return r != sharemind::Detail::MemoryMap::MemorySlotInUse;
-}
-
-extern "C"
-std::size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
-                                      std::uint64_t ptr)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(ptr == 0u))
-        return 0u;
-
-    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.publicSlotSize(ptr);
-}
-
-extern "C"
-void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
-                                std::uint64_t ptr)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(ptr == 0u))
-        return nullptr;
-
-    auto const & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.publicSlotPtr(ptr);
-}
-
-extern "C"
-void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(nBytes == 0))
-        return nullptr;
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.privateAlloc(nBytes);
-}
-
-extern "C"
-void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
-                            void * ptr)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(!ptr))
-        return;
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.privateFree(ptr);
-}
-
-extern "C"
-bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(nBytes == 0u))
-        return true;
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.privateReserve(nBytes);
-}
-
-extern "C"
-bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-{
-    SHAREMIND_LIBVM_PROCESS_CHECK_CONTEXT(c);
-
-    if (unlikely(nBytes == 0u))
-        return true;
-
-    auto & ps = SHAREMIND_LIBVM_STATE_FROM_CONTEXT(c);
-    return ps.privateRelease(nBytes);
-}
-
 namespace sharemind {
 
 #define GUARD_(g) std::lock_guard<decltype(g)> const guard(g)
@@ -395,19 +263,6 @@ ProcessState::ProcessState(std::shared_ptr<ParseData> parseData)
           parseData->staticData->rodataSections[m_currentCodeSectionIndex],
           m_dataSections[m_currentCodeSectionIndex],
           m_bssSections[m_currentCodeSectionIndex])
-    , m_syscallContext{this,    // vm_internal
-                       nullptr, // process_internal
-                       nullptr, // module_handle
-                       &sharemind_get_pdpi_info,
-                       &sharemind_processFacility,
-                       &sharemind_public_alloc,
-                       &sharemind_public_free,
-                       &sharemind_public_get_size,
-                       &sharemind_public_get_ptr,
-                       &sharemind_private_alloc,
-                       &sharemind_private_free,
-                       &sharemind_private_reserve,
-                       &sharemind_private_release}
 {}
 
 ProcessState::~ProcessState() noexcept {
@@ -431,7 +286,7 @@ void ProcessState::setPdpiFacility(char const * const name,
 
 void ProcessState::setInternal(void * const value) {
     GUARD;
-    m_syscallContext.process_internal = value;
+    m_syscallContext.m_processInternal = value;
 }
 
 void ProcessState::run() {
@@ -635,7 +490,7 @@ void Process::pause() noexcept { return m_inner->pause(); }
 SharemindCodeBlock Process::returnValue() const noexcept
 { return m_inner->m_returnValue; }
 
-SharemindModuleApi0x1Error Process::syscallException() const noexcept
+std::exception_ptr Process::syscallException() const noexcept
 { return m_inner->m_syscallException; }
 
 std::size_t Process::currentCodeSectionIndex() const noexcept

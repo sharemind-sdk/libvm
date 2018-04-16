@@ -38,10 +38,6 @@ public: /* Methods: */
 
     ~DataSection() noexcept override;
 
-    bool ref() noexcept final override;
-    void deref() noexcept final override;
-    bool canFree() const noexcept final override;
-
     void * data() const noexcept final override;
     std::size_t size() const noexcept final override;
 

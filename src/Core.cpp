@@ -37,7 +37,6 @@
 #include "PreparationBlock.h"
 #include "Process_p.h"
 #include "Program.h"
-#include "References.h"
 
 
 namespace sharemind {
@@ -58,9 +57,8 @@ namespace {
 #define SHAREMIND_VM_PROCESS_INTEGER_OVERFLOW SHAREMIND_RE(IntegerOverflow)
 
 #define SHAREMIND_T_CodeBlock SharemindCodeBlock
-#define SHAREMIND_T_CReference CReference
-#define SHAREMIND_T_MemorySlot MemorySlot
-#define SHAREMIND_T_Reference Reference
+#define SHAREMIND_T_CReference Vm::ConstReference
+#define SHAREMIND_T_Reference Vm::Reference
 
 #define SHAREMIND_MI_FPU_STATE (p->m_fpuState)
 #define SHAREMIND_MI_FPU_STATE_SET(v) \
@@ -358,94 +356,79 @@ enum class HaltCode { Continue, Halt };
         p->m_nextFrame->stack.emplace_back(v); \
     } while ((0))
 
-#define SHAREMIND_MI_PUSHREF_BLOCK_(prefix,value,b,bOffset,rSize) \
+#define SHAREMIND_MI_PUSHREF_BLOCK_(whichStack,maybeConst,b,bOffset,rSize) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        p->m_nextFrame->value.emplace_back(nullptr, \
-                                           &(b)->uint8[0] + (bOffset), \
-                                           (rSize)); \
+        p->m_nextFrame->whichStack.emplace_back( \
+            std::shared_ptr<void maybeConst>(std::shared_ptr<void>(), \
+                                             &(b)->uint8[0] + (bOffset)), \
+            (rSize)); \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_BLOCK_ref(b) \
-    SHAREMIND_MI_PUSHREF_BLOCK_(Ref, \
-                                refstack, \
+    SHAREMIND_MI_PUSHREF_BLOCK_(refstack,, \
                                 (b), \
                                 0u, \
                                 sizeof(SharemindCodeBlock))
 #define SHAREMIND_MI_PUSHREF_BLOCK_cref(b) \
-    SHAREMIND_MI_PUSHREF_BLOCK_(CRef, \
-                                crefstack, \
+    SHAREMIND_MI_PUSHREF_BLOCK_(crefstack, \
+                                const, \
                                 (b), \
                                 0u, \
                                 sizeof(SharemindCodeBlock))
 #define SHAREMIND_MI_PUSHREFPART_BLOCK_ref(b,o,s) \
-    SHAREMIND_MI_PUSHREF_BLOCK_(Ref, refstack,  (b), (o), (s))
+    SHAREMIND_MI_PUSHREF_BLOCK_(refstack,,        (b), (o), (s))
 #define SHAREMIND_MI_PUSHREFPART_BLOCK_cref(b,o,s) \
-    SHAREMIND_MI_PUSHREF_BLOCK_(CRef,crefstack, (b), (o), (s))
+    SHAREMIND_MI_PUSHREF_BLOCK_(crefstack, const, (b), (o), (s))
 
-#define SHAREMIND_MI_PUSHREF_REF_(prefix,value,constPerhaps,r,rOffset,rSize) \
+#define SHAREMIND_MI_PUSHREF_REF_(whichStack,...) \
     do { \
-        using M = SHAREMIND_T_MemorySlot; \
-        auto const internal = (r)->internal; \
-        bool deref = false; \
-        if (internal) { \
-            if (!static_cast<M *>((r)->internal)->ref()) \
-                throw std::bad_alloc(); \
-            deref = true; \
-        } \
-        try { \
-            SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-            p->m_nextFrame->value.emplace_back( \
-                internal, \
-                static_cast<constPerhaps uint8_t *>((r)->pData) + (rOffset), \
-                (rSize)); \
-        } catch (...) { \
-            if (deref) \
-                static_cast<M *>((r)->internal)->deref(); \
-            throw; \
-        } \
+        SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
+        p->m_nextFrame->whichStack.emplace_back(__VA_ARGS__); \
     } while ((0))
 
 #define SHAREMIND_MI_PUSHREF_REF_ref(r) \
-    SHAREMIND_MI_PUSHREF_REF_(Ref, refstack,,        (r), 0u, (r)->size)
+    SHAREMIND_MI_PUSHREF_REF_(refstack, (r))
 #define SHAREMIND_MI_PUSHREF_REF_cref(r) \
-    SHAREMIND_MI_PUSHREF_REF_(CRef,crefstack, const, (r), 0u, (r)->size)
+    SHAREMIND_MI_PUSHREF_REF_(crefstack, (r))
 #define SHAREMIND_MI_PUSHREFPART_REF_ref(r,o,s) \
-    SHAREMIND_MI_PUSHREF_REF_(Ref, refstack,,        (r), (o), (s))
+    SHAREMIND_MI_PUSHREF_REF_( \
+        refstack, \
+        Vm::Reference{std::shared_ptr<void>((r)->data, \
+                                            ptrAdd((r)->data.get(), (o))), \
+                      (s)})
 #define SHAREMIND_MI_PUSHREFPART_REF_cref(r,o,s) \
-    SHAREMIND_MI_PUSHREF_REF_(CRef,crefstack, const, (r), (o), (s))
+    SHAREMIND_MI_PUSHREF_REF_( \
+        crefstack, \
+        Vm::ConstReference{std::shared_ptr<void const>((r)->data, \
+                                                       ptrAdd((r)->data.get(), \
+                                                              (o))),\
+                           (s)})
 
 std::uint8_t emptyReferenceTarget = 0u;
 std::uint8_t const emptyCReferenceTarget = 0u;
 
-#define SHAREMIND_MI_PUSHREF_MEM_(prefix,value,slot,mOffset,rSize) \
-    do { \
-        SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        if (!(slot)->ref()) \
-            throw std::bad_alloc(); \
-        try { \
-            p->m_nextFrame->value.emplace_back( \
-                    (slot), \
-                    (rSize) \
-                    ? (static_cast<uint8_t *>((slot)->data()) + (mOffset)) \
-                    /* Non-NULL invalid pointer so as not to signal end of */ \
-                    /* (c)refs: */ \
-                    : &empty ## prefix ## erenceTarget, \
-                    (rSize)); \
-        } catch (...) { \
-            (slot)->deref(); \
-            throw; \
-        } \
-    } while ((0))
+#define SHAREMIND_MI_PUSHREF_MEM_FULL_(slot, whichStack, type, maybeConst) \
+    SHAREMIND_MI_PUSHREF_REF_( \
+        whichStack, \
+        Vm::type{std::shared_ptr<void maybeConst>((slot), (slot)->data()), \
+                 (slot)->size()})
+#define SHAREMIND_MI_PUSHREF_MEM_PART_(slot,whichStack,type,maybeConst,o,s) \
+    SHAREMIND_MI_PUSHREF_REF_( \
+        whichStack, \
+        Vm::type{std::shared_ptr<void maybeConst>((slot), \
+                                                  ptrAdd((slot)->data(), (o))),\
+                 (s)})
 
 #define SHAREMIND_MI_PUSHREF_MEM_ref(slot) \
-    SHAREMIND_MI_PUSHREF_MEM_(Ref, refstack,  (slot), 0u, (slot)->size())
+    SHAREMIND_MI_PUSHREF_MEM_FULL_((slot), refstack, Reference,)
 #define SHAREMIND_MI_PUSHREF_MEM_cref(slot) \
-    SHAREMIND_MI_PUSHREF_MEM_(CRef,crefstack, (slot), 0u, (slot)->size())
+    SHAREMIND_MI_PUSHREF_MEM_FULL_((slot), crefstack, ConstReference, const)
 #define SHAREMIND_MI_PUSHREFPART_MEM_ref(slot,o,s) \
-    SHAREMIND_MI_PUSHREF_MEM_(Ref, refstack,  (slot), (o), (s))
+    SHAREMIND_MI_PUSHREF_MEM_PART_((slot), refstack, Reference,,(o),(s))
 #define SHAREMIND_MI_PUSHREFPART_MEM_cref(slot,o,s) \
-    SHAREMIND_MI_PUSHREF_MEM_(CRef,crefstack, (slot), (o), (s))
+    SHAREMIND_MI_PUSHREF_MEM_PART_((slot), crefstack, ConstReference, const, \
+                                   (o),(s))
 
 #define SHAREMIND_MI_RESIZE_STACK(size) \
     do { \
@@ -492,56 +475,39 @@ std::uint8_t const emptyCReferenceTarget = 0u;
         SHAREMIND_MI_CALL((a)->uint64[0],r,nargs); \
     } while ((0))
 
-#define SHAREMIND_MI_SYSCALL(sc,r,nargs) \
+#define SHAREMIND_MI_SYSCALL_(scPtr,r) \
     do { \
         SHAREMIND_MI_CHECK_CREATE_NEXT_FRAME; \
-        auto * const nextFrame = p->m_nextFrame; \
-        nextFrame->returnValueAddr = (r); \
-        using SC = SharemindSyscallWrapper const *; \
-        SharemindSyscallCallable const rc = static_cast<SC>(sc)->callable; \
-        p->m_syscallContext.moduleHandle = static_cast<SC>(sc)->internal; \
-        SHAREMIND_T_Reference * ref; \
-        bool const hasRefs = !nextFrame->refstack.empty(); \
-        if (!hasRefs) { \
-            ref = nullptr; \
-        } else { \
-            nextFrame->refstack.emplace_back(nullptr, nullptr, 0u); \
-            ref = nextFrame->refstack.data(); \
+        auto & nextFrame = *p->m_nextFrame; \
+        try { \
+            (*scPtr)(nextFrame.stack, \
+                     nextFrame.refstack, \
+                     nextFrame.crefstack, \
+                     (r), \
+                     p->m_syscallContext); \
+        } catch (...) { \
+            p->m_frames.pop_back(); \
+            p->m_nextFrame = nullptr; \
+            p->m_syscallException = std::current_exception(); \
+            std::throw_with_nested(Process::SystemCallErrorException()); \
         } \
-        bool const hasCRefs = !nextFrame->crefstack.empty(); \
-        CReference * cref; \
-        if (!hasCRefs) { \
-            cref = nullptr; \
-        } else { \
-            nextFrame->crefstack.emplace_back(nullptr, nullptr, 0u);\
-            cref = nextFrame->crefstack.data(); \
-        } \
-        SharemindModuleApi0x1Error const st = \
-                (*rc)(nextFrame->stack.data(), nextFrame->stack.size(), \
-                        ref, cref, \
-                        (r), &p->m_syscallContext); \
-        if (hasRefs) \
-            nextFrame->refstack.pop_back(); \
-        if (hasCRefs) \
-            nextFrame->crefstack.pop_back(); \
         p->m_frames.pop_back(); \
         p->m_nextFrame = nullptr; \
-        if (st != SHAREMIND_MODULE_API_0x1_OK) { \
-            p->m_syscallException = st; \
-            throw Process::SystemCallErrorException(); \
-        } \
         SHAREMIND_CHECK_TRAP; \
     } while ((0))
 
-#define SHAREMIND_MI_CHECK_SYSCALL(a,r,nargs) \
+#define SHAREMIND_MI_SYSCALL(a,r) \
+    SHAREMIND_MI_SYSCALL_(static_cast<Vm::SyscallWrapper const *>((a)->cp[0u]),\
+                          (r))
+
+#define SHAREMIND_MI_CHECK_SYSCALL(a,r) \
     do { \
         auto const & bindings = p->m_staticProgramData->syscallBindings; \
         if (unlikely((a)->uint64[0] >= bindings.size())) \
             throw Process::InvalidSyscallIndexException(); \
-        SHAREMIND_MI_SYSCALL( \
-                &bindings[static_cast<std::size_t>((a)->uint64[0])], \
-                r, \
-                nargs); \
+        SHAREMIND_MI_SYSCALL_( \
+                bindings[static_cast<std::size_t>((a)->uint64[0])], \
+                (r)); \
     } while ((0))
 
 #define SHAREMIND_MI_RETURN(r) \
@@ -603,10 +569,8 @@ std::uint8_t const emptyCReferenceTarget = 0u;
                           CRef, \
                           Process::InvalidConstReferenceIndexException)
 
-#define SHAREMIND_MI_REFERENCE_GET_MEMORY_PTR(r) \
-    (static_cast<SHAREMIND_T_MemorySlot *>((r)->internal))
-#define SHAREMIND_MI_REFERENCE_GET_PTR(r) ((r)->pData)
-#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) ((r)->pData)
+#define SHAREMIND_MI_REFERENCE_GET_PTR(r) ((r)->data.get())
+#define SHAREMIND_MI_REFERENCE_GET_CONST_PTR(r) ((r)->data.get())
 #define SHAREMIND_MI_REFERENCE_GET_SIZE(r) ((r)->size)
 
 #define SHAREMIND_MI_BLOCK_AS(b,t) (b->t[0])
@@ -624,15 +588,20 @@ std::uint8_t const emptyCReferenceTarget = 0u;
         (dptr)->uint64[0] = p->publicAlloc((sizereg)->uint64[0]); \
     } while ((0))
 
+inline std::shared_ptr<MemorySlot> getMemorySlotOrExcept(
+        ProcessState & p,
+        MemoryMap::KeyType index)
+{
+    if (!index)
+        throw Process::InvalidMemoryHandleException();
+    auto const & v = p.m_memoryMap.get(index);
+    if (unlikely(!v))
+        throw Process::InvalidMemoryHandleException();
+    return v;
+}
+
 #define SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT(index,dest) \
-    do { \
-        if (unlikely(index == 0u)) \
-            throw Process::InvalidMemoryHandleException(); \
-        auto const & v = p->m_memoryMap.get((index)); \
-        if (unlikely(!v)) \
-            throw Process::InvalidMemoryHandleException(); \
-        (dest) = v.get(); \
-    } while ((0))
+    auto dest(getMemorySlotOrExcept(*p, (index)))
 
 inline void publicFree(ProcessState & p, SharemindCodeBlock const & ptr) {
     switch (p.publicFree(ptr.uint64[0])) {
@@ -649,7 +618,6 @@ inline void publicFree(ProcessState & p, SharemindCodeBlock const & ptr) {
 
 #define SHAREMIND_MI_MEM_GET_SIZE(ptr,sizedest) \
     do { \
-        SHAREMIND_T_MemorySlot * slot; \
         SHAREMIND_MI_MEM_GET_SLOT_OR_EXCEPT((ptr)->uint64[0], slot); \
         (sizedest)->uint64[0] = slot->size(); \
     } while ((0))

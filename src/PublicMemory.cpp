@@ -35,19 +35,6 @@ PublicMemory::PublicMemory(std::size_t const size) noexcept
 
 PublicMemory::~PublicMemory() noexcept { ::operator delete(m_data); }
 
-bool PublicMemory::ref() noexcept {
-    if (m_nrefs == std::numeric_limits<decltype(m_nrefs)>::max())
-        return false;
-    ++m_nrefs;
-    return true;
-}
-
-void PublicMemory::deref() noexcept {
-    assert(m_nrefs);
-    --m_nrefs;
-}
-
-bool PublicMemory::canFree() const noexcept { return m_nrefs == 0u; }
 void * PublicMemory::data() const noexcept { return m_data; }
 std::size_t PublicMemory::size() const noexcept { return m_size; }
 

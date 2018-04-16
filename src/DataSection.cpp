@@ -28,9 +28,6 @@ namespace sharemind {
 namespace Detail {
 
 DataSection::~DataSection() noexcept {}
-bool DataSection::ref() noexcept { return true; }
-void DataSection::deref() noexcept {}
-bool DataSection::canFree() const noexcept { return false; }
 void * DataSection::data() const noexcept { return m_data; }
 std::size_t DataSection::size() const noexcept { return m_size; }
 

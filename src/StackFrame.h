@@ -26,7 +26,7 @@
 
 #include <sharemind/codeblock.h>
 #include <vector>
-#include "References.h"
+#include "Vm.h"
 
 
 namespace sharemind {
@@ -41,8 +41,8 @@ struct __attribute__((visibility("internal"))) StackFrame {
 /* Fields: */
 
     RegisterVector stack;
-    ReferenceVector refstack;
-    CReferenceVector crefstack;
+    Vm::ReferenceVector refstack;
+    Vm::ConstReferenceVector crefstack;
 
     SharemindCodeBlock const * returnAddr;
     SharemindCodeBlock * returnValueAddr;

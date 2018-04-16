@@ -43,9 +43,6 @@ public: /* Methods: */
 
     virtual void * data() const noexcept = 0;
     virtual std::size_t size() const noexcept = 0;
-    virtual bool ref() noexcept = 0;
-    virtual void deref() noexcept = 0;
-    virtual bool canFree() const noexcept = 0;
     virtual bool isWritable() const noexcept;
 
 protected: /* Methods: */

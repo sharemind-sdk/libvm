@@ -43,56 +43,6 @@
 #include "StackFrame.h"
 
 
-extern "C"
-SharemindModuleApi0x1PdpiInfo const * sharemind_get_pdpi_info(
-        SharemindModuleApi0x1SyscallContext * c,
-        uint64_t pd_index) __attribute__((visibility("internal")));
-
-extern "C"
-void * sharemind_processFacility(SharemindModuleApi0x1SyscallContext const * c,
-                                 char const * facilityName)
-        __attribute__((visibility("internal")));
-
-extern "C"
-std::uint64_t sharemind_public_alloc(SharemindModuleApi0x1SyscallContext * c,
-                                     std::uint64_t nBytes)
-        __attribute__((visibility("internal")));
-
-extern "C"
-bool sharemind_public_free(SharemindModuleApi0x1SyscallContext * c,
-                           std::uint64_t ptr)
-        __attribute__((visibility("internal")));
-
-extern "C"
-std::size_t sharemind_public_get_size(SharemindModuleApi0x1SyscallContext * c,
-                                      std::uint64_t ptr)
-        __attribute__((visibility("internal")));
-
-extern "C"
-void * sharemind_public_get_ptr(SharemindModuleApi0x1SyscallContext * c,
-                                std::uint64_t ptr)
-        __attribute__((visibility("internal")));
-
-extern "C"
-void * sharemind_private_alloc(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-        __attribute__((visibility("internal")));
-
-extern "C"
-void sharemind_private_free(SharemindModuleApi0x1SyscallContext * c,
-                            void * ptr)
-        __attribute__((visibility("internal")));
-
-extern "C"
-bool sharemind_private_reserve(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-        __attribute__((visibility("internal")));
-
-extern "C"
-bool sharemind_private_release(SharemindModuleApi0x1SyscallContext * c,
-                               std::size_t nBytes)
-        __attribute__((visibility("internal")));
-
 namespace sharemind {
 namespace Detail {
 
@@ -145,6 +95,43 @@ struct __attribute__((visibility("internal"))) ProcessState {
         Trapped,
         Finished,
         Crashed
+    };
+
+    struct SyscallContext final: Vm::SyscallContext {
+
+    /* Methods: */
+
+        SyscallContext(ProcessState & state) noexcept : m_state(state) {}
+
+        void * processInternal() const noexcept final override
+        { return m_processInternal; }
+
+        SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
+                std::uint64_t pd_index) const noexcept final override
+        { return m_state.pdpiInfo(pd_index); }
+
+        void * processFacility(char const * facilityName)
+                const noexcept final override
+        { return m_state.processFacility(facilityName); }
+
+        /* Access to public dynamic memory inside the VM process: */
+        PublicMemoryPointer publicAlloc(std::uint64_t nBytes) final override
+        { return {m_state.publicAlloc(nBytes)}; }
+
+        bool publicFree(PublicMemoryPointer ptr) final override
+        { return m_state.publicFree(ptr.ptr); }
+
+        std::size_t publicMemPtrSize(PublicMemoryPointer ptr) final override
+        { return m_state.publicSlotSize(ptr.ptr); }
+
+        void * publicMemPtrData(PublicMemoryPointer ptr) final override
+        { return m_state.publicSlotPtr(ptr.ptr); }
+
+    /* Fields: */
+
+        ProcessState & m_state;
+        void * m_processInternal;
+
     };
 
 /* Methods: */
@@ -230,7 +217,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
     std::size_t m_currentIp = 0u;
     SharemindCodeBlock m_returnValue;
     Process::UserDefinedException m_userException;
-    SharemindModuleApi0x1Error m_syscallException = SHAREMIND_MODULE_API_0x1_OK;
+    std::exception_ptr m_syscallException;
 
     std::atomic<bool> m_trapCond{false};
 
@@ -244,7 +231,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
     std::uint64_t m_memorySlotNext;
     PrivateMemoryMap m_privateMemoryMap;
 
-    SharemindModuleApi0x1SyscallContext m_syscallContext;
+    SyscallContext m_syscallContext{*this};
 
     MemoryInfo m_memPublicHeap;
     MemoryInfo m_memPrivate;

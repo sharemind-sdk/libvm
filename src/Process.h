@@ -173,7 +173,7 @@ public: /* Methods: */
     void pause() noexcept;
 
     SharemindCodeBlock returnValue() const noexcept;
-    SharemindModuleApi0x1Error syscallException() const noexcept;
+    std::exception_ptr syscallException() const noexcept;
     std::size_t currentCodeSectionIndex() const noexcept;
     std::uintptr_t currentIp() const noexcept;
 

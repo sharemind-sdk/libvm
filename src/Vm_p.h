@@ -43,7 +43,7 @@ struct __attribute__((visibility("internal"))) Vm::Inner {
 
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS
 
-    SharemindSyscallWrapper findSyscall(std::string const & signature)
+    std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;
 
     SharemindPd * findPd(std::string const & pdName) const noexcept;

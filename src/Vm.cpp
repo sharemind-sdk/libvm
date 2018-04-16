@@ -36,13 +36,13 @@ Vm::Inner::Inner() {}
 
 Vm::Inner::~Inner() noexcept {}
 
-SharemindSyscallWrapper Vm::Inner::findSyscall(std::string const & signature)
-        const noexcept
+std::shared_ptr<Vm::SyscallWrapper> Vm::Inner::findSyscall(
+        std::string const & signature) const noexcept
 {
     INNERGUARD;
     if (m_syscallFinder && *m_syscallFinder)
         return (*m_syscallFinder)(signature);
-    return SharemindSyscallWrapper{nullptr, nullptr};
+    return nullptr;
 }
 
 SharemindPd * Vm::Inner::findPd(std::string const & pdName) const noexcept {
@@ -52,6 +52,9 @@ SharemindPd * Vm::Inner::findPd(std::string const & pdName) const noexcept {
     return nullptr;
 }
 
+Vm::SyscallContext::~SyscallContext() noexcept = default;
+
+Vm::SyscallWrapper::~SyscallWrapper() noexcept = default;
 
 Vm::Vm() : m_inner(std::make_shared<Inner>()) {}
 
@@ -72,8 +75,8 @@ void Vm::setProcessFacilityFinder(ProcessFacilityFinderFunPtr f) noexcept {
     m_inner->m_processFacilityMap->setNextGetter(std::move(f));
 }
 
-SharemindSyscallWrapper Vm::findSyscall(std::string const & signature)
-        const noexcept
+std::shared_ptr<Vm::SyscallWrapper> Vm::findSyscall(
+        std::string const & signature) const noexcept
 { return m_inner->findSyscall(signature); }
 
 SharemindPd * Vm::findPd(std::string const & pdName) const noexcept

@@ -37,9 +37,6 @@ public: /* Methods: */
     PublicMemory(std::size_t const size) noexcept;
     ~PublicMemory() noexcept override;
 
-    bool ref() noexcept final override;
-    void deref() noexcept final override;
-    bool canFree() const noexcept final override;
     void * data() const noexcept final override;
     std::size_t size() const noexcept final override;
 
@@ -47,7 +44,6 @@ private: /* Fields: */
 
     void * const m_data;
     std::size_t const m_size;
-    std::size_t m_nrefs = 0u;
 
 };
 
