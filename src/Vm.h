@@ -163,11 +163,6 @@ public: /* Types: */
     using PdFinderFun = std::function<PdFinder>;
     using PdFinderFunPtr = std::shared_ptr<PdFinderFun>;
 
-    using ProcessFacilityFinder = void * (char const *);
-    using ProcessFacilityFinderFun = std::function<ProcessFacilityFinder>;
-    using ProcessFacilityFinderFunPtr =
-            std::shared_ptr<ProcessFacilityFinderFun>;
-
 public: /* Methods: */
 
     Vm();
@@ -175,7 +170,6 @@ public: /* Methods: */
 
     void setSyscallFinder(SyscallFinderFunPtr f) noexcept;
     void setPdFinder(PdFinderFunPtr f) noexcept;
-    void setProcessFacilityFinder(ProcessFacilityFinderFunPtr f) noexcept;
 
     template <typename F>
     auto setSyscallFinder(F && f)
@@ -201,21 +195,6 @@ public: /* Methods: */
                     void
                 >::type
     { return setPdFinder(std::make_shared<PdFinderFun>(std::forward<F>(f))); }
-
-    template <typename F>
-    auto setProcessFacilityFinder(F && f)
-            -> typename std::enable_if<
-                    !std::is_convertible<
-                        typename std::decay<decltype(f)>::type,
-                        ProcessFacilityFinderFunPtr
-                    >::value,
-                    void
-                >::type
-    {
-        return setProcessFacilityFinder(
-                    std::make_shared<ProcessFacilityFinderFun>(
-                        std::forward<F>(f)));
-    }
 
     std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;

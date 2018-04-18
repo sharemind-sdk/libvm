@@ -34,7 +34,6 @@
 #include <sharemind/SimpleUnorderedStringMap.h>
 #include <string>
 #include <type_traits>
-#include "Vm.h"
 
 
 namespace sharemind {
@@ -52,9 +51,9 @@ public: /* Types: */
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(Exception,
                                                    FacilityNameClashException);
 
-    using NextGetter = Vm::ProcessFacilityFinder;
-    using NextGetterFun = Vm::ProcessFacilityFinderFun;
-    using NextGetterFunPtr = Vm::ProcessFacilityFinderFunPtr;
+    using NextGetter = void * (char const *);
+    using NextGetterFun = std::function<NextGetter>;
+    using NextGetterFunPtr = std::shared_ptr<NextGetterFun>;
 
 public: /* Methods: */
 

@@ -70,11 +70,6 @@ void Vm::setPdFinder(PdFinderFunPtr f) noexcept {
     m_inner->m_pdFinder = std::move(f);
 }
 
-void Vm::setProcessFacilityFinder(ProcessFacilityFinderFunPtr f) noexcept {
-    GUARD;
-    m_inner->m_processFacilityMap->setNextGetter(std::move(f));
-}
-
 std::shared_ptr<Vm::SyscallWrapper> Vm::findSyscall(
         std::string const & signature) const noexcept
 { return m_inner->findSyscall(signature); }
