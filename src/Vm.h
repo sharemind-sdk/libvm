@@ -123,7 +123,7 @@ public: /* Types: */
 
         virtual ~SyscallContext() noexcept;
 
-        virtual void * processInternal() const noexcept = 0;
+        virtual std::shared_ptr<void> processInternal() const noexcept = 0;
 
         virtual SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
                 std::uint64_t pd_index) const noexcept = 0;

@@ -284,9 +284,9 @@ void ProcessState::setPdpiFacility(char const * const name,
     m_pdpiCache.setPdpiFacility(name, facility, context);
 }
 
-void ProcessState::setInternal(void * const value) {
+void ProcessState::setInternal(std::shared_ptr<void> value) {
     GUARD;
-    m_syscallContext.m_processInternal = value;
+    m_syscallContext.m_processInternal = std::move(value);
 }
 
 void ProcessState::run() {
@@ -503,8 +503,8 @@ void Process::setPdpiFacility(char const * const name,
                               void * const context)
 { return m_inner->setPdpiFacility(name, facility, context); }
 
-void Process::setInternal(void * const value)
-{ return m_inner->setInternal(value); }
+void Process::setInternal(std::shared_ptr<void> value)
+{ return m_inner->setInternal(std::move(value)); }
 
 SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(Process,m_inner->)
 

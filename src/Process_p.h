@@ -103,7 +103,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
         SyscallContext(ProcessState & state) noexcept : m_state(state) {}
 
-        void * processInternal() const noexcept final override
+        std::shared_ptr<void> processInternal() const noexcept final override
         { return m_processInternal; }
 
         SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
@@ -130,7 +130,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
     /* Fields: */
 
         ProcessState & m_state;
-        void * m_processInternal;
+        std::shared_ptr<void> m_processInternal;
 
     };
 
@@ -143,7 +143,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
                          void * const facility,
                          void * const context);
 
-    void setInternal(void * const value);
+    void setInternal(std::shared_ptr<void> value);
 
     void run();
     void resume();
