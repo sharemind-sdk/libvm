@@ -337,15 +337,16 @@ void ProcessState::execute(ExecuteMethod const executeMethod) {
 
     try {
         vmRun(executeMethod, this);
-        m_pdpiCache.stopPdpis();
-        setState(State::Finished);
     } catch (Process::TrapException const &) {
         setState(State::Trapped);
         throw;
     } catch (...) {
+        m_pdpiCache.stopPdpis();
         setState(State::Crashed);
         throw;
     }
+    m_pdpiCache.stopPdpis();
+    setState(State::Finished);
 }
 
 void ProcessState::pause() noexcept
