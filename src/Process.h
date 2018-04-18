@@ -166,8 +166,6 @@ public: /* Methods: */
                          void * const facility,
                          void * const context = nullptr);
 
-    void setInternal(std::shared_ptr<void> value);
-
     void run();
     void resume();
     void pause() noexcept;
