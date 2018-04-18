@@ -325,6 +325,9 @@ void ProcessState::resume() {
 }
 
 void ProcessState::execute(ExecuteMethod const executeMethod) {
+    assert((executeMethod == ExecuteMethod::Run)
+           || (executeMethod == ExecuteMethod::Continue));
+
     auto const setState =
             [this](State const newState) noexcept {
                 RUNSTATEGUARD;
