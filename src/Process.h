@@ -177,9 +177,9 @@ public: /* Methods: */
     std::size_t currentCodeSectionIndex() const noexcept;
     std::uintptr_t currentIp() const noexcept;
 
-    void setFacility(std::string name, void * facility);
-    void * facility(char const * const name) const noexcept;
-    void * facility(std::string const & name) const noexcept;
+    void setFacility(std::string name, std::shared_ptr<void> facility);
+    std::shared_ptr<void> facility(char const * const name) const noexcept;
+    std::shared_ptr<void> facility(std::string const & name) const noexcept;
     bool unsetFacility(std::string const & name) noexcept;
 
 private: /* Fields: */

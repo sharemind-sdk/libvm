@@ -98,9 +98,11 @@ public: /* Methods: */
 
     SharemindPd * pd(std::size_t const i) const noexcept;
 
-    void setProcessFacility(std::string name, void * facility);
-    void * processFacility(char const * const name) const noexcept;
-    void * processFacility(std::string const & name) const noexcept;
+    void setProcessFacility(std::string name, std::shared_ptr<void> facility);
+    std::shared_ptr<void> processFacility(char const * const name)
+            const noexcept;
+    std::shared_ptr<void> processFacility(std::string const & name)
+            const noexcept;
     bool unsetProcessFacility(std::string const & name) noexcept;
 
 private: /* Fields: */

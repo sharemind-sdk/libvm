@@ -34,7 +34,9 @@ SHAREMIND_DEFINE_EXCEPTION_CONST_MSG_NOINLINE(
 
 #define GUARD std::lock_guard<decltype(m_mutex)> const guard(m_mutex)
 
-void ProcessFacilityMap::setFacility(std::string name, void * facility) {
+void ProcessFacilityMap::setFacility(std::string name,
+                                     std::shared_ptr<void> facility)
+{
     GUARD;
     auto const rp(m_inner.emplace(std::move(name), std::move(facility)));
     if (!rp.second)
@@ -46,7 +48,9 @@ void ProcessFacilityMap::setNextGetter(NextGetterFunPtr nextGetter) noexcept {
     m_nextGetter = std::move(nextGetter);
 }
 
-void * ProcessFacilityMap::facility(std::string const & name) const noexcept {
+std::shared_ptr<void> ProcessFacilityMap::facility(std::string const & name)
+        const noexcept
+{
     decltype(m_nextGetter) nextGetter;
     {
         GUARD;
@@ -60,7 +64,9 @@ void * ProcessFacilityMap::facility(std::string const & name) const noexcept {
     return (*nextGetter)(name.c_str());
 }
 
-void * ProcessFacilityMap::facility(char const * const name) const noexcept {
+std::shared_ptr<void> ProcessFacilityMap::facility(char const * const name)
+        const noexcept
+{
     decltype(m_nextGetter) nextGetter;
     {
         GUARD;

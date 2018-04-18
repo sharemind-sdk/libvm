@@ -43,7 +43,7 @@ class __attribute__((visibility("internal"))) ProcessFacilityMap {
 
 private: /* Types: */
 
-    using Inner = sharemind::SimpleUnorderedStringMap<void *>;
+    using Inner = sharemind::SimpleUnorderedStringMap<std::shared_ptr<void> >;
 
 public: /* Types: */
 
@@ -51,13 +51,13 @@ public: /* Types: */
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(Exception,
                                                    FacilityNameClashException);
 
-    using NextGetter = void * (char const *);
+    using NextGetter = std::shared_ptr<void> (char const *);
     using NextGetterFun = std::function<NextGetter>;
     using NextGetterFunPtr = std::shared_ptr<NextGetterFun>;
 
 public: /* Methods: */
 
-    void setFacility(std::string name, void * const facility);
+    void setFacility(std::string name, std::shared_ptr<void> facility);
 
     void setNextGetter(NextGetterFunPtr nextGetter) noexcept;
 
@@ -75,8 +75,8 @@ public: /* Methods: */
                     std::make_shared<NextGetterFun>(std::forward<F>(f)));
     }
 
-    void * facility(char const * const name) const noexcept;
-    void * facility(std::string const & name) const noexcept;
+    std::shared_ptr<void> facility(char const * const name) const noexcept;
+    std::shared_ptr<void> facility(std::string const & name) const noexcept;
 
     bool unsetFacility(std::string const & name) noexcept;
 
@@ -97,9 +97,10 @@ private: /* Fields: */
                 std::make_shared<::sharemind::Detail::ProcessFacilityMap>()}
 
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(fNF,FN) \
-    void set ## FN ## Facility(std::string name, void * facility); \
-    void * fNF(char const * const name) const noexcept; \
-    void * fNF(std::string const & name) const noexcept; \
+    void set ## FN ## Facility(std::string name, \
+                               std::shared_ptr<void> facility); \
+    std::shared_ptr<void> fNF(char const * const name) const noexcept; \
+    std::shared_ptr<void> fNF(std::string const & name) const noexcept; \
     bool unset ## FN ## Facility(std::string const & name) noexcept;
 #define SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS \
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(processFacility, Process)
@@ -107,13 +108,14 @@ private: /* Fields: */
     SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS_(facility,)
 
 #define SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_(CN,fNF,FN,prefix) \
-    void CN::set ## FN ## Facility(std::string name, void * facility) { \
+    void CN::set ## FN ## Facility(std::string name, \
+                                   std::shared_ptr<void> facility) { \
         return prefix m_processFacilityMap->setFacility(std::move(name), \
                                                         std::move(facility)); \
     } \
-    void * CN::fNF(char const * const name) const noexcept \
+    std::shared_ptr<void> CN::fNF(char const * const name) const noexcept \
     { return prefix m_processFacilityMap->facility(name); } \
-    void * CN::fNF(std::string const & name) const noexcept \
+    std::shared_ptr<void> CN::fNF(std::string const & name) const noexcept \
     { return prefix m_processFacilityMap->facility(name); } \
     bool CN::unset ## FN ## Facility(std::string const & name) noexcept \
     { return prefix m_processFacilityMap->unsetFacility(name); }

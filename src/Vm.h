@@ -128,7 +128,7 @@ public: /* Types: */
         virtual SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
                 std::uint64_t pd_index) const noexcept = 0;
 
-        virtual void * processFacility(char const * facilityName)
+        virtual std::shared_ptr<void> processFacility(char const * facilityName)
                 const noexcept = 0;
 
         /* Access to public dynamic memory inside the VM process: */
@@ -201,9 +201,12 @@ public: /* Methods: */
 
     SharemindPd * findPd(std::string const & pdName) const noexcept;
 
-    void setProcessFacility(std::string name, void * facility);
-    void * processFacility(char const * const name) const noexcept;
-    void * processFacility(std::string const & name) const noexcept;
+    void setProcessFacility(std::string name,
+                            std::shared_ptr<void> facility);
+    std::shared_ptr<void> processFacility(char const * const name)
+            const noexcept;
+    std::shared_ptr<void> processFacility(std::string const & name)
+            const noexcept;
     bool unsetProcessFacility(std::string const & name) noexcept;
 
 private: /* Fields: */

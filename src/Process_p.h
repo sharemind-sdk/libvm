@@ -110,7 +110,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
                 std::uint64_t pd_index) const noexcept final override
         { return m_state.pdpiInfo(pd_index); }
 
-        void * processFacility(char const * facilityName)
+        std::shared_ptr<void> processFacility(char const * facilityName)
                 const noexcept final override
         { return m_state.processFacility(facilityName); }
 
