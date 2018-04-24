@@ -230,9 +230,12 @@ std::size_t PrivateMemoryMap::free(void * const ptr) noexcept {
 ProcessState::DataSections::DataSections(
         DataSectionsVector & originalDataSections)
 {
-    for (auto const & s : originalDataSections)
-        emplace_back(std::make_shared<RwDataSection>(s->data(),
-                                                     s->size()));
+    for (auto const & s : originalDataSections) {
+        auto const sectionSize(s->size());
+        auto newSection(std::make_shared<RwDataSection>(sectionSize));
+        std::memcpy(newSection->data(), s->data(), sectionSize);
+        emplace_back(std::move(newSection));
+    }
 }
 
 ProcessState::BssSections::BssSections(DataSectionSizesVector & sizes) {

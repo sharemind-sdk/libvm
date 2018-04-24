@@ -42,24 +42,20 @@ BssDataSection::~BssDataSection() noexcept { ::operator delete(data()); }
 RegularDataSection::~RegularDataSection() noexcept
 { ::operator delete(data()); }
 
-RegularDataSection::RegularDataSection(void const * const data,
-                                       std::size_t const size)
+RegularDataSection::RegularDataSection(std::size_t const size)
     : DataSection(::operator new(size), size)
-{
-    if (size > 0u)
-        std::memcpy(this->data(), data, size);
-}
+{}
 
 
-RwDataSection::RwDataSection(void const * const data, std::size_t const size)
-    : RegularDataSection(data, size)
+RwDataSection::RwDataSection(std::size_t const size)
+    : RegularDataSection(size)
 {}
 
 RwDataSection::~RwDataSection() noexcept {}
 
 
-RoDataSection::RoDataSection(void const * const data, std::size_t const size)
-    : RegularDataSection(data, size)
+RoDataSection::RoDataSection(std::size_t const size)
+    : RegularDataSection(size)
 {}
 
 RoDataSection::~RoDataSection() noexcept {}

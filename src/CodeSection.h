@@ -39,15 +39,14 @@ class __attribute__((visibility("internal"))) CodeSection {
 public: /* Methods: */
 
     CodeSection(CodeSection &&) = default;
-    CodeSection(CodeSection const &) = delete;
+    CodeSection(CodeSection const &) = default;
 
-    CodeSection(SharemindCodeBlock const * const code,
-                std::size_t const codeSize);
+    CodeSection(std::size_t codeSize);
 
     ~CodeSection() noexcept;
 
     CodeSection & operator=(CodeSection &&) = default;
-    CodeSection & operator=(CodeSection const &) = delete;
+    CodeSection & operator=(CodeSection const &) = default;
 
     bool isInstructionAtOffset(std::size_t const offset) const noexcept;
 

@@ -76,7 +76,7 @@ public: /* Methods: */
 
 protected: /* Methods: */
 
-    RegularDataSection(void const * const data, std::size_t const size);
+    RegularDataSection(std::size_t const size);
 
 };
 
@@ -86,7 +86,7 @@ class __attribute__((visibility("internal"))) RwDataSection
 
 public: /* Methods: */
 
-    RwDataSection(void const * const data, std::size_t const size);
+    RwDataSection(std::size_t const size);
     ~RwDataSection() noexcept override;
 
 };
@@ -97,7 +97,7 @@ class __attribute__((visibility("internal"))) RoDataSection
 
 public: /* Methods: */
 
-    RoDataSection(void const * const data, std::size_t const size);
+    RoDataSection(std::size_t const size);
     ~RoDataSection() noexcept override;
 
     bool isWritable() const noexcept final override;

@@ -21,6 +21,7 @@
 #define SHAREMIND_LIBVM_PROGRAM_H
 
 #include <cstddef>
+#include <istream>
 #include <memory>
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
@@ -89,6 +90,7 @@ public: /* Methods: */
     void loadFromCFile(FILE * const file);
     void loadFromFileDescriptor(int const fd);
     void loadFromMemory(void const * data, std::size_t dataSize);
+    void loadFromStream(std::istream & inputStream);
 
     VmInstructionInfo const * instruction(std::size_t codeSection,
                                           std::size_t instructionIndex)

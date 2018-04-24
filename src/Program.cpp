@@ -24,14 +24,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <istream>
 #include <limits>
 #include <new>
 #include <sharemind/GlobalDeleter.h>
+#include <sharemind/IntegralComparisons.h>
 #include <sharemind/libexecutable/libexecutable.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
-#include <sharemind/PotentiallyVoidTypeInfo.h>
 #include <sharemind/SignedToUnsigned.h>
+#include <streambuf>
 #include <sys/stat.h>
 #include <type_traits>
 #include <unistd.h>
@@ -46,6 +48,80 @@
 namespace sharemind {
 
 namespace {
+
+template <typename Exception, typename ValueToRead>
+std::istream & wrappedIstreamReadValue(std::istream & is, ValueToRead & v) {
+    try {
+        if (!(is >> v))
+            throw Exception();
+    } catch (Exception const &) {
+        throw;
+    } catch (...) {
+        std::throw_with_nested(Exception());
+    }
+    return is;
+}
+
+template <typename Exception, typename SizeType>
+std::istream & wrappedIstreamRead(std::istream & is,
+                                  void * buffer,
+                                  SizeType size)
+{
+    static constexpr auto const maxRead =
+            std::numeric_limits<std::streamsize>::max();
+    auto buf = static_cast<char *>(buffer);
+    try {
+        while (integralGreater(size, maxRead)) {
+            if (!is.read(buf, maxRead))
+                throw Exception();
+            size -= maxRead;
+            buf += maxRead;
+        }
+        if (!is.read(buf, static_cast<std::streamsize>(size)))
+            throw Exception();
+    } catch (Exception const &) {
+        throw;
+    } catch (...) {
+        std::throw_with_nested(Exception());
+    }
+    return is;
+}
+
+class LimitedBufferFilter: public std::streambuf {
+
+public: /* Methods: */
+
+    LimitedBufferFilter(LimitedBufferFilter &&) = delete;
+    LimitedBufferFilter(LimitedBufferFilter const &) = delete;
+
+    LimitedBufferFilter(std::istream & srcStream, std::size_t size)
+        : m_srcStream(srcStream)
+        , m_sizeLeft(size)
+    {}
+
+protected: /* Methods: */
+
+    int_type underflow() override {
+        if (gptr() < egptr())
+            return traits_type::to_int_type(m_buf);
+        if (m_sizeLeft <= 0u)
+            return traits_type::eof();
+        auto r(m_srcStream.get());
+        if (r == traits_type::eof())
+            return r;
+        --m_sizeLeft;
+        m_buf = traits_type::to_char_type(std::move(r));
+        this->setg(&m_buf, &m_buf, &m_buf + 1u);
+        return r;
+    }
+
+private: /* Fields: */
+
+    std::istream & m_srcStream;
+    std::size_t m_sizeLeft;
+    char m_buf;
+
+};
 
 #define SHAREMIND_PREPARE_ARGUMENTS_CHECK(c) \
     if (unlikely(!(c))) { \
@@ -271,71 +347,95 @@ void Program::loadFromFileDescriptor(int const fd) {
 void Program::loadFromMemory(void const * data, std::size_t dataSize) {
     assert(data);
 
+    struct MemoryBuffer: std::streambuf {
+        MemoryBuffer(char const * data, std::size_t size) {
+            auto d = const_cast<char *>(data);
+            this->setg(d, d, d + size);
+        }
+    };
+
+    struct InputMemoryStream: virtual MemoryBuffer, std::istream {
+        InputMemoryStream(void const * data, std::size_t size)
+            : MemoryBuffer(static_cast<char const *>(data), size)
+            , std::istream(static_cast<std::streambuf *>(this))
+        {}
+    };
+
+    InputMemoryStream inStream(data, dataSize);
+    return loadFromStream(inStream);
+}
+
+void Program::loadFromStream(std::istream & is) {
+
     auto d(std::make_shared<Detail::ParseData>());
 
-    if (dataSize < sizeof(ExecutableCommonHeader))
-        throw InvalidHeaderException();
-
     ExecutableCommonHeader ch;
-    if (!ch.deserializeFrom(data))
-        throw InvalidHeaderException();
+    wrappedIstreamReadValue<InvalidHeaderException>(is, ch);
 
     if (ch.fileFormatVersion() > 0u)
         throw VersionMismatchException();
 
-    auto pos = ptrAdd(data, sizeof(ch));
-
     ExecutableHeader0x0 h;
-    if (!h.deserializeFrom(pos))
-        throw InvalidHeaderException();
-
-    pos = ptrAdd(pos, sizeof(ExecutableHeader0x0));
+    wrappedIstreamReadValue<InvalidHeaderException>(is, h);
 
     static std::size_t const extraPadding[8] =
             { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
+    char extraPaddingBuffer[8u];
+
+    auto const readAndCheckExtraPadding =
+            [&is, &extraPaddingBuffer](std::size_t size) {
+                assert(sizeof(extraPaddingBuffer) >= size);
+                static_assert(std::numeric_limits<std::streamsize>::max() >= 8,
+                              "");
+                if (!is.read(extraPaddingBuffer,
+                             static_cast<std::streamsize>(size)))
+                    throw InvalidInputFileException();
+                for (unsigned i = 0u; i < size; ++i)
+                    if (extraPaddingBuffer[i] != '\0')
+                        throw InvalidInputFileException();
+            };
 
     for (unsigned ui = 0; ui <= h.numberOfLinkingUnitsMinusOne(); ui++) {
         ExecutableLinkingUnitHeader0x0 uh;
-        if (!uh.deserializeFrom(pos))
-            throw InvalidHeaderException();
+        wrappedIstreamReadValue<InvalidHeaderException>(is, uh);
 
-        pos = ptrAdd(pos, sizeof(uh));
         for (unsigned si = 0; si <= uh.numberOfSectionsMinusOne(); si++) {
             ExecutableSectionHeader0x0 sh;
-            if (!sh.deserializeFrom(pos))
-                throw InvalidHeaderException();
-
-            pos = ptrAdd(pos, sizeof(sh));
+            wrappedIstreamReadValue<InvalidHeaderException>(is, sh);
 
             auto const type = sh.type();
             assert(type != ExecutableSectionHeader0x0::SectionType::Invalid);
 
             auto const sectionSize = sh.size();
-            if (unlikely(sectionSize > std::numeric_limits<std::size_t>::max()))
+            if (unlikely(integralGreater(
+                             sectionSize,
+                             std::numeric_limits<std::size_t>::max())))
                 throw ImplementationLimitsReachedException();
 
 #define LOAD_DATASECTION_CASE(utype,ltype,spec) \
     case ExecutableSectionHeader0x0::SectionType::utype: { \
-        d-> ltype ## Sections.emplace_back( \
-                std::make_shared<Detail::spec>(pos, sectionSize)); \
-        pos = ptrAdd(pos, (sectionSize + extraPadding[sectionSize % 8])); \
+        auto newSection(std::make_shared<Detail::spec>(sectionSize)); \
+        wrappedIstreamRead<InvalidInputFileException>(is, \
+                                                      newSection->data(), \
+                                                      sectionSize); \
+        readAndCheckExtraPadding(extraPadding[sectionSize % 8]); \
+        d-> ltype ## Sections.emplace_back(std::move(newSection)); \
     } break;
 #define LOAD_BINDSECTION_CASE(utype,e,missingBindsExceptionPrefix,...) \
     case ExecutableSectionHeader0x0::SectionType::utype: { \
         if (sectionSize <= 0) \
             break; \
-        void const * const endPos = ptrAdd(pos, sectionSize); \
-        /* Check for 0-termination: */ \
-        if (unlikely(*(static_cast<char const *>(endPos) - 1))) \
-            throw InvalidInputFileException(); \
+        static_assert(std::numeric_limits<decltype(sectionSize)>::max() \
+                      < std::numeric_limits<std::size_t>::max(), ""); \
+        LimitedBufferFilter limitedBuffer(is, sectionSize); \
+        std::istream is2(&limitedBuffer); \
         std::set<std::string> missingBinds; \
-        do { \
-            std::string bindName(static_cast<char const *>(pos)); \
+        std::string bindName; \
+        while (std::getline(is2, bindName, '\0')) { \
             if (bindName.empty()) \
                 throw InvalidInputFileException(); \
-            pos = ptrAdd(pos, bindName.size() + 1); \
             { __VA_ARGS__ } \
-        } while (pos != endPos); \
+        } \
         if (!missingBinds.empty()) { \
             std::ostringstream oss; \
             oss << missingBindsExceptionPrefix; \
@@ -350,19 +450,19 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
             } \
             throw e(oss.str()); \
         } \
-        pos = ptrAdd(pos, extraPadding[sectionSize % 8]); \
+        readAndCheckExtraPadding(extraPadding[sectionSize % 8]); \
     } break;
 
             switch (type) {
 
                 case ExecutableSectionHeader0x0::SectionType::Text: {
-                    assert(pos);
                     assert(sectionSize);
-                    d->staticData->codeSections.emplace_back(
-                                static_cast<::SharemindCodeBlock const *>(pos),
-                                sectionSize);
-                    pos = ptrAdd(pos,
-                                 sectionSize * sizeof(::SharemindCodeBlock));
+                    d->staticData->codeSections.emplace_back(sectionSize);
+                    auto & cs = d->staticData->codeSections.back();
+                    wrappedIstreamRead<InvalidInputFileException>(
+                                is,
+                                cs.data(),
+                                cs.size() * sizeof(SharemindCodeBlock));
                 } break;
 
                 LOAD_DATASECTION_CASE(RoData,staticData->rodata,RoDataSection)
@@ -402,17 +502,15 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
             }
         }
 
-        if (unlikely(d->staticData->codeSections.size() == ui)) {
-            pos = nullptr;
+        if (unlikely(d->staticData->codeSections.size() == ui))
             throw NoCodeSectionsException();
-        }
 
         if (d->staticData->rodataSections.size() == ui)
             d->staticData->rodataSections.emplace_back(
-                    std::make_shared<Detail::RoDataSection>(nullptr, 0u));
+                    std::make_shared<Detail::RoDataSection>(0u));
         if (d->dataSections.size() == ui)
             d->dataSections.emplace_back(
-                    std::make_shared<Detail::RwDataSection>(nullptr, 0u));
+                    std::make_shared<Detail::RwDataSection>(0u));
         if (d->bssSectionSizes.size() == ui)
             d->bssSectionSizes.emplace_back(0u);
     }

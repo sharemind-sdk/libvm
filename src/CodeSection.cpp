@@ -29,14 +29,12 @@
 namespace sharemind {
 namespace Detail {
 
-CodeSection::CodeSection(SharemindCodeBlock const * const code,
-                         std::size_t const codeSize)
-{
+CodeSection::CodeSection(std::size_t codeSize) {
     if (codeSize == std::numeric_limits<std::size_t>::max())
-        throw std::bad_alloc();
+        throw std::bad_array_new_length();
     m_instrmap.resize(codeSize, false);
     m_data.resize(codeSize + 1u);
-    std::copy(code, code + codeSize, m_data.data());
+    m_data.back().uint64[0u] = 0u;
 }
 
 CodeSection::~CodeSection() noexcept {}
