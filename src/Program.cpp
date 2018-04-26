@@ -241,8 +241,13 @@ EC(Io, FileFstat, "Failed fstat()!");
 EC(Io, FileRead, "Failed to read() all data from file!");
 EC(, ImplementationLimitsReached, "Implementation limits reached!");
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(Exception, Program::,PrepareException);
-EC(Prepare, InvalidHeader, "Invalid executable file header!");
+EC(Prepare, InvalidFileHeader, "Invalid executable file header!");
 EC(Prepare, VersionMismatch, "Executable file format version not supported!");
+EC(Prepare, InvalidFileHeader0x0, "Invalid version 0x0 specific file header!");
+EC(Prepare, InvalidLinkingUnitHeader0x0,
+   "Invalid version 0x0 specific linking unit header!");
+EC(Prepare, InvalidSectionHeader0x0,
+   "Invalid version 0x0 specific section header!");
 EC(Prepare, InvalidInputFile, "Invalid or absent data in executable file!");
 SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
         PrepareException,
@@ -370,13 +375,13 @@ void Program::loadFromStream(std::istream & is) {
     auto d(std::make_shared<Detail::ParseData>());
 
     ExecutableCommonHeader ch;
-    wrappedIstreamReadValue<InvalidHeaderException>(is, ch);
+    wrappedIstreamReadValue<InvalidFileHeaderException>(is, ch);
 
     if (ch.fileFormatVersion() > 0u)
         throw VersionMismatchException();
 
     ExecutableHeader0x0 h;
-    wrappedIstreamReadValue<InvalidHeaderException>(is, h);
+    wrappedIstreamReadValue<InvalidFileHeader0x0Exception>(is, h);
 
     static std::size_t const extraPadding[8] =
             { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
@@ -397,11 +402,11 @@ void Program::loadFromStream(std::istream & is) {
 
     for (unsigned ui = 0; ui <= h.numberOfLinkingUnitsMinusOne(); ui++) {
         ExecutableLinkingUnitHeader0x0 uh;
-        wrappedIstreamReadValue<InvalidHeaderException>(is, uh);
+        wrappedIstreamReadValue<InvalidLinkingUnitHeader0x0Exception>(is, uh);
 
         for (unsigned si = 0; si <= uh.numberOfSectionsMinusOne(); si++) {
             ExecutableSectionHeader0x0 sh;
-            wrappedIstreamReadValue<InvalidHeaderException>(is, sh);
+            wrappedIstreamReadValue<InvalidSectionHeader0x0Exception>(is, sh);
 
             auto const type = sh.type();
             assert(type != ExecutableSectionHeader0x0::SectionType::Invalid);

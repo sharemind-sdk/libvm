@@ -57,9 +57,18 @@ public: /* Types: */
             ImplementationLimitsReachedException);
     SHAREMIND_DECLARE_EXCEPTION_NOINLINE(Exception, PrepareException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
-                                                   InvalidHeaderException);
+                                                   InvalidFileHeaderException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    VersionMismatchException);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            PrepareException,
+            InvalidFileHeader0x0Exception);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            PrepareException,
+            InvalidLinkingUnitHeader0x0Exception);
+    SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
+            PrepareException,
+            InvalidSectionHeader0x0Exception);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    InvalidInputFileException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
