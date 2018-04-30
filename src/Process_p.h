@@ -159,8 +159,10 @@ struct __attribute__((visibility("internal"))) ProcessState {
             -> decltype(std::declval<PdpiCache &>().info(index))
     { return m_pdpiCache.info(index); }
 
-    inline CodeSection & currentCodeSection() const noexcept
-    { return m_staticProgramData->codeSections[m_currentCodeSectionIndex]; }
+    inline CodeSection & currentCodeSection() const noexcept {
+        return m_staticProgramData->codeSections[
+                m_staticProgramData->activeLinkingUnit];
+    }
 
     template <typename F, typename ... Args>
     auto runStatefulSoftfloatOperation(F f, Args && ... args)
@@ -209,7 +211,6 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
     PdpiCache m_pdpiCache;
 
-    std::size_t const m_currentCodeSectionIndex;
     std::size_t m_currentIp = 0u;
     SharemindCodeBlock m_returnValue;
     Process::UserDefinedException m_userException;

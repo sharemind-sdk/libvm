@@ -261,11 +261,11 @@ ProcessState::ProcessState(std::shared_ptr<ParseData> parseData)
     , m_dataSections(parseData->dataSections)
     , m_bssSections(parseData->bssSectionSizes)
     , m_pdpiCache(parseData->staticData->pdBindings)
-    , m_currentCodeSectionIndex(parseData->staticData->activeLinkingUnit)
     , m_memoryMap(
-          parseData->staticData->rodataSections[m_currentCodeSectionIndex],
-          m_dataSections[m_currentCodeSectionIndex],
-          m_bssSections[m_currentCodeSectionIndex])
+          parseData->staticData->rodataSections[
+                parseData->staticData->activeLinkingUnit],
+          m_dataSections[parseData->staticData->activeLinkingUnit],
+          m_bssSections[parseData->staticData->activeLinkingUnit])
 {}
 
 ProcessState::~ProcessState() noexcept {
@@ -495,7 +495,7 @@ std::exception_ptr Process::syscallException() const noexcept
 { return m_inner->m_syscallException; }
 
 std::size_t Process::currentCodeSectionIndex() const noexcept
-{ return m_inner->m_currentCodeSectionIndex; }
+{ return m_inner->m_staticProgramData->activeLinkingUnit; }
 
 std::size_t Process::currentIp() const noexcept
 { return m_inner->m_currentIp; }
