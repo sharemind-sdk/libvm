@@ -50,10 +50,6 @@ struct __attribute__((visibility("internal"))) StaticData {
     PdBindingsVector pdBindings;
     std::size_t activeLinkingUnit;
 };
-struct __attribute__((visibility("internal"))) DynamicSections {
-    DataSectionsVector rwdata;
-    DataSectionsVector bss;
-};
 struct __attribute__((visibility("internal"))) ParseData {
     std::shared_ptr<StaticData> staticData{std::make_shared<StaticData>()};
     DataSectionsVector dataSections;
