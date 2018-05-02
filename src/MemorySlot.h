@@ -34,10 +34,10 @@ class __attribute__((visibility("internal"))) MemorySlot {
 
 public: /* Methods: */
 
-    MemorySlot(MemorySlot &&) = delete;
-    MemorySlot(MemorySlot const &) = delete;
-    MemorySlot & operator=(MemorySlot &&) = delete;
-    MemorySlot & operator=(MemorySlot const &) = delete;
+    MemorySlot(MemorySlot &&) noexcept;
+    MemorySlot(MemorySlot const &) noexcept;
+    MemorySlot & operator=(MemorySlot &&) noexcept;
+    MemorySlot & operator=(MemorySlot const &) noexcept;
 
     virtual ~MemorySlot() noexcept;
 

@@ -35,7 +35,6 @@
 #include <unordered_map>
 #include <utility>
 #include "Core.h"
-#include "DataSectionsVector.h"
 #include "MemoryMap.h"
 #include "PdpiCache.h"
 #include "ProcessFacilityMap.h"
@@ -45,8 +44,6 @@
 
 namespace sharemind {
 namespace Detail {
-
-struct ParseData;
 
 struct __attribute__((visibility("internal"))) MemoryInfo final {
     std::size_t usage = 0u;
@@ -74,18 +71,10 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
 /* Types: */
 
-    struct DataSections: DataSectionsVector {
-        DataSections(DataSectionsVector & originalDataSections);
-    };
-
-    struct BssSections: DataSectionsVector {
-        BssSections(DataSectionSizesVector & sizes);
-    };
-
     struct SimpleMemoryMap: MemoryMap {
-        SimpleMemoryMap(std::shared_ptr<DataSection> rodataSection,
-                        std::shared_ptr<DataSection> dataSection,
-                        std::shared_ptr<DataSection> bssSection);
+        SimpleMemoryMap(std::shared_ptr<RoDataSection const> rodataSection,
+                        std::shared_ptr<RwDataSection> dataSection,
+                        std::shared_ptr<BssDataSection> bssSection);
     };
 
     enum class State {
@@ -132,7 +121,8 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
 /* Methods: */
 
-    ProcessState(std::shared_ptr<ParseData> parseData);
+    ProcessState(std::shared_ptr<PreparedExecutable const> preparedExecutable);
+
     virtual ~ProcessState() noexcept;
 
     void setPdpiFacility(char const * const name,
@@ -159,10 +149,8 @@ struct __attribute__((visibility("internal"))) ProcessState {
             -> decltype(std::declval<PdpiCache &>().info(index))
     { return m_pdpiCache.info(index); }
 
-    inline CodeSection & currentCodeSection() const noexcept {
-        return m_staticProgramData->codeSections[
-                m_staticProgramData->activeLinkingUnit];
-    }
+    inline CodeSection const & currentCodeSection() const noexcept
+    { return m_preparedLinkingUnit->codeSection; }
 
     template <typename F, typename ... Args>
     auto runStatefulSoftfloatOperation(F f, Args && ... args)
@@ -203,11 +191,9 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
     mutable std::mutex m_mutex;
 
+    std::size_t m_activeLinkingUnitIndex;
     /// Keeps alive read-only data and code:
-    std::shared_ptr<StaticData> m_staticProgramData;
-
-    DataSections m_dataSections;
-    BssSections m_bssSections;
+    std::shared_ptr<PreparedLinkingUnit const> m_preparedLinkingUnit;
 
     PdpiCache m_pdpiCache;
 

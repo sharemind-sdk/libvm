@@ -25,11 +25,11 @@
 #endif
 
 #include <mutex>
-#include <sharemind/libexecutable/libexecutable_0x0.h>
+#include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <vector>
 #include "CodeSection.h"
-#include "DataSectionsVector.h"
+#include "DataSection.h"
 #include "ProcessFacilityMap.h"
 #include "Program.h"
 #include "Vm.h"
@@ -38,22 +38,94 @@
 namespace sharemind {
 namespace Detail {
 
-using DataSectionSizesVector =
-        std::vector<ExecutableSectionHeader0x0::SizeType>;
-using CodeSectionsVector = std::vector<CodeSection>;
-using SyscallBindingsVector = std::vector<std::shared_ptr<Vm::SyscallWrapper> >;
-using PdBindingsVector = std::vector<SharemindPd *>;
-struct __attribute__((visibility("internal"))) StaticData {
-    CodeSectionsVector codeSections;
-    DataSectionsVector rodataSections;
-    SyscallBindingsVector syscallBindings;
-    PdBindingsVector pdBindings;
-    std::size_t activeLinkingUnit;
+struct __attribute__((visibility("internal"))) PreparedSyscallBindings
+    : std::vector<std::shared_ptr<Vm::SyscallWrapper> >
+{
+
+/* Methods: */
+
+    PreparedSyscallBindings() = delete;
+    PreparedSyscallBindings(PreparedSyscallBindings &&) noexcept;
+    PreparedSyscallBindings(PreparedSyscallBindings const &);
+
+    template <typename SyscallFinder>
+    PreparedSyscallBindings(
+            std::shared_ptr<Executable::SyscallBindingsSection> parsedBindings,
+            SyscallFinder && syscallFinder);
+
+    PreparedSyscallBindings & operator=(PreparedSyscallBindings &&) noexcept;
+    PreparedSyscallBindings & operator=(PreparedSyscallBindings const &);
+
 };
-struct __attribute__((visibility("internal"))) ParseData {
-    std::shared_ptr<StaticData> staticData{std::make_shared<StaticData>()};
-    DataSectionsVector dataSections;
-    DataSectionSizesVector bssSectionSizes;
+
+struct __attribute__((visibility("internal"))) PreparedPdBindings
+    : std::vector<SharemindPd *>
+{
+
+/* Methods: */
+
+    PreparedPdBindings() = delete;
+    PreparedPdBindings(PreparedPdBindings &&) noexcept;
+    PreparedPdBindings(PreparedPdBindings const &);
+
+    template <typename PdFinder>
+    PreparedPdBindings(
+            std::shared_ptr<Executable::PdBindingsSection> parsedBindings,
+            PdFinder && pdFinder);
+
+    PreparedPdBindings & operator=(PreparedPdBindings &&) noexcept;
+    PreparedPdBindings & operator=(PreparedPdBindings const &);
+
+};
+
+struct __attribute__((visibility("internal"))) PreparedLinkingUnit {
+
+/* Methods: */
+
+    template <typename SyscallFinder, typename PdFinder>
+    PreparedLinkingUnit(Executable::LinkingUnit && parsedLinkingUnit,
+                        SyscallFinder && syscallFinder,
+                        PdFinder && pdFinder);
+
+    PreparedLinkingUnit(PreparedLinkingUnit &&) noexcept;
+    PreparedLinkingUnit(PreparedLinkingUnit const &) = delete;
+
+    PreparedLinkingUnit & operator=(PreparedLinkingUnit &&) noexcept;
+    PreparedLinkingUnit & operator=(PreparedLinkingUnit const &) = delete;
+
+/* Fields: */
+
+    CodeSection codeSection;
+    RoDataSection roDataSection;
+    RwDataSection rwDataSection;
+    std::size_t bssSectionSize;
+    PreparedSyscallBindings syscallBindings;
+    PreparedPdBindings pdBindings;
+
+};
+
+struct __attribute__((visibility("internal"))) PreparedExecutable {
+
+/* Methods: */
+
+    PreparedExecutable() = delete;
+    PreparedExecutable(PreparedExecutable &&) noexcept;
+    PreparedExecutable(PreparedExecutable const &) noexcept = delete;
+
+    template <typename SyscallFinder, typename PdFinder>
+    PreparedExecutable(Executable parsedExecutable,
+                       SyscallFinder && syscallFinder,
+                       PdFinder && pdFinder);
+
+    PreparedExecutable & operator=(PreparedExecutable &&) noexcept;
+    PreparedExecutable & operator=(PreparedExecutable const &) noexcept =
+            delete;
+
+/* Fields: */
+
+    std::vector<PreparedLinkingUnit> linkingUnits;
+    std::size_t activeLinkingUnitIndex;
+
 };
 
 } /* namespace Detail { */
@@ -70,8 +142,7 @@ struct __attribute__((visibility("internal"))) Program::Inner {
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
     std::shared_ptr<Vm::Inner> m_vmInner;
 
-    mutable std::mutex m_mutex;
-    std::shared_ptr<Detail::ParseData> m_parseData;
+    std::shared_ptr<Detail::PreparedExecutable> m_preparedExecutable;
 
 };
 

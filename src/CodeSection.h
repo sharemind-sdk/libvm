@@ -29,6 +29,7 @@
 #include <sharemind/libvmi/instr.h>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 
 
 namespace sharemind {
@@ -41,7 +42,7 @@ public: /* Methods: */
     CodeSection(CodeSection &&) = default;
     CodeSection(CodeSection const &) = default;
 
-    CodeSection(std::size_t codeSize);
+    CodeSection(std::vector<SharemindCodeBlock> data);
 
     ~CodeSection() noexcept;
 

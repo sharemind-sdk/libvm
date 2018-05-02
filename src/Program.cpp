@@ -20,6 +20,8 @@
 #include "Program.h"
 #include "Program_p.h"
 
+#include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -29,9 +31,10 @@
 #include <new>
 #include <sharemind/GlobalDeleter.h>
 #include <sharemind/IntegralComparisons.h>
-#include <sharemind/libexecutable/libexecutable.h>
+#include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
+#include <sharemind/MakeUnique.h>
 #include <sharemind/SignedToUnsigned.h>
 #include <streambuf>
 #include <sys/stat.h>
@@ -49,79 +52,45 @@ namespace sharemind {
 
 namespace {
 
-template <typename Exception, typename ValueToRead>
-std::istream & wrappedIstreamReadValue(std::istream & is, ValueToRead & v) {
-    try {
-        if (!(is >> v))
-            throw Exception();
-    } catch (Exception const &) {
-        throw;
-    } catch (...) {
-        std::throw_with_nested(Exception());
-    }
-    return is;
-}
-
-template <typename Exception, typename SizeType>
-std::istream & wrappedIstreamRead(std::istream & is,
-                                  void * buffer,
-                                  SizeType size)
+template <typename Exception,
+          typename BindingsVector,
+          typename PredicateWithAction,
+          typename Predicate,
+          typename ExceptionPrefix>
+void parseBindings(BindingsVector & r,
+                   std::vector<std::string> & bindings,
+                   PredicateWithAction predicateWithAction,
+                   Predicate predicate,
+                   ExceptionPrefix && exceptionPrefix)
 {
-    static constexpr auto const maxRead =
-            std::numeric_limits<std::streamsize>::max();
-    auto buf = static_cast<char *>(buffer);
-    try {
-        while (integralGreater(size, maxRead)) {
-            if (!is.read(buf, maxRead))
-                throw Exception();
-            size -= maxRead;
-            buf += maxRead;
+    assert(r.empty());
+    if (bindings.empty())
+        return;
+    r.reserve(bindings.size());
+    auto it(bindings.begin());
+
+    do {
+        if (!predicateWithAction(r, *it)) {
+            std::vector<std::string> missingBinds;
+            missingBinds.emplace_back(std::move(*it));
+            while (++it != bindings.end())
+                if (!predicate(*it))
+                    missingBinds.emplace_back(std::move(*it));
+            std::ostringstream oss;
+            oss << std::forward<ExceptionPrefix>(exceptionPrefix);
+            bool isFirstElement = true;
+            for (auto & bindName : missingBinds) {
+                if (isFirstElement) {
+                    isFirstElement = false;
+                } else {
+                    oss << ", ";
+                }
+                oss << std::move(bindName);
+            }
+            throw Exception(oss.str());
         }
-        if (!is.read(buf, static_cast<std::streamsize>(size)))
-            throw Exception();
-    } catch (Exception const &) {
-        throw;
-    } catch (...) {
-        std::throw_with_nested(Exception());
-    }
-    return is;
+    } while (++it != bindings.end());
 }
-
-class LimitedBufferFilter: public std::streambuf {
-
-public: /* Methods: */
-
-    LimitedBufferFilter(LimitedBufferFilter &&) = delete;
-    LimitedBufferFilter(LimitedBufferFilter const &) = delete;
-
-    LimitedBufferFilter(std::istream & srcStream, std::size_t size)
-        : m_srcStream(srcStream)
-        , m_sizeLeft(size)
-    {}
-
-protected: /* Methods: */
-
-    int_type underflow() override {
-        if (gptr() < egptr())
-            return traits_type::to_int_type(m_buf);
-        if (m_sizeLeft <= 0u)
-            return traits_type::eof();
-        auto r(m_srcStream.get());
-        if (r == traits_type::eof())
-            return r;
-        --m_sizeLeft;
-        m_buf = traits_type::to_char_type(std::move(r));
-        this->setg(&m_buf, &m_buf, &m_buf + 1u);
-        return r;
-    }
-
-private: /* Fields: */
-
-    std::istream & m_srcStream;
-    std::size_t m_sizeLeft;
-    char m_buf;
-
-};
 
 #define SHAREMIND_PREPARE_ARGUMENTS_CHECK(c) \
     if (unlikely(!(c))) { \
@@ -138,27 +107,27 @@ private: /* Fields: */
     } while ((0))
 #define SHAREMIND_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
 #define SHAREMIND_PREPARE_CURRENT_I (*i)
-#define SHAREMIND_PREPARE_CODESIZE (s)->size()
+#define SHAREMIND_PREPARE_CODESIZE (s.size())
 
-#define SHAREMIND_PREPARE_IS_INSTR(addr) (s->isInstructionAtOffset(addr))
+#define SHAREMIND_PREPARE_IS_INSTR(addr) (s.isInstructionAtOffset(addr))
 static_assert(std::numeric_limits<std::uint64_t>::max()
               <= std::numeric_limits<std::size_t>::max(), "");
 #define SHAREMIND_PREPARE_SYSCALL(argNum) \
     do { \
         SHAREMIND_PREPARE_ARGUMENTS_CHECK( \
-            c[(*i)+(argNum)].uint64[0] < p.staticData->syscallBindings.size());\
+            c[(*i)+(argNum)].uint64[0] < syscallBindings.size()); \
         c[(*i)+(argNum)].cp[0] = \
-            p.staticData->syscallBindings[c[(*i)+(argNum)].uint64[0]].get(); \
+                syscallBindings[c[(*i)+(argNum)].uint64[0]].get(); \
     } while ((0))
 
 #define SHAREMIND_PREPARE_PASS2_FUNCTION(name,bytecode,...) \
     static void prepare_pass2_ ## name ( \
-            Detail::ParseData & p, \
-            Detail::CodeSection * s, \
+            Detail::PreparedSyscallBindings & syscallBindings, \
+            Detail::CodeSection & s, \
             SharemindCodeBlock * c, \
             std::size_t * i) \
     { \
-        (void) p; (void) s; (void) c; (void) i; \
+        (void) syscallBindings; (void) s; (void) c; (void) i; \
         __VA_ARGS__ \
     }
 #include <sharemind/m4/preprocess_pass2_functions.h>
@@ -168,8 +137,8 @@ static_assert(std::numeric_limits<std::uint64_t>::max()
     { bytecode, prepare_pass2_ ## name},
 struct preprocess_pass2_function {
     std::uint64_t code;
-    void (*f)(Detail::ParseData & p,
-              Detail::CodeSection * s,
+    void (*f)(Detail::PreparedSyscallBindings & syscallBindings,
+              Detail::CodeSection & s,
               SharemindCodeBlock * c,
               std::size_t * i);
 };
@@ -178,57 +147,178 @@ static struct preprocess_pass2_function preprocess_pass2_functions[] = {
     { 0u, nullptr }
 };
 
-/**
- * \brief Prepares the program fully for execution.
- * \param p The parse data to prepare.
- */
-void endPrepare(Detail::ParseData & p) {
-    assert(!p.staticData->codeSections.empty());
+} // anonymous namespace
 
-    for (std::size_t j = 0u; j < p.staticData->codeSections.size(); j++) {
-        Detail::CodeSection * const s = &p.staticData->codeSections[j];
 
-        SharemindCodeBlock * const c = s->data();
-        assert(c);
+Detail::PreparedSyscallBindings::PreparedSyscallBindings(
+        PreparedSyscallBindings &&) noexcept = default;
 
-        /* Initialize instructions hashmap: */
-        std::size_t numInstrs = 0u;
-        auto const & cm = instructionCodeMap();
-        for (std::size_t i = 0u; i < s->size(); i++, numInstrs++) {
-            auto const instrIt(cm.find(c[i].uint64[0]));
-            if (instrIt == cm.end())
-                throw Program::InvalidInstructionException();
-            auto const & instr = instrIt->second;
-            if (i + instr.numArgs >= s->size())
-                throw Program::InvalidInstructionArgumentsException();
-            s->registerInstruction(i, numInstrs, instr);
-            i += instr.numArgs;
-        }
+Detail::PreparedSyscallBindings::PreparedSyscallBindings(
+        PreparedSyscallBindings const &) = default;
 
-        for (std::size_t i = 0u; i < s->size(); i++) {
-            struct preprocess_pass2_function * ppf =
-                    &preprocess_pass2_functions[0];
-            for (;;) {
-                if (!(ppf->f))
-                    throw Program::InvalidInstructionException();
-                if (ppf->code == c[i].uint64[0]) {
-                    (*(ppf->f))(p, s, c, &i);
-                    break;
+template <typename SyscallFinder>
+Detail::PreparedSyscallBindings::PreparedSyscallBindings(
+        std::shared_ptr<Executable::SyscallBindingsSection> parsedBindings,
+        SyscallFinder && syscallFinder)
+{
+    if (parsedBindings) {
+        parseBindings<Program::UndefinedSyscallBindException>(
+            *this,
+            parsedBindings->syscallBindings,
+            [&syscallFinder](PreparedSyscallBindings & r,
+                       std::string const & bindName)
+            {
+                if (auto w = syscallFinder(bindName)) {
+                    r.emplace_back(std::move(w));
+                    return true;
                 }
-                ++ppf;
-            }
-        }
+                return false;
+            },
+            [&syscallFinder](std::string const & bindName)
+            { return static_cast<bool>(syscallFinder(bindName)); },
+            "Found bindings for undefined systems calls: ");
+    }
+}
 
-        /* Initialize exception pointer: */
-        {
-            Detail::PreparationBlock pb{&c[s->size()],
-                                        Detail::PreparationBlock::EofLabel};
-            Detail::vmRun(Detail::ExecuteMethod::GetInstruction, &pb);
+Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
+        PreparedSyscallBindings &&) noexcept = default;
+
+Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
+        PreparedSyscallBindings const &) = default;
+
+
+
+Detail::PreparedPdBindings::PreparedPdBindings(PreparedPdBindings &&) noexcept
+        = default;
+
+Detail::PreparedPdBindings::PreparedPdBindings(PreparedPdBindings const &)
+        = default;
+
+template <typename PdFinder>
+Detail::PreparedPdBindings::PreparedPdBindings(
+        std::shared_ptr<Executable::PdBindingsSection> parsedBindings,
+        PdFinder && pdFinder)
+{
+    if (parsedBindings) {
+        parseBindings<Program::UndefinedPdBindException>(
+            *this,
+            parsedBindings->pdBindings,
+            [&pdFinder](PreparedPdBindings & r,
+                        std::string const & bindName)
+            {
+                if (auto w = pdFinder(bindName)) {
+                    r.emplace_back(std::move(w));
+                    return true;
+                }
+                return false;
+            },
+            [&pdFinder](std::string const & bindName)
+            { return static_cast<bool>(pdFinder(bindName)); },
+            "Found bindings for undefined protection domains: ");
+    }
+}
+
+Detail::PreparedPdBindings & Detail::PreparedPdBindings::operator=(
+        PreparedPdBindings &&) noexcept = default;
+
+Detail::PreparedPdBindings & Detail::PreparedPdBindings::operator=(
+        PreparedPdBindings const &) = default;
+
+
+
+Detail::PreparedLinkingUnit::PreparedLinkingUnit(PreparedLinkingUnit &&)
+        noexcept = default;
+
+template <typename SyscallFinder, typename PdFinder>
+Detail::PreparedLinkingUnit::PreparedLinkingUnit(
+        Executable::LinkingUnit && parsedLinkingUnit,
+        SyscallFinder && syscallFinder,
+        PdFinder && pdFinder)
+    : codeSection(
+        [](std::shared_ptr<Executable::TextSection> textSection) {
+            if (unlikely(!textSection))
+                throw Program::NoCodeSectionException();
+            return std::move(textSection->instructions);
+        }(std::move(parsedLinkingUnit.textSection)))
+    , roDataSection(parsedLinkingUnit.roDataSection
+                    ? std::move(*parsedLinkingUnit.roDataSection)
+                    : Executable::DataSection())
+    , rwDataSection(parsedLinkingUnit.rwDataSection
+                    ? std::move(*parsedLinkingUnit.rwDataSection)
+                    : Executable::DataSection())
+    , bssSectionSize(parsedLinkingUnit.bssSection
+                     ? parsedLinkingUnit.bssSection->sizeInBytes
+                     : 0u)
+    , syscallBindings(std::move(parsedLinkingUnit.syscallBindingsSection),
+                      std::forward<SyscallFinder>(syscallFinder))
+    , pdBindings(std::move(parsedLinkingUnit.pdBindingsSection),
+                 std::forward<PdFinder>(pdFinder))
+{
+    // Prepare the linking unit fully for execution:
+    SharemindCodeBlock * const c = codeSection.data();
+    assert(c);
+
+    /* Initialize instructions hashmap: */
+    std::size_t numInstrs = 0u;
+    auto const & cm = instructionCodeMap();
+    auto const codeSectionSize(codeSection.size());
+    for (std::size_t i = 0u; i < codeSectionSize; i++, numInstrs++) {
+        auto const instrIt(cm.find(c[i].uint64[0]));
+        if (instrIt == cm.end())
+            throw Program::InvalidInstructionException();
+        auto const & instr = instrIt->second;
+        if (i + instr.numArgs >= codeSectionSize)
+            throw Program::InvalidInstructionArgumentsException();
+        codeSection.registerInstruction(i, numInstrs, instr);
+        i += instr.numArgs;
+    }
+
+    for (std::size_t i = 0u; i < codeSectionSize; i++) {
+        struct preprocess_pass2_function * ppf =
+                &preprocess_pass2_functions[0];
+        for (;;) {
+            if (!(ppf->f))
+                throw Program::InvalidInstructionException();
+            if (ppf->code == c[i].uint64[0]) {
+                (*(ppf->f))(syscallBindings, codeSection, c, &i);
+                break;
+            }
+            ++ppf;
         }
     }
-} // endPrepare()
 
-} // anonymous namespace
+    /* Initialize exception pointer: */
+    {
+        Detail::PreparationBlock pb{&c[codeSection.size()],
+                                    Detail::PreparationBlock::EofLabel};
+        Detail::vmRun(Detail::ExecuteMethod::GetInstruction, &pb);
+    }
+}
+
+Detail::PreparedLinkingUnit & Detail::PreparedLinkingUnit::operator=(
+        PreparedLinkingUnit &&) noexcept = default;
+
+
+
+Detail::PreparedExecutable::PreparedExecutable(PreparedExecutable &&) noexcept
+        = default;
+
+template <typename SyscallFinder, typename PdFinder>
+Detail::PreparedExecutable::PreparedExecutable(Executable parsedExecutable,
+                                               SyscallFinder && syscallFinder,
+                                               PdFinder && pdFinder)
+    : activeLinkingUnitIndex(std::move(parsedExecutable.activeLinkingUnitIndex))
+{
+    linkingUnits.reserve(parsedExecutable.linkingUnits.size());
+    for (auto & parsedLinkingUnit : parsedExecutable.linkingUnits)
+        linkingUnits.emplace_back(std::move(parsedLinkingUnit),
+                                  syscallFinder,
+                                  pdFinder);
+}
+
+Detail::PreparedExecutable & Detail::PreparedExecutable::operator=(
+        PreparedExecutable &&) noexcept = default;
+
 
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(sharemind::Exception, Program::, Exception);
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(IoException, Program::, IoException);
@@ -261,14 +351,11 @@ SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
         PrepareException,
         Program::,
         DuplicatePdBindException)
-EC(Prepare, NoCodeSections, "No code sections found!");
+EC(Prepare, NoCodeSection, "No code section in linking unit found!");
 EC(Prepare, InvalidInstruction, "Invalid instruction found!");
 EC(Prepare, InvalidInstructionArguments,
    "Invalid arguments for instruction found!");
 #undef EC
-
-#define GUARD \
-    std::lock_guard<decltype(m_inner->m_mutex)> const guard(m_inner->m_mutex)
 
 
 Program::Inner::Inner(std::shared_ptr<Vm::Inner> vmInner)
@@ -285,8 +372,9 @@ Program::Program(Vm & vm)
 Program::~Program() noexcept {}
 
 bool Program::isReady() const noexcept {
-    GUARD;
-    return static_cast<bool>(m_inner->m_parseData);
+    return static_cast<bool>(std::atomic_load_explicit(
+                                 &m_inner->m_preparedExecutable,
+                                 std::memory_order_acquire));
 }
 
 void Program::loadFromFile(char const * const filename) {
@@ -371,159 +459,34 @@ void Program::loadFromMemory(void const * data, std::size_t dataSize) {
 }
 
 void Program::loadFromStream(std::istream & is) {
-
-    auto d(std::make_shared<Detail::ParseData>());
-
-    ExecutableCommonHeader ch;
-    wrappedIstreamReadValue<InvalidFileHeaderException>(is, ch);
-
-    if (ch.fileFormatVersion() > 0u)
-        throw VersionMismatchException();
-
-    ExecutableHeader0x0 h;
-    wrappedIstreamReadValue<InvalidFileHeader0x0Exception>(is, h);
-
-    static std::size_t const extraPadding[8] =
-            { 0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u };
-    char extraPaddingBuffer[8u];
-
-    auto const readAndCheckExtraPadding =
-            [&is, &extraPaddingBuffer](std::size_t size) {
-                assert(sizeof(extraPaddingBuffer) >= size);
-                static_assert(std::numeric_limits<std::streamsize>::max() >= 8,
-                              "");
-                if (!is.read(extraPaddingBuffer,
-                             static_cast<std::streamsize>(size)))
-                    throw InvalidInputFileException();
-                for (unsigned i = 0u; i < size; ++i)
-                    if (extraPaddingBuffer[i] != '\0')
-                        throw InvalidInputFileException();
-            };
-
-    for (unsigned ui = 0; ui <= h.numberOfLinkingUnitsMinusOne(); ui++) {
-        ExecutableLinkingUnitHeader0x0 uh;
-        wrappedIstreamReadValue<InvalidLinkingUnitHeader0x0Exception>(is, uh);
-
-        for (unsigned si = 0; si <= uh.numberOfSectionsMinusOne(); si++) {
-            ExecutableSectionHeader0x0 sh;
-            wrappedIstreamReadValue<InvalidSectionHeader0x0Exception>(is, sh);
-
-            auto const type = sh.type();
-            assert(type != ExecutableSectionHeader0x0::SectionType::Invalid);
-
-            auto const sectionSize = sh.size();
-            if (unlikely(integralGreater(
-                             sectionSize,
-                             std::numeric_limits<std::size_t>::max())))
-                throw ImplementationLimitsReachedException();
-
-#define LOAD_DATASECTION_CASE(utype,ltype,spec) \
-    case ExecutableSectionHeader0x0::SectionType::utype: { \
-        auto newSection(std::make_shared<Detail::spec>(sectionSize)); \
-        wrappedIstreamRead<InvalidInputFileException>(is, \
-                                                      newSection->data(), \
-                                                      sectionSize); \
-        readAndCheckExtraPadding(extraPadding[sectionSize % 8]); \
-        d-> ltype ## Sections.emplace_back(std::move(newSection)); \
-    } break;
-#define LOAD_BINDSECTION_CASE(utype,e,missingBindsExceptionPrefix,...) \
-    case ExecutableSectionHeader0x0::SectionType::utype: { \
-        if (sectionSize <= 0) \
-            break; \
-        static_assert(std::numeric_limits<decltype(sectionSize)>::max() \
-                      < std::numeric_limits<std::size_t>::max(), ""); \
-        LimitedBufferFilter limitedBuffer(is, sectionSize); \
-        std::istream is2(&limitedBuffer); \
-        std::set<std::string> missingBinds; \
-        std::string bindName; \
-        while (std::getline(is2, bindName, '\0')) { \
-            if (bindName.empty()) \
-                throw InvalidInputFileException(); \
-            { __VA_ARGS__ } \
-        } \
-        if (!missingBinds.empty()) { \
-            std::ostringstream oss; \
-            oss << missingBindsExceptionPrefix; \
-            bool first = true; \
-            for (auto & missingBind : missingBinds) { \
-                if (first) { \
-                    first = false; \
-                } else { \
-                    oss << ", "; \
-                } \
-                oss << std::move(missingBind); \
-            } \
-            throw e(oss.str()); \
-        } \
-        readAndCheckExtraPadding(extraPadding[sectionSize % 8]); \
-    } break;
-
-            switch (type) {
-
-                case ExecutableSectionHeader0x0::SectionType::Text: {
-                    assert(sectionSize);
-                    d->staticData->codeSections.emplace_back(sectionSize);
-                    auto & cs = d->staticData->codeSections.back();
-                    wrappedIstreamRead<InvalidInputFileException>(
-                                is,
-                                cs.data(),
-                                cs.size() * sizeof(SharemindCodeBlock));
-                } break;
-
-                LOAD_DATASECTION_CASE(RoData,staticData->rodata,RoDataSection)
-                LOAD_DATASECTION_CASE(Data,data,RwDataSection)
-
-                case ExecutableSectionHeader0x0::SectionType::Bss:
-                    d->bssSectionSizes.emplace_back(sectionSize);
-                    break;
-
-                LOAD_BINDSECTION_CASE(Bind,
-                    UndefinedSyscallBindException,
-                    "Found bindings for undefined systems calls: ",
-                    if (auto w = m_inner->m_vmInner->findSyscall(bindName)) {
-                        d->staticData->syscallBindings.emplace_back(
-                                    std::move(w));
-                    } else {
-                        missingBinds.emplace(std::move(bindName));
-                    })
-
-                LOAD_BINDSECTION_CASE(PdBind,
-                    UndefinedPdBindException,
-                    "Found bindings for undefined protection domains: ",
-                    for (auto const & pdBinding : d->staticData->pdBindings)
-                        if (SharemindPd_name(pdBinding) == bindName)
-                            throw DuplicatePdBindException(
-                                    "Duplicate bindings found for protection "
-                                    "domain: " + std::move(bindName));
-                    if (auto * const w = m_inner->m_vmInner->findPd(bindName)) {
-                        d->staticData->pdBindings.emplace_back(w);
-                    } else {
-                        missingBinds.emplace(std::move(bindName));
-                    })
-
-                default:
-                    /* Ignore other sections */
-                    break;
-            }
+    Executable parsedExecutable;
+    {
+        auto oldExceptionMask(is.exceptions());
+        is.exceptions(std::ios_base::failbit
+                      | std::ios_base::badbit
+                      | std::ios_base::eofbit);
+        try {
+            is >> parsedExecutable;
+        } catch (...) {
+            is.exceptions(std::move(oldExceptionMask));
+            throw;
         }
-
-        if (unlikely(d->staticData->codeSections.size() == ui))
-            throw NoCodeSectionsException();
-
-        if (d->staticData->rodataSections.size() == ui)
-            d->staticData->rodataSections.emplace_back(
-                    std::make_shared<Detail::RoDataSection>(0u));
-        if (d->dataSections.size() == ui)
-            d->dataSections.emplace_back(
-                    std::make_shared<Detail::RwDataSection>(0u));
-        if (d->bssSectionSizes.size() == ui)
-            d->bssSectionSizes.emplace_back(0u);
+        is.exceptions(std::move(oldExceptionMask));
     }
-    d->staticData->activeLinkingUnit = h.activeLinkingUnitIndex();
 
-    endPrepare(*d);
-    GUARD;
-    m_inner->m_parseData = std::move(d);
+    assert(!parsedExecutable.linkingUnits.empty());
+    assert(parsedExecutable.activeLinkingUnitIndex
+           < parsedExecutable.linkingUnits.size());
+
+    std::atomic_store_explicit(
+            &m_inner->m_preparedExecutable,
+            std::make_shared<Detail::PreparedExecutable>(
+                std::move(parsedExecutable),
+                [this](std::string const & syscallSignature)
+                { return m_inner->m_vmInner->findSyscall(syscallSignature); },
+                [this](std::string const & pdSignature)
+                { return m_inner->m_vmInner->findPd(pdSignature); }),
+            std::memory_order_release);
 }
 
 VmInstructionInfo const * Program::instruction(
@@ -531,34 +494,35 @@ VmInstructionInfo const * Program::instruction(
         std::size_t instructionIndex) const noexcept
 {
     {
-        GUARD;
-        auto const & parseData = m_inner->m_parseData;
-        assert(parseData);
-        assert(parseData->staticData);
-        auto & codeSections = parseData->staticData->codeSections;
-        if (parseData && codeSection < codeSections.size()) {
-            return codeSections[codeSection].instructionDescriptionAtOffset(
-                        instructionIndex);
+        auto const preparedExecutable(std::atomic_load_explicit(
+                                          &m_inner->m_preparedExecutable,
+                                          std::memory_order_acquire));
+        assert(preparedExecutable);
+        if (codeSection < preparedExecutable->linkingUnits.size()) {
+            auto const & cs =
+                    preparedExecutable->linkingUnits[codeSection].codeSection;
+            return cs.instructionDescriptionAtOffset(instructionIndex);
         }
     }
     return nullptr;
 }
 
 std::size_t Program::pdCount() const noexcept {
-    GUARD;
-    auto const & parseData = m_inner->m_parseData;
-    assert(parseData);
-    assert(parseData->staticData);
-    return parseData->staticData->pdBindings.size();
+    auto const preparedExecutable(std::atomic_load_explicit(
+                                      &m_inner->m_preparedExecutable,
+                                      std::memory_order_acquire));
+    assert(preparedExecutable);
+    return preparedExecutable->linkingUnits[0u].pdBindings.size();
 }
 
 SharemindPd * Program::pd(std::size_t const i) const noexcept {
     {
-        GUARD;
-        auto const & parseData = m_inner->m_parseData;
-        assert(parseData);
-        assert(parseData->staticData);
-        auto & pdBindings = parseData->staticData->pdBindings;
+        auto const preparedExecutable(std::atomic_load_explicit(
+                                          &m_inner->m_preparedExecutable,
+                                          std::memory_order_acquire));
+        assert(preparedExecutable);
+        auto const & pdBindings =
+                preparedExecutable->linkingUnits[0u].pdBindings;
         if (i < pdBindings.size())
             return pdBindings[i];
     }

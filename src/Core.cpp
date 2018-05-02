@@ -502,7 +502,7 @@ std::uint8_t const emptyCReferenceTarget = 0u;
 
 #define SHAREMIND_MI_CHECK_SYSCALL(a,r) \
     do { \
-        auto const & bindings = p->m_staticProgramData->syscallBindings; \
+        auto const & bindings = p->m_preparedLinkingUnit->syscallBindings; \
         if (unlikely((a)->uint64[0] >= bindings.size())) \
             throw Process::InvalidSyscallIndexException(); \
         SHAREMIND_MI_SYSCALL_( \
@@ -588,7 +588,7 @@ std::uint8_t const emptyCReferenceTarget = 0u;
         (dptr)->uint64[0] = p->publicAlloc((sizereg)->uint64[0]); \
     } while ((0))
 
-inline std::shared_ptr<MemorySlot> getMemorySlotOrExcept(
+inline std::shared_ptr<MemorySlot const> getMemorySlotOrExcept(
         ProcessState & p,
         MemoryMap::KeyType index)
 {

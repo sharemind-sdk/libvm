@@ -51,8 +51,8 @@ struct __attribute__((visibility("internal"))) Vm::Inner {
 /* Fields: */
 
     mutable std::recursive_mutex m_mutex;
-    std::shared_ptr<std::function<Vm::SyscallFinder> > m_syscallFinder;
-    std::shared_ptr<std::function<Vm::PdFinder> > m_pdFinder;
+    SyscallFinderFunPtr m_syscallFinder;
+    PdFinderFunPtr m_pdFinder;
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
 
 };

@@ -27,79 +27,81 @@
 #include "MemorySlot.h"
 
 #include <cstddef>
+#include <memory>
+#include <sharemind/GlobalDeleter.h>
+#include <sharemind/libexecutable/Executable.h>
 
 
 namespace sharemind {
 namespace Detail {
 
-class __attribute__((visibility("internal"))) DataSection: public MemorySlot {
+class __attribute__((visibility("internal"))) BssDataSection
+    : public MemorySlot
+{
 
 public: /* Methods: */
 
-    ~DataSection() noexcept override;
+    BssDataSection(BssDataSection &&) noexcept;
+    BssDataSection(BssDataSection const &);
+
+    BssDataSection(std::size_t const size);
+
+    ~BssDataSection() noexcept override;
+
+    BssDataSection & operator=(BssDataSection &&) noexcept;
+    BssDataSection & operator=(BssDataSection const &);
 
     void * data() const noexcept final override;
     std::size_t size() const noexcept final override;
 
-protected: /* Methods: */
-
-    DataSection(void * const data, std::size_t const size) noexcept
-        : m_data(data)
-        , m_size(size)
-    {}
-
 private: /* Fields: */
 
-    void * const m_data;
-    std::size_t const m_size;
-
-};
-
-class __attribute__((visibility("internal"))) BssDataSection
-    : public DataSection
-{
-
-public: /* Methods: */
-
-    BssDataSection(std::size_t const size);
-    ~BssDataSection() noexcept override;
-
-};
-
-class __attribute__((visibility("internal"))) RegularDataSection
-    : public DataSection
-{
-
-public: /* Methods: */
-
-    ~RegularDataSection() noexcept override;
-
-protected: /* Methods: */
-
-    RegularDataSection(std::size_t const size);
+    std::unique_ptr<void, GlobalDeleter> m_data;
+    std::size_t m_size;
 
 };
 
 class __attribute__((visibility("internal"))) RwDataSection
-    : public RegularDataSection
+    : private Executable::DataSection
+    , public MemorySlot
 {
 
 public: /* Methods: */
 
-    RwDataSection(std::size_t const size);
+    RwDataSection(RwDataSection &&) noexcept;
+    RwDataSection(RwDataSection const &);
+
+    RwDataSection(Executable::DataSection && dataSection);
+
     ~RwDataSection() noexcept override;
+
+    RwDataSection & operator=(RwDataSection &&) noexcept;
+    RwDataSection & operator=(RwDataSection const &);
+
+    void * data() const noexcept final override;
+    std::size_t size() const noexcept final override;
 
 };
 
 class __attribute__((visibility("internal"))) RoDataSection
-    : public RegularDataSection
+    : private Executable::DataSection
+    , public MemorySlot
 {
 
 public: /* Methods: */
 
-    RoDataSection(std::size_t const size);
+    RoDataSection(RoDataSection &&) noexcept;
+    RoDataSection(RoDataSection const &);
+
+    RoDataSection(Executable::DataSection && dataSection);
+
     ~RoDataSection() noexcept override;
 
+    RoDataSection & operator=(RoDataSection &&) noexcept;
+    RoDataSection & operator=(RoDataSection const &);
+
+    void * data() const noexcept final override;
+    std::size_t size() const noexcept final override;
     bool isWritable() const noexcept final override;
 
 };

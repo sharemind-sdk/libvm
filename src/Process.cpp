@@ -227,45 +227,37 @@ std::size_t PrivateMemoryMap::free(void * const ptr) noexcept {
     return r;
 }
 
-ProcessState::DataSections::DataSections(
-        DataSectionsVector & originalDataSections)
-{
-    for (auto const & s : originalDataSections) {
-        auto const sectionSize(s->size());
-        auto newSection(std::make_shared<RwDataSection>(sectionSize));
-        std::memcpy(newSection->data(), s->data(), sectionSize);
-        emplace_back(std::move(newSection));
-    }
-}
-
-ProcessState::BssSections::BssSections(DataSectionSizesVector & sizes) {
-    for (auto const size : sizes) {
-        static_assert(std::numeric_limits<decltype(size)>::max()
-                      <= std::numeric_limits<std::size_t>::max(), "");
-        emplace_back(std::make_shared<BssDataSection>(size));
-    }
-}
-
 ProcessState::SimpleMemoryMap::SimpleMemoryMap(
-        std::shared_ptr<DataSection> rodataSection,
-        std::shared_ptr<DataSection> dataSection,
-        std::shared_ptr<DataSection> bssSection)
+        std::shared_ptr<RoDataSection const> rodataSection,
+        std::shared_ptr<RwDataSection> dataSection,
+        std::shared_ptr<BssDataSection> bssSection)
 {
-    insertDataSection(1u, std::move(rodataSection));
-    insertDataSection(2u, std::move(dataSection));
-    insertDataSection(3u, std::move(bssSection));
+    insertSlot(1u, std::move(rodataSection));
+    insertSlot(2u, std::move(dataSection));
+    insertSlot(3u, std::move(bssSection));
 }
 
-ProcessState::ProcessState(std::shared_ptr<ParseData> parseData)
-    : m_staticProgramData(assertReturn(assertReturn(parseData)->staticData))
-    , m_dataSections(parseData->dataSections)
-    , m_bssSections(parseData->bssSectionSizes)
-    , m_pdpiCache(parseData->staticData->pdBindings)
-    , m_memoryMap(
-          parseData->staticData->rodataSections[
-                parseData->staticData->activeLinkingUnit],
-          m_dataSections[parseData->staticData->activeLinkingUnit],
-          m_bssSections[parseData->staticData->activeLinkingUnit])
+ProcessState::ProcessState(
+        std::shared_ptr<PreparedExecutable const> preparedExecutable)
+    : m_activeLinkingUnitIndex(
+          assertReturn(preparedExecutable)->activeLinkingUnitIndex)
+    , m_preparedLinkingUnit(
+        [](std::shared_ptr<PreparedExecutable const> exePtr) noexcept {
+            assert(exePtr);
+            auto const & activeLinkingUnit =
+                    exePtr->linkingUnits[exePtr->activeLinkingUnitIndex];
+            return std::shared_ptr<PreparedLinkingUnit const>(
+                        std::move(exePtr),
+                        &activeLinkingUnit);
+        }(std::move(preparedExecutable)))
+    , m_pdpiCache(m_preparedLinkingUnit->pdBindings)
+    , m_memoryMap(std::shared_ptr<RoDataSection const>(
+                      m_preparedLinkingUnit,
+                      &m_preparedLinkingUnit->roDataSection),
+                  std::make_shared<RwDataSection>(
+                      m_preparedLinkingUnit->rwDataSection),
+                  std::make_shared<BssDataSection>(
+                      m_preparedLinkingUnit->bssSectionSize))
 {}
 
 ProcessState::~ProcessState() noexcept {
@@ -470,7 +462,9 @@ SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(ProcessState,)
 } /* namespace Detail { */
 
 Process::Inner::Inner(std::shared_ptr<Program::Inner> programInner)
-    : ProcessState(assertReturn(programInner->m_parseData)) /// \todo throw instead of assert?
+    : ProcessState(std::atomic_load_explicit(
+                       &assertReturn(programInner)->m_preparedExecutable,
+                       std::memory_order_acquire))
 { SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *programInner); }
 
 Process::Inner::~Inner() noexcept {}
@@ -495,7 +489,7 @@ std::exception_ptr Process::syscallException() const noexcept
 { return m_inner->m_syscallException; }
 
 std::size_t Process::currentCodeSectionIndex() const noexcept
-{ return m_inner->m_staticProgramData->activeLinkingUnit; }
+{ return m_inner->m_activeLinkingUnitIndex; }
 
 std::size_t Process::currentIp() const noexcept
 { return m_inner->m_currentIp; }

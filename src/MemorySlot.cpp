@@ -23,6 +23,11 @@
 namespace sharemind {
 namespace Detail {
 
+MemorySlot::MemorySlot(MemorySlot &&) noexcept = default;
+MemorySlot::MemorySlot(MemorySlot const &) noexcept = default;
+MemorySlot & MemorySlot::operator=(MemorySlot &&) noexcept = default;
+MemorySlot & MemorySlot::operator=(MemorySlot const &) noexcept = default;
+
 MemorySlot::~MemorySlot() noexcept {}
 
 bool MemorySlot::isWritable() const noexcept { return true; }

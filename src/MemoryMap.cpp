@@ -35,15 +35,13 @@ MemoryMap::ValueType const & MemoryMap::get(KeyType const ptr) const noexcept {
     return (it != m_inner.end()) ? it->second : m_notFound;
 }
 
-void MemoryMap::insertDataSection(KeyType ptr,
-                                  std::shared_ptr<DataSection> section)
-{
+void MemoryMap::insertSlot(KeyType ptr, ValueType slot) {
     assert(ptr);
     assert(ptr < numReservedPointers);
     assert(m_inner.find(ptr) == m_inner.end());
-    if (!section)
+    if (!slot)
         return;
-    m_inner.emplace(std::move(ptr), std::move(section));
+    m_inner.emplace(std::move(ptr), std::move(slot));
 }
 
 MemoryMap::KeyType MemoryMap::allocate(std::size_t const size) {

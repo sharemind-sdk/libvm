@@ -22,43 +22,83 @@
 
 #include <cstring>
 #include <new>
+#include <sharemind/AssertReturn.h>
 
 
 namespace sharemind {
 namespace Detail {
 
-DataSection::~DataSection() noexcept {}
-void * DataSection::data() const noexcept { return m_data; }
-std::size_t DataSection::size() const noexcept { return m_size; }
+BssDataSection::BssDataSection(BssDataSection &&) noexcept = default;
 
+BssDataSection::BssDataSection(BssDataSection const & copy)
+    : MemorySlot()
+    , m_data(::operator new(copy.m_size))
+    , m_size(copy.m_size)
+{ std::memcpy(m_data.get(), copy.m_data.get(), m_size); }
 
 BssDataSection::BssDataSection(std::size_t const size)
-    : DataSection(::operator new(size), size)
+    : m_data(::operator new(size))
+    , m_size(size)
 { std::memset(data(), 0, size); }
 
-BssDataSection::~BssDataSection() noexcept { ::operator delete(data()); }
+BssDataSection::~BssDataSection() noexcept = default;
+
+BssDataSection & BssDataSection::operator=(BssDataSection &&) noexcept =
+        default;
+
+BssDataSection & BssDataSection::operator=(BssDataSection const & copy) {
+    decltype(m_data) newData(::operator new(copy.m_size));
+    std::memcpy(newData.get(), copy.m_data.get(), m_size);
+    m_data = std::move(newData);
+    m_size = copy.m_size;
+    return *this;
+}
+
+void * BssDataSection::data() const noexcept { return m_data.get(); }
+
+std::size_t BssDataSection::size() const noexcept { return m_size; }
 
 
-RegularDataSection::~RegularDataSection() noexcept
-{ ::operator delete(data()); }
 
-RegularDataSection::RegularDataSection(std::size_t const size)
-    : DataSection(::operator new(size), size)
+RwDataSection::RwDataSection(RwDataSection &&) noexcept = default;
+
+RwDataSection::RwDataSection(RwDataSection const &) = default;
+
+RwDataSection::RwDataSection(Executable::DataSection && dataSection)
+    : Executable::DataSection(std::move(dataSection))
 {}
 
+RwDataSection::~RwDataSection() noexcept = default;
 
-RwDataSection::RwDataSection(std::size_t const size)
-    : RegularDataSection(size)
+RwDataSection & RwDataSection::operator=(RwDataSection &&) noexcept = default;
+
+RwDataSection & RwDataSection::operator=(RwDataSection const &) = default;
+
+void * RwDataSection::data() const noexcept
+{ return static_cast<Executable::DataSection const *>(this)->data.get(); }
+
+std::size_t RwDataSection::size() const noexcept { return this->sizeInBytes; }
+
+
+
+RoDataSection::RoDataSection(RoDataSection &&) noexcept = default;
+
+RoDataSection::RoDataSection(RoDataSection const &) = default;
+
+RoDataSection::RoDataSection(Executable::DataSection && dataSection)
+    : Executable::DataSection(std::move(dataSection))
 {}
 
-RwDataSection::~RwDataSection() noexcept {}
+RoDataSection::~RoDataSection() noexcept = default;
 
+RoDataSection & RoDataSection::operator=(RoDataSection &&) noexcept = default;
 
-RoDataSection::RoDataSection(std::size_t const size)
-    : RegularDataSection(size)
-{}
+RoDataSection & RoDataSection::operator=(RoDataSection const &) = default;
 
-RoDataSection::~RoDataSection() noexcept {}
+void * RoDataSection::data() const noexcept
+{ return static_cast<Executable::DataSection const *>(this)->data.get(); }
+
+std::size_t RoDataSection::size() const noexcept { return this->sizeInBytes; }
 
 bool RoDataSection::isWritable() const noexcept { return false; }
 

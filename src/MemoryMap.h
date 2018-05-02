@@ -33,7 +33,6 @@
 namespace sharemind {
 namespace Detail {
 
-class DataSection;
 class MemorySlot;
 
 class __attribute__((visibility("internal"))) MemoryMap {
@@ -41,7 +40,7 @@ class __attribute__((visibility("internal"))) MemoryMap {
 public: /* Types: */
 
     using KeyType = std::uint64_t;
-    using ValueType = std::shared_ptr<MemorySlot>;
+    using ValueType = std::shared_ptr<MemorySlot const>;
 
     enum ErrorCode { Ok, MemorySlotInUse, InvalidMemoryHandle };
 
@@ -54,7 +53,7 @@ public: /* Methods: */
 
     ValueType const & get(KeyType const ptr) const noexcept;
 
-    void insertDataSection(KeyType ptr, std::shared_ptr<DataSection> section);
+    void insertSlot(KeyType ptr, ValueType section);
 
     KeyType allocate(std::size_t const size);
 

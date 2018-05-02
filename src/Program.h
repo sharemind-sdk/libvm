@@ -81,7 +81,7 @@ public: /* Types: */
             PrepareException,
             DuplicatePdBindException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
-                                                   NoCodeSectionsException);
+                                                   NoCodeSectionException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    InvalidInstructionException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(
@@ -105,8 +105,10 @@ public: /* Methods: */
                                           std::size_t instructionIndex)
             const noexcept;
 
+    /// \returns the number of PDs in the FIRST linking unit.
     std::size_t pdCount() const noexcept;
 
+    /// \returns the given PD in the FIRST linking unit.
     SharemindPd * pd(std::size_t const i) const noexcept;
 
     void setProcessFacility(std::string name, std::shared_ptr<void> facility);
