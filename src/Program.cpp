@@ -358,13 +358,19 @@ EC(Prepare, InvalidInstructionArguments,
 #undef EC
 
 
-Program::Inner::Inner(std::shared_ptr<Vm::Inner> vmInner)
+Program::Inner::Inner(
+        std::shared_ptr<Vm::Inner> vmInner,
+        std::shared_ptr<Detail::PreparedExecutable> preparedExecutable)
     : m_vmInner(std::move(vmInner))
+    , m_preparedExecutable(std::move(preparedExecutable))
 { SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *m_vmInner); }
 
 Program::Inner::~Inner() noexcept {}
 
-void Program::Inner::loadFromFile(char const * const filename) {
+std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromFile(
+        Vm::Inner const & vmInner,
+        char const * const filename)
+{
     assert(filename);
 
     /* Open input file: */
@@ -372,24 +378,31 @@ void Program::Inner::loadFromFile(char const * const filename) {
     if (fd < 0)
         throw FileOpenException();
     try {
-        loadFromFileDescriptor(fd);
+        auto r = loadFromFileDescriptor(vmInner, fd);
         ::close(fd);
+        return r;
     } catch (...) {
         ::close(fd);
         throw;
     }
 }
 
-void Program::Inner::loadFromCFile(FILE * const file) {
+std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromCFile(
+        Vm::Inner const & vmInner,
+        FILE * const file)
+{
     assert(file);
     int const fd = ::fileno(file);
     if (fd == -1)
         throw FileNoException();
     assert(fd >= 0);
-    return loadFromFileDescriptor(fd);
+    return loadFromFileDescriptor(vmInner, fd);
 }
 
-void Program::Inner::loadFromFileDescriptor(int const fd) {
+std::shared_ptr<Detail::PreparedExecutable>
+Program::Inner::loadFromFileDescriptor(Vm::Inner const & vmInner,
+                                       int const fd)
+{
     assert(fd >= 0);
 
     /* Determine input file size: */
@@ -406,7 +419,7 @@ void Program::Inner::loadFromFileDescriptor(int const fd) {
                 return statFileSize;
             }(fd);
     if (fileSize == 0u) // Parse empty data block:
-        return loadFromMemory(&fileSize, 0u);
+        return loadFromMemory(vmInner, &fileSize, 0u);
 
     /* Read file to memory: */
     std::unique_ptr<void, GlobalDeleter> fileData(::operator new(fileSize));
@@ -421,10 +434,14 @@ void Program::Inner::loadFromFileDescriptor(int const fd) {
         throw FileReadException();
     }
 
-    return loadFromMemory(fileData.get(), fileSize);
+    return loadFromMemory(vmInner, fileData.get(), fileSize);
 }
 
-void Program::Inner::loadFromMemory(void const * data, std::size_t dataSize) {
+std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromMemory(
+        Vm::Inner const & vmInner,
+        void const * data,
+        std::size_t dataSize)
+{
     assert(data);
 
     struct MemoryBuffer: std::streambuf {
@@ -442,10 +459,13 @@ void Program::Inner::loadFromMemory(void const * data, std::size_t dataSize) {
     };
 
     InputMemoryStream inStream(data, dataSize);
-    return loadFromStream(inStream);
+    return loadFromStream(vmInner, inStream);
 }
 
-void Program::Inner::loadFromStream(std::istream & is) {
+std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromStream(
+        Vm::Inner const & vmInner,
+        std::istream & is)
+{
     Executable parsedExecutable;
     {
         auto oldExceptionMask(is.exceptions());
@@ -465,37 +485,44 @@ void Program::Inner::loadFromStream(std::istream & is) {
     assert(parsedExecutable.activeLinkingUnitIndex
            < parsedExecutable.linkingUnits.size());
 
-    std::atomic_store_explicit(
-            &m_preparedExecutable,
-            std::make_shared<Detail::PreparedExecutable>(
+    return std::make_shared<Detail::PreparedExecutable>(
                 std::move(parsedExecutable),
-                [this](std::string const & syscallSignature)
-                { return m_vmInner->findSyscall(syscallSignature); },
-                [this](std::string const & pdSignature)
-                { return m_vmInner->findPd(pdSignature); }),
-            std::memory_order_release);
+                [&vmInner](std::string const & syscallSignature)
+                { return vmInner.findSyscall(syscallSignature); },
+                [&vmInner](std::string const & pdSignature)
+                { return vmInner.findPd(pdSignature); });
 }
 
 
 Program::Program(Vm & vm, char const * filename)
-    : m_inner(std::make_shared<Inner>(vm.m_inner))
-{ m_inner->loadFromFile(filename); }
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromFile(*vm.m_inner,
+                                                          filename)))
+{}
 
 Program::Program(Vm & vm, FILE * file)
-    : m_inner(std::make_shared<Inner>(vm.m_inner))
-{ m_inner->loadFromCFile(file); }
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromCFile(*vm.m_inner, file)))
+{}
 
 Program::Program(Vm & vm, int fd)
-    : m_inner(std::make_shared<Inner>(vm.m_inner))
-{ m_inner->loadFromFileDescriptor(fd); }
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromFileDescriptor(*vm.m_inner,
+                                                                    fd)))
+{}
 
 Program::Program(Vm & vm, void const * data, std::size_t dataSize)
-    : m_inner(std::make_shared<Inner>(vm.m_inner))
-{ m_inner->loadFromMemory(data, dataSize); }
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromMemory(*vm.m_inner,
+                                                            data,
+                                                            dataSize)))
+{}
 
 Program::Program(Vm & vm, std::istream & inputStream)
-    : m_inner(std::make_shared<Inner>(vm.m_inner))
-{ m_inner->loadFromStream(inputStream); }
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromStream(*vm.m_inner,
+                                                            inputStream)))
+{}
 
 Program::~Program() noexcept {}
 

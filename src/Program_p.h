@@ -134,14 +134,30 @@ struct __attribute__((visibility("internal"))) Program::Inner {
 
 /* Methods: */
 
-    Inner(std::shared_ptr<Vm::Inner> vmInner);
+    Inner(std::shared_ptr<Vm::Inner> vmInner,
+          std::shared_ptr<Detail::PreparedExecutable> preparedExecutable);
     ~Inner() noexcept;
 
-    void loadFromFile(char const * const filename);
-    void loadFromCFile(FILE * const file);
-    void loadFromFileDescriptor(int const fd);
-    void loadFromMemory(void const * data, std::size_t dataSize);
-    void loadFromStream(std::istream & inputStream);
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromFile(
+                Vm::Inner const & vmInner,
+                char const * const filename);
+
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromCFile(
+                Vm::Inner const & vmInner,
+                FILE * const file);
+
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromFileDescriptor(
+                Vm::Inner const & vmInner,
+                int const fd);
+
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromMemory(
+                Vm::Inner const & vmInner,
+                void const * data,
+                std::size_t dataSize);
+
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromStream(
+                Vm::Inner const & vmInner,
+                std::istream & inputStream);
 
 /* Fields: */
 
