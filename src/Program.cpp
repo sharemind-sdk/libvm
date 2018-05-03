@@ -480,13 +480,18 @@ std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromStream(
         }
         is.exceptions(std::move(oldExceptionMask));
     }
+    return loadFromExecutable(vmInner, std::move(parsedExecutable));
+}
 
-    assert(!parsedExecutable.linkingUnits.empty());
-    assert(parsedExecutable.activeLinkingUnitIndex
-           < parsedExecutable.linkingUnits.size());
+std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromExecutable(
+            Vm::Inner const & vmInner,
+            Executable && executable)
+{
+    assert(!executable.linkingUnits.empty());
+    assert(executable.activeLinkingUnitIndex < executable.linkingUnits.size());
 
     return std::make_shared<Detail::PreparedExecutable>(
-                std::move(parsedExecutable),
+                std::move(executable),
                 [&vmInner](std::string const & syscallSignature)
                 { return vmInner.findSyscall(syscallSignature); },
                 [&vmInner](std::string const & pdSignature)
@@ -522,6 +527,13 @@ Program::Program(Vm & vm, std::istream & inputStream)
     : m_inner(std::make_shared<Inner>(vm.m_inner,
                                       Inner::loadFromStream(*vm.m_inner,
                                                             inputStream)))
+{}
+
+Program::Program(Vm & vm, Executable executable)
+    : m_inner(std::make_shared<Inner>(vm.m_inner,
+                                      Inner::loadFromExecutable(
+                                          *vm.m_inner,
+                                          std::move(executable))))
 {}
 
 Program::~Program() noexcept {}

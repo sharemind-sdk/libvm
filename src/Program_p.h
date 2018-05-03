@@ -159,6 +159,10 @@ struct __attribute__((visibility("internal"))) Program::Inner {
                 Vm::Inner const & vmInner,
                 std::istream & inputStream);
 
+    static std::shared_ptr<Detail::PreparedExecutable> loadFromExecutable(
+                Vm::Inner const & vmInner,
+                Executable && executable);
+
 /* Fields: */
 
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;

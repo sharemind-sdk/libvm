@@ -25,6 +25,7 @@
 #include <memory>
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
+#include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/libvmi/instr.h>
 
@@ -140,6 +141,13 @@ public: /* Methods: */
       \param[in] inputStream The input stream to load the program from.
     */
     Program(Vm & vm, std::istream & inputStream);
+
+    /**
+      \brief Loads the program from the given executable.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] inputStream The executable to load the program from.
+    */
+    Program(Vm & vm, Executable executable);
 
     virtual ~Program() noexcept;
 
