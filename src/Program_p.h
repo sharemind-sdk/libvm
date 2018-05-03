@@ -168,7 +168,8 @@ struct __attribute__((visibility("internal"))) Program::Inner {
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
     std::shared_ptr<Vm::Inner> m_vmInner;
 
-    std::shared_ptr<Detail::PreparedExecutable> m_preparedExecutable;
+    std::shared_ptr<Detail::PreparedExecutable const> const
+            m_preparedExecutable;
 
 };
 

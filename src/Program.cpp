@@ -21,7 +21,6 @@
 #include "Program_p.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -543,13 +542,11 @@ VmInstructionInfo const * Program::instruction(
         std::size_t instructionIndex) const noexcept
 {
     {
-        auto const preparedExecutable(std::atomic_load_explicit(
-                                          &m_inner->m_preparedExecutable,
-                                          std::memory_order_acquire));
-        assert(preparedExecutable);
-        if (codeSection < preparedExecutable->linkingUnits.size()) {
+        assert(m_inner->m_preparedExecutable);
+        auto const & preparedExecutable = *m_inner->m_preparedExecutable;
+        if (codeSection < preparedExecutable.linkingUnits.size()) {
             auto const & cs =
-                    preparedExecutable->linkingUnits[codeSection].codeSection;
+                    preparedExecutable.linkingUnits[codeSection].codeSection;
             return cs.instructionDescriptionAtOffset(instructionIndex);
         }
     }
@@ -557,21 +554,17 @@ VmInstructionInfo const * Program::instruction(
 }
 
 std::size_t Program::pdCount() const noexcept {
-    auto const preparedExecutable(std::atomic_load_explicit(
-                                      &m_inner->m_preparedExecutable,
-                                      std::memory_order_acquire));
-    assert(preparedExecutable);
-    return preparedExecutable->linkingUnits[0u].pdBindings.size();
+    assert(m_inner->m_preparedExecutable);
+    assert(!m_inner->m_preparedExecutable->linkingUnits.empty());
+    return m_inner->m_preparedExecutable->linkingUnits[0u].pdBindings.size();
 }
 
 SharemindPd * Program::pd(std::size_t const i) const noexcept {
     {
-        auto const preparedExecutable(std::atomic_load_explicit(
-                                          &m_inner->m_preparedExecutable,
-                                          std::memory_order_acquire));
-        assert(preparedExecutable);
+        assert(m_inner->m_preparedExecutable);
+        assert(!m_inner->m_preparedExecutable->linkingUnits.empty());
         auto const & pdBindings =
-                preparedExecutable->linkingUnits[0u].pdBindings;
+                m_inner->m_preparedExecutable->linkingUnits[0u].pdBindings;
         if (i < pdBindings.size())
             return pdBindings[i];
     }

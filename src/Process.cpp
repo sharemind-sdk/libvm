@@ -462,9 +462,7 @@ SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(ProcessState,)
 } /* namespace Detail { */
 
 Process::Inner::Inner(std::shared_ptr<Program::Inner> programInner)
-    : ProcessState(std::atomic_load_explicit(
-                       &assertReturn(programInner)->m_preparedExecutable,
-                       std::memory_order_acquire))
+    : ProcessState(assertReturn(programInner)->m_preparedExecutable)
 { SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *programInner); }
 
 Process::Inner::~Inner() noexcept {}
