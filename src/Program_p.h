@@ -137,6 +137,12 @@ struct __attribute__((visibility("internal"))) Program::Inner {
     Inner(std::shared_ptr<Vm::Inner> vmInner);
     ~Inner() noexcept;
 
+    void loadFromFile(char const * const filename);
+    void loadFromCFile(FILE * const file);
+    void loadFromFileDescriptor(int const fd);
+    void loadFromMemory(void const * data, std::size_t dataSize);
+    void loadFromStream(std::istream & inputStream);
+
 /* Fields: */
 
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;

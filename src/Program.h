@@ -90,16 +90,67 @@ public: /* Types: */
 
 public: /* Methods: */
 
-    Program(Vm & vm);
+    /**
+      \brief Constructs a program in an invalid state in which operations other
+             than move-assignment and destruction result in undefined behavior.
+    */
+    Program() noexcept = default;
+
+    /**
+      \note The Program object which will be moved from will be left in an
+            invalid state in which operations other than move-assignment and
+            destruction result in undefined behavior.
+    */
+    Program(Program &&) noexcept = default;
+
+    Program(Program const &) noexcept = delete;
+
+    /**
+      \brief Loads the program from the file with the given filename.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] filename The filename to load the program from.
+    */
+    Program(Vm & vm, char const * filename);
+
+    /**
+      \brief Loads the program from the given FILE object.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] file The FILE object to load the program from.
+    */
+    Program(Vm & vm, FILE * file);
+
+    /**
+      \brief Loads the program from the given file descriptor.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] fd The file descriptor to load the program from.
+    */
+    Program(Vm & vm, int fd);
+
+    /**
+      \brief Loads the program from the given memory data area.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] data Pointer to the memory area to load the program from.
+      \param[in] dataSize Size of the memory area to load the program from.
+    */
+    Program(Vm & vm, void const * data, std::size_t dataSize);
+
+    /**
+      \brief Loads the program from the given input stream.
+      \param[in] vm Reference to the Vm instance.
+      \param[in] inputStream The input stream to load the program from.
+    */
+    Program(Vm & vm, std::istream & inputStream);
+
     virtual ~Program() noexcept;
 
-    bool isReady() const noexcept;
+    /**
+      \note The Program object which will be moved from will be left in an
+            invalid state in which operations other than move-assignment and
+            destruction result in undefined behavior.
+    */
+    Program & operator=(Program &&) noexcept = default;
 
-    void loadFromFile(char const * const filename);
-    void loadFromCFile(FILE * const file);
-    void loadFromFileDescriptor(int const fd);
-    void loadFromMemory(void const * data, std::size_t dataSize);
-    void loadFromStream(std::istream & inputStream);
+    Program & operator=(Program const &) noexcept = delete;
 
     VmInstructionInfo const * instruction(std::size_t codeSection,
                                           std::size_t instructionIndex)

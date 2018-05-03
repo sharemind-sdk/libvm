@@ -159,8 +159,37 @@ public: /* Types: */
 
 public: /* Methods: */
 
+    /**
+      \brief Constructs a process in an invalid state in which operations other
+             than move-assignment and destruction result in undefined behavior.
+    */
+    Process() noexcept = default;
+
+    /**
+      \note The Process object which will be moved from will be left in an
+            invalid state in which operations other than move-assignment and
+            destruction result in undefined behavior.
+    */
+    Process(Process &&) noexcept = default;
+
+    Process(Process const &) noexcept = delete;
+
+    /**
+       \brief Constructs a process from the given program.
+       \param[in] program Reference to the program which the process should run.
+    */
     Process(Program & program);
+
     virtual ~Process() noexcept;
+
+    /**
+      \note The Process object which will be moved from will be left in an
+            invalid state in which operations other than move-assignment and
+            destruction result in undefined behavior.
+    */
+    Process & operator=(Process &&) noexcept = default;
+
+    Process & operator=(Process const &) noexcept = delete;
 
     void setPdpiFacility(char const * const name,
                          void * const facility,

@@ -164,7 +164,26 @@ public: /* Types: */
 public: /* Methods: */
 
     Vm();
+
+    /**
+      \note The Vm object which will be moved from will be left in an invalid
+            state in which operations other than move-assignment and destruction
+            result in undefined behavior.
+    */
+    Vm(Vm &&) noexcept = default;
+
+    Vm(Vm const &) noexcept = delete;
+
     virtual ~Vm() noexcept;
+
+    /**
+      \note The Vm object which will be moved from will be left in an invalid
+            state in which operations other than move-assignment and destruction
+            result in undefined behavior.
+    */
+    Vm & operator=(Vm &&) noexcept = default;
+
+    Vm & operator=(Vm const &) noexcept = delete;
 
     void setSyscallFinder(SyscallFinderFunPtr f) noexcept;
     void setPdFinder(PdFinderFunPtr f) noexcept;
