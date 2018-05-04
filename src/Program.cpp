@@ -29,6 +29,7 @@
 #include <limits>
 #include <new>
 #include <sharemind/GlobalDeleter.h>
+#include <sharemind/InputMemoryStream.h>
 #include <sharemind/IntegralComparisons.h>
 #include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libvmi/instr.h>
@@ -442,22 +443,7 @@ std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromMemory(
         std::size_t dataSize)
 {
     assert(data);
-
-    struct MemoryBuffer: std::streambuf {
-        MemoryBuffer(char const * data, std::size_t size) {
-            auto d = const_cast<char *>(data);
-            this->setg(d, d, d + size);
-        }
-    };
-
-    struct InputMemoryStream: virtual MemoryBuffer, std::istream {
-        InputMemoryStream(void const * data, std::size_t size)
-            : MemoryBuffer(static_cast<char const *>(data), size)
-            , std::istream(static_cast<std::streambuf *>(this))
-        {}
-    };
-
-    InputMemoryStream inStream(data, dataSize);
+    InputMemoryStream inStream(static_cast<char const *>(data), dataSize);
     return loadFromStream(vmInner, inStream);
 }
 
