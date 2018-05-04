@@ -22,8 +22,14 @@
 
 #include <functional>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <sharemind/codeblock.h>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 
