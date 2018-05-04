@@ -29,6 +29,7 @@
 #include <memory>
 #include <mutex>
 #include <sharemind/libmodapi/libmodapi.h>
+#include <string>
 #include "ProcessFacilityMap.h"
 
 
