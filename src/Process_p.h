@@ -114,6 +114,12 @@ struct __attribute__((visibility("internal"))) ProcessState {
         void * publicMemPtrData(PublicMemoryPointer ptr) final override
         { return m_state.publicSlotPtr(ptr.ptr); }
 
+        std::size_t currentLinkingUnitIndex() const noexcept final override
+        { return m_state.m_activeLinkingUnitIndex; }
+
+        std::size_t currentInstructionIndex() const noexcept final override
+        { return m_state.m_currentIp; }
+
     /* Fields: */
 
         ProcessState & m_state;

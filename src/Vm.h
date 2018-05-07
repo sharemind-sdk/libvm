@@ -141,6 +141,10 @@ public: /* Types: */
         virtual std::size_t publicMemPtrSize(PublicMemoryPointer ptr) = 0;
         virtual void * publicMemPtrData(PublicMemoryPointer ptr) = 0;
 
+        /* Access to current code location: */
+        virtual std::size_t currentLinkingUnitIndex() const noexcept = 0;
+        virtual std::size_t currentInstructionIndex() const noexcept = 0;
+
     };
 
     struct SyscallWrapper {
