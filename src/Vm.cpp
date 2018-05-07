@@ -45,13 +45,6 @@ std::shared_ptr<Vm::SyscallWrapper> Vm::Inner::findSyscall(
     return nullptr;
 }
 
-SharemindPd * Vm::Inner::findPd(std::string const & pdName) const noexcept {
-    INNERGUARD;
-    if (m_pdFinder && *m_pdFinder)
-        return (*m_pdFinder)(pdName);
-    return nullptr;
-}
-
 Vm::SyscallContext::~SyscallContext() noexcept = default;
 
 Vm::SyscallWrapper::~SyscallWrapper() noexcept = default;
@@ -65,17 +58,9 @@ void Vm::setSyscallFinder(SyscallFinderFunPtr f) noexcept {
     m_inner->m_syscallFinder = std::move(f);
 }
 
-void Vm::setPdFinder(PdFinderFunPtr f) noexcept {
-    GUARD;
-    m_inner->m_pdFinder = std::move(f);
-}
-
 std::shared_ptr<Vm::SyscallWrapper> Vm::findSyscall(
         std::string const & signature) const noexcept
 { return m_inner->findSyscall(signature); }
-
-SharemindPd * Vm::findPd(std::string const & pdName) const noexcept
-{ return m_inner->findPd(pdName); }
 
 SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(Vm,m_inner->)
 

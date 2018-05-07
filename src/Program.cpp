@@ -188,52 +188,13 @@ Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
 
 
 
-Detail::PreparedPdBindings::PreparedPdBindings(PreparedPdBindings &&) noexcept
-        = default;
-
-Detail::PreparedPdBindings::PreparedPdBindings(PreparedPdBindings const &)
-        = default;
-
-template <typename PdFinder>
-Detail::PreparedPdBindings::PreparedPdBindings(
-        std::shared_ptr<Executable::PdBindingsSection> parsedBindings,
-        PdFinder && pdFinder)
-{
-    if (parsedBindings) {
-        parseBindings<Program::UndefinedPdBindException>(
-            *this,
-            parsedBindings->pdBindings,
-            [&pdFinder](PreparedPdBindings & r,
-                        std::string const & bindName)
-            {
-                if (auto w = pdFinder(bindName)) {
-                    r.emplace_back(std::move(w));
-                    return true;
-                }
-                return false;
-            },
-            [&pdFinder](std::string const & bindName)
-            { return static_cast<bool>(pdFinder(bindName)); },
-            "Found bindings for undefined protection domains: ");
-    }
-}
-
-Detail::PreparedPdBindings & Detail::PreparedPdBindings::operator=(
-        PreparedPdBindings &&) noexcept = default;
-
-Detail::PreparedPdBindings & Detail::PreparedPdBindings::operator=(
-        PreparedPdBindings const &) = default;
-
-
-
 Detail::PreparedLinkingUnit::PreparedLinkingUnit(PreparedLinkingUnit &&)
         noexcept = default;
 
-template <typename SyscallFinder, typename PdFinder>
+template <typename SyscallFinder>
 Detail::PreparedLinkingUnit::PreparedLinkingUnit(
         Executable::LinkingUnit && parsedLinkingUnit,
-        SyscallFinder && syscallFinder,
-        PdFinder && pdFinder)
+        SyscallFinder && syscallFinder)
     : codeSection(
         [](std::shared_ptr<Executable::TextSection> textSection) {
             if (unlikely(!textSection))
@@ -251,8 +212,6 @@ Detail::PreparedLinkingUnit::PreparedLinkingUnit(
                      : 0u)
     , syscallBindings(std::move(parsedLinkingUnit.syscallBindingsSection),
                       std::forward<SyscallFinder>(syscallFinder))
-    , pdBindings(std::move(parsedLinkingUnit.pdBindingsSection),
-                 std::forward<PdFinder>(pdFinder))
 {
     // Prepare the linking unit fully for execution:
     SharemindCodeBlock * const c = codeSection.data();
@@ -303,17 +262,14 @@ Detail::PreparedLinkingUnit & Detail::PreparedLinkingUnit::operator=(
 Detail::PreparedExecutable::PreparedExecutable(PreparedExecutable &&) noexcept
         = default;
 
-template <typename SyscallFinder, typename PdFinder>
+template <typename SyscallFinder>
 Detail::PreparedExecutable::PreparedExecutable(Executable parsedExecutable,
-                                               SyscallFinder && syscallFinder,
-                                               PdFinder && pdFinder)
+                                               SyscallFinder && syscallFinder)
     : activeLinkingUnitIndex(std::move(parsedExecutable.activeLinkingUnitIndex))
 {
     linkingUnits.reserve(parsedExecutable.linkingUnits.size());
     for (auto & parsedLinkingUnit : parsedExecutable.linkingUnits)
-        linkingUnits.emplace_back(std::move(parsedLinkingUnit),
-                                  syscallFinder,
-                                  pdFinder);
+        linkingUnits.emplace_back(std::move(parsedLinkingUnit), syscallFinder);
 }
 
 Detail::PreparedExecutable & Detail::PreparedExecutable::operator=(
@@ -343,14 +299,6 @@ SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
         PrepareException,
         Program::,
         UndefinedSyscallBindException)
-SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
-        PrepareException,
-        Program::,
-        UndefinedPdBindException)
-SHAREMIND_DEFINE_EXCEPTION_CONST_STDSTRING_NOINLINE(
-        PrepareException,
-        Program::,
-        DuplicatePdBindException)
 EC(Prepare, NoCodeSection, "No code section in linking unit found!");
 EC(Prepare, InvalidInstruction, "Invalid instruction found!");
 EC(Prepare, InvalidInstructionArguments,
@@ -478,9 +426,7 @@ std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromExecutable(
     return std::make_shared<Detail::PreparedExecutable>(
                 std::move(executable),
                 [&vmInner](std::string const & syscallSignature)
-                { return vmInner.findSyscall(syscallSignature); },
-                [&vmInner](std::string const & pdSignature)
-                { return vmInner.findPd(pdSignature); });
+                { return vmInner.findSyscall(syscallSignature); });
 }
 
 
@@ -535,24 +481,6 @@ VmInstructionInfo const * Program::instruction(
                     preparedExecutable.linkingUnits[codeSection].codeSection;
             return cs.instructionDescriptionAtOffset(instructionIndex);
         }
-    }
-    return nullptr;
-}
-
-std::size_t Program::pdCount() const noexcept {
-    assert(m_inner->m_preparedExecutable);
-    assert(!m_inner->m_preparedExecutable->linkingUnits.empty());
-    return m_inner->m_preparedExecutable->linkingUnits[0u].pdBindings.size();
-}
-
-SharemindPd * Program::pd(std::size_t const i) const noexcept {
-    {
-        assert(m_inner->m_preparedExecutable);
-        assert(!m_inner->m_preparedExecutable->linkingUnits.empty());
-        auto const & pdBindings =
-                m_inner->m_preparedExecutable->linkingUnits[0u].pdBindings;
-        if (i < pdBindings.size())
-            return pdBindings[i];
     }
     return nullptr;
 }

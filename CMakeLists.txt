@@ -31,10 +31,8 @@ SharemindSetProjectVersion()
 FIND_PACKAGE(SharemindCHeaders REQUIRED)
 FIND_PACKAGE(SharemindCxxHeaders 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindLibModapi 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindModuleApis REQUIRED)
 FIND_PACKAGE(SharemindVmM4 0.3.0 REQUIRED)
 
 
@@ -64,14 +62,11 @@ SharemindAddSharedLibrary("libvm"
         ${SharemindCHeaders_INCLUDE_DIRS}
         ${SharemindCxxHeaders_INCLUDE_DIRS}
         ${SharemindLibExecutable_INCLUDE_DIRS}
-        ${SharemindLibModapi_INCLUDE_DIRS}
         ${SharemindLibSoftfloat_INCLUDE_DIRS}
         ${SharemindLibVmi_INCLUDE_DIRS}
-        ${SharemindModuleApis_INCLUDE_DIRS}
         ${SharemindVmM4_INCLUDE_DIRS}
     LINK_LIBRARIES
         ${SharemindLibExecutable_LIBRARIES}
-        ${SharemindLibModapi_LIBRARIES}
         ${SharemindLibSoftfloat_LIBRARIES}
         ${SharemindLibVmi_LIBRARIES}
         "m"
@@ -80,7 +75,6 @@ SharemindAddSharedLibrary("libvm"
         ${SharemindCHeaders_DEFINITIONS}
         ${SharemindCxxHeaders_DEFINITIONS}
         ${SharemindLibExecutable_DEFINITIONS}
-        ${SharemindLibModapi_DEFINITIONS}
         ${SharemindLibSoftfloat_DEFINITIONS}
         ${SharemindLibVmi_DEFINITIONS}
         ${SharemindVmM4_DEFINITIONS}
@@ -98,7 +92,6 @@ SharemindCreateCMakeFindFiles(
         "-D_XOPEN_SOURCE=700"
     LIBRARIES
         ${SharemindLibExecutable_LIBRARIES}
-        ${SharemindLibModapi_LIBRARIES}
         ${SharemindLibSoftfloat_LIBRARIES}
         ${SharemindLibVmi_LIBRARIES}
         "m"
@@ -116,7 +109,6 @@ SharemindAddComponentPackage("lib"
     DEB_DEPENDS
         "libsharemind-vmi (>= 0.2.0)"
         "libsharemind-executable (>= 0.2.0)"
-        "libsharemind-modapi (>= 0.3.0)"
         "libsharemind-softfloat (>= 0.2.0)"
         "libc6 (>= 2.19)"
         "libstdc++6 (>= 4.8.0)"
@@ -128,7 +120,6 @@ SharemindAddComponentPackage("dev"
     DEB_DEPENDS
         "libsharemind-vm (= ${SharemindLibVm_VERSION})"
         "libsharemind-vmi-dev (>= 0.2.0)"
-        "libsharemind-modapi-dev (>= 0.3.0)"
         "libsharemind-cheaders-dev (>= 0.1.0)"
         "libsharemind-cxxheaders-dev (>= 0.3.0)"
         "libc6-dev (>= 2.19)"

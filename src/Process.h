@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <memory>
 #include <sharemind/codeblock.h>
-#include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
 #include <string>
@@ -191,10 +190,6 @@ public: /* Methods: */
     Process & operator=(Process &&) noexcept = default;
 
     Process & operator=(Process const &) noexcept = delete;
-
-    void setPdpiFacility(char const * const name,
-                         void * const facility,
-                         void * const context = nullptr);
 
     void run();
     void resume();

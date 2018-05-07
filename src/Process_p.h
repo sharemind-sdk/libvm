@@ -37,7 +37,6 @@
 #include <utility>
 #include "Core.h"
 #include "MemoryMap.h"
-#include "PdpiCache.h"
 #include "ProcessFacilityMap.h"
 #include "Program_p.h"
 #include "StackFrame.h"
@@ -92,10 +91,6 @@ struct __attribute__((visibility("internal"))) ProcessState {
     /* Methods: */
 
         SyscallContext(ProcessState & state) noexcept : m_state(state) {}
-
-        SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
-                std::uint64_t pd_index) const noexcept final override
-        { return m_state.pdpiInfo(pd_index); }
 
         std::shared_ptr<void> processFacility(char const * facilityName)
                 const noexcept final override
@@ -152,10 +147,6 @@ struct __attribute__((visibility("internal"))) ProcessState {
     bool privateReserve(std::size_t const nBytes);
     bool privateRelease(std::size_t const nBytes);
 
-    auto pdpiInfo(std::size_t const index) const noexcept
-            -> decltype(std::declval<PdpiCache &>().info(index))
-    { return m_pdpiCache.info(index); }
-
     inline CodeSection const & currentCodeSection() const noexcept
     { return m_preparedLinkingUnit->codeSection; }
 
@@ -201,8 +192,6 @@ struct __attribute__((visibility("internal"))) ProcessState {
     std::size_t m_activeLinkingUnitIndex;
     /// Keeps alive read-only data and code:
     std::shared_ptr<PreparedLinkingUnit const> m_preparedLinkingUnit;
-
-    PdpiCache m_pdpiCache;
 
     std::size_t m_currentIp = 0u;
     SharemindCodeBlock m_returnValue;

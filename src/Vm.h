@@ -26,7 +26,6 @@
 #include <cstdint>
 #include <memory>
 #include <sharemind/codeblock.h>
-#include <sharemind/libmodapi/libmodapi.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -129,9 +128,6 @@ public: /* Types: */
 
         virtual ~SyscallContext() noexcept;
 
-        virtual SharemindModuleApi0x1PdpiInfo const * pdpiInfo(
-                std::uint64_t pd_index) const noexcept = 0;
-
         virtual std::shared_ptr<void> processFacility(char const * facilityName)
                 const noexcept = 0;
 
@@ -167,10 +163,6 @@ public: /* Types: */
     using SyscallFinderFun = std::function<SyscallFinder>;
     using SyscallFinderFunPtr = std::shared_ptr<SyscallFinderFun>;
 
-    using PdFinder = SharemindPd * (std::string const &);
-    using PdFinderFun = std::function<PdFinder>;
-    using PdFinderFunPtr = std::shared_ptr<PdFinderFun>;
-
 public: /* Methods: */
 
     Vm();
@@ -196,7 +188,6 @@ public: /* Methods: */
     Vm & operator=(Vm const &) noexcept = delete;
 
     void setSyscallFinder(SyscallFinderFunPtr f) noexcept;
-    void setPdFinder(PdFinderFunPtr f) noexcept;
 
     template <typename F>
     auto setSyscallFinder(F && f)
@@ -212,21 +203,8 @@ public: /* Methods: */
                     std::make_shared<SyscallFinderFun>(std::forward<F>(f)));
     }
 
-    template <typename F>
-    auto setPdFinder(F && f)
-            -> typename std::enable_if<
-                    !std::is_convertible<
-                        typename std::decay<decltype(f)>::type,
-                        PdFinderFunPtr
-                    >::value,
-                    void
-                >::type
-    { return setPdFinder(std::make_shared<PdFinderFun>(std::forward<F>(f))); }
-
     std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;
-
-    SharemindPd * findPd(std::string const & pdName) const noexcept;
 
     void setProcessFacility(std::string name,
                             std::shared_ptr<void> facility);

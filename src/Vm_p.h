@@ -28,7 +28,6 @@
 
 #include <memory>
 #include <mutex>
-#include <sharemind/libmodapi/libmodapi.h>
 #include <string>
 #include "ProcessFacilityMap.h"
 
@@ -47,13 +46,10 @@ struct __attribute__((visibility("internal"))) Vm::Inner {
     std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;
 
-    SharemindPd * findPd(std::string const & pdName) const noexcept;
-
 /* Fields: */
 
     mutable std::recursive_mutex m_mutex;
     SyscallFinderFunPtr m_syscallFinder;
-    PdFinderFunPtr m_pdFinder;
     SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
 
 };

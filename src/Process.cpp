@@ -250,7 +250,6 @@ ProcessState::ProcessState(
                         std::move(exePtr),
                         &activeLinkingUnit);
         }(std::move(preparedExecutable)))
-    , m_pdpiCache(m_preparedLinkingUnit->pdBindings)
     , m_memoryMap(std::shared_ptr<RoDataSection const>(
                       m_preparedLinkingUnit,
                       &m_preparedLinkingUnit->roDataSection),
@@ -263,20 +262,6 @@ ProcessState::ProcessState(
 ProcessState::~ProcessState() noexcept {
     assert(m_state != State::Starting);
     assert(m_state != State::Running);
-    if (m_state == State::Trapped)
-        m_pdpiCache.stopPdpis();
-
-    m_frames.clear();
-    m_pdpiCache.clear();
-}
-
-void ProcessState::setPdpiFacility(char const * const name,
-                                   void * const facility,
-                                   void * const context)
-{
-    assert(name);
-    GUARD;
-    m_pdpiCache.setPdpiFacility(name, facility, context);
 }
 
 void ProcessState::run() {
@@ -285,15 +270,6 @@ void ProcessState::run() {
         if (unlikely(m_state != State::Initialized))
             throw Process::NotInInitializedStateException();
         m_state = State::Starting;
-    }
-
-    try {
-        m_pdpiCache.startPdpis();
-    } catch (...) {
-        RUNSTATEGUARD;
-        assert(m_state == State::Starting);
-        m_state = State::Initialized;
-        throw;
     }
 
     {
@@ -331,11 +307,9 @@ void ProcessState::execute(ExecuteMethod const executeMethod) {
         setState(State::Trapped);
         throw;
     } catch (...) {
-        m_pdpiCache.stopPdpis();
         setState(State::Crashed);
         throw;
     }
-    m_pdpiCache.stopPdpis();
     setState(State::Finished);
 }
 
@@ -491,11 +465,6 @@ std::size_t Process::currentCodeSectionIndex() const noexcept
 
 std::size_t Process::currentIp() const noexcept
 { return m_inner->m_currentIp; }
-
-void Process::setPdpiFacility(char const * const name,
-                              void * const facility,
-                              void * const context)
-{ return m_inner->setPdpiFacility(name, facility, context); }
 
 SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(Process,m_inner->)
 

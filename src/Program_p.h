@@ -26,7 +26,6 @@
 
 #include <mutex>
 #include <sharemind/libexecutable/Executable.h>
-#include <sharemind/libmodapi/libmodapi.h>
 #include <vector>
 #include "CodeSection.h"
 #include "DataSection.h"
@@ -58,34 +57,13 @@ struct __attribute__((visibility("internal"))) PreparedSyscallBindings
 
 };
 
-struct __attribute__((visibility("internal"))) PreparedPdBindings
-    : std::vector<SharemindPd *>
-{
-
-/* Methods: */
-
-    PreparedPdBindings() = delete;
-    PreparedPdBindings(PreparedPdBindings &&) noexcept;
-    PreparedPdBindings(PreparedPdBindings const &);
-
-    template <typename PdFinder>
-    PreparedPdBindings(
-            std::shared_ptr<Executable::PdBindingsSection> parsedBindings,
-            PdFinder && pdFinder);
-
-    PreparedPdBindings & operator=(PreparedPdBindings &&) noexcept;
-    PreparedPdBindings & operator=(PreparedPdBindings const &);
-
-};
-
 struct __attribute__((visibility("internal"))) PreparedLinkingUnit {
 
 /* Methods: */
 
-    template <typename SyscallFinder, typename PdFinder>
+    template <typename SyscallFinder>
     PreparedLinkingUnit(Executable::LinkingUnit && parsedLinkingUnit,
-                        SyscallFinder && syscallFinder,
-                        PdFinder && pdFinder);
+                        SyscallFinder && syscallFinder);
 
     PreparedLinkingUnit(PreparedLinkingUnit &&) noexcept;
     PreparedLinkingUnit(PreparedLinkingUnit const &) = delete;
@@ -100,7 +78,6 @@ struct __attribute__((visibility("internal"))) PreparedLinkingUnit {
     RwDataSection rwDataSection;
     std::size_t bssSectionSize;
     PreparedSyscallBindings syscallBindings;
-    PreparedPdBindings pdBindings;
 
 };
 
@@ -112,10 +89,9 @@ struct __attribute__((visibility("internal"))) PreparedExecutable {
     PreparedExecutable(PreparedExecutable &&) noexcept;
     PreparedExecutable(PreparedExecutable const &) noexcept = delete;
 
-    template <typename SyscallFinder, typename PdFinder>
+    template <typename SyscallFinder>
     PreparedExecutable(Executable parsedExecutable,
-                       SyscallFinder && syscallFinder,
-                       PdFinder && pdFinder);
+                       SyscallFinder && syscallFinder);
 
     PreparedExecutable & operator=(PreparedExecutable &&) noexcept;
     PreparedExecutable & operator=(PreparedExecutable const &) noexcept =

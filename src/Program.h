@@ -26,7 +26,6 @@
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
 #include <sharemind/libexecutable/Executable.h>
-#include <sharemind/libmodapi/libmodapi.h>
 #include <sharemind/libvmi/instr.h>
 
 
@@ -75,12 +74,6 @@ public: /* Types: */
     SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
             PrepareException,
             UndefinedSyscallBindException);
-    SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
-            PrepareException,
-            UndefinedPdBindException);
-    SHAREMIND_DECLARE_EXCEPTION_CONST_STDSTRING_NOINLINE(
-            PrepareException,
-            DuplicatePdBindException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
                                                    NoCodeSectionException);
     SHAREMIND_DECLARE_EXCEPTION_CONST_MSG_NOINLINE(PrepareException,
@@ -163,12 +156,6 @@ public: /* Methods: */
     VmInstructionInfo const * instruction(std::size_t codeSection,
                                           std::size_t instructionIndex)
             const noexcept;
-
-    /// \returns the number of PDs in the FIRST linking unit.
-    std::size_t pdCount() const noexcept;
-
-    /// \returns the given PD in the FIRST linking unit.
-    SharemindPd * pd(std::size_t const i) const noexcept;
 
     void setProcessFacility(std::string name, std::shared_ptr<void> facility);
     std::shared_ptr<void> processFacility(char const * const name)
