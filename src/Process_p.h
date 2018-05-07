@@ -32,6 +32,7 @@
 #include <list>
 #include <mutex>
 #include <sharemind/libsoftfloat/softfloat.h>
+#include <sharemind/likely.h>
 #include <unordered_map>
 #include <utility>
 #include "Core.h"
