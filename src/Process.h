@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <sharemind/codeblock.h>
 #include <sharemind/module-apis/api_0x1.h>
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
