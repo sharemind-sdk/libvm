@@ -145,7 +145,7 @@ public: /* Methods: */
     /**
       \brief Loads the program from the given executable.
       \param[in] vm Reference to the Vm instance.
-      \param[in] inputStream The executable to load the program from.
+      \param[in] executable The executable to load the program from.
     */
     Program(Vm & vm, Executable executable);
 
