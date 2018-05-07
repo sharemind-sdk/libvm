@@ -29,6 +29,7 @@
 #include <sharemind/AssertReturn.h>
 #include <sharemind/codeblock.h>
 #include <sharemind/libsoftfloat/softfloat.h>
+#include <sharemind/likely.h>
 #include <sharemind/null.h>
 #include <sharemind/PotentiallyVoidTypeInfo.h>
 #include <sharemind/restrict.h>
