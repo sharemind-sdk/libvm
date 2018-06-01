@@ -27,10 +27,10 @@
 #include <sharemind/ExceptionMacros.h>
 #include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libvmi/instr.h>
+#include "Vm.h"
 
 
 namespace sharemind {
-class Vm;
 
 class Program {
 
@@ -157,12 +157,24 @@ public: /* Methods: */
                                           std::size_t instructionIndex)
             const noexcept;
 
-    void setProcessFacility(std::string name, std::shared_ptr<void> facility);
-    std::shared_ptr<void> processFacility(char const * const name)
-            const noexcept;
-    std::shared_ptr<void> processFacility(std::string const & name)
-            const noexcept;
-    bool unsetProcessFacility(std::string const & name) noexcept;
+    void setProcessFacilityFinder(Vm::FacilityFinderFunPtr f) noexcept;
+
+    template <typename F>
+    auto setProcessFacilityFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        Vm::FacilityFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    {
+        return setProcessFacilityFinder(
+                    std::make_shared<Vm::FacilityFinderFun>(
+                        std::forward<F>(f)));
+    }
+
+    std::shared_ptr<void> findProcessFacility(char const * name) const noexcept;
 
 private: /* Fields: */
 

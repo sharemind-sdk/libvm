@@ -163,6 +163,10 @@ public: /* Types: */
     using SyscallFinderFun = std::function<SyscallFinder>;
     using SyscallFinderFunPtr = std::shared_ptr<SyscallFinderFun>;
 
+    using FacilityFinder = std::shared_ptr<void> (char const *);
+    using FacilityFinderFun = std::function<FacilityFinder>;
+    using FacilityFinderFunPtr = std::shared_ptr<FacilityFinderFun>;
+
 public: /* Methods: */
 
     Vm();
@@ -206,13 +210,23 @@ public: /* Methods: */
     std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
             const noexcept;
 
-    void setProcessFacility(std::string name,
-                            std::shared_ptr<void> facility);
-    std::shared_ptr<void> processFacility(char const * const name)
-            const noexcept;
-    std::shared_ptr<void> processFacility(std::string const & name)
-            const noexcept;
-    bool unsetProcessFacility(std::string const & name) noexcept;
+    void setProcessFacilityFinder(FacilityFinderFunPtr f) noexcept;
+
+    template <typename F>
+    auto setProcessFacilityFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        FacilityFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    {
+        return setProcessFacilityFinder(
+                    std::make_shared<FacilityFinderFun>(std::forward<F>(f)));
+    }
+
+    std::shared_ptr<void> findProcessFacility(char const * name) const noexcept;
 
 private: /* Fields: */
 

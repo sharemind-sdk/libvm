@@ -37,7 +37,6 @@
 #include <utility>
 #include "Core.h"
 #include "MemoryMap.h"
-#include "ProcessFacilityMap.h"
 #include "Program_p.h"
 #include "StackFrame.h"
 
@@ -94,7 +93,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
         std::shared_ptr<void> processFacility(char const * facilityName)
                 const noexcept final override
-        { return m_state.processFacility(facilityName); }
+        { return m_state.findProcessFacility(facilityName); }
 
         /* Access to public dynamic memory inside the VM process: */
         PublicMemoryPointer publicAlloc(std::uint64_t nBytes) final override
@@ -181,11 +180,12 @@ struct __attribute__((visibility("internal"))) ProcessState {
         return r.result;
     }
 
-    SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS
+    std::shared_ptr<void> findProcessFacility(char const * name) const noexcept;
 
 /* Fields: */
 
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
+    Vm::FacilityFinderFunPtr m_processFacilityFinder;
+    std::shared_ptr<ProgramState> m_programState;
 
     mutable std::mutex m_mutex;
 
@@ -236,6 +236,8 @@ struct __attribute__((visibility("internal"))) ProcessState {
 struct __attribute__((visibility("internal"))) Process::Inner final
     : Detail::ProcessState
 {
+
+/* Methods: */
 
     Inner(std::shared_ptr<Program::Inner> programInner);
     ~Inner() noexcept;

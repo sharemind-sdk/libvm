@@ -431,13 +431,20 @@ bool ProcessState::privateRelease(std::size_t const nBytes) {
     return true;
 }
 
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(ProcessState,)
+std::shared_ptr<void> ProcessState::findProcessFacility(char const * name)
+        const noexcept
+{
+    if (m_processFacilityFinder && *m_processFacilityFinder)
+        return (*m_processFacilityFinder)(name);
+    return m_programState->findProcessFacility(name);
+}
 
 } /* namespace Detail { */
 
+
 Process::Inner::Inner(std::shared_ptr<Program::Inner> programInner)
     : ProcessState(assertReturn(programInner)->m_preparedExecutable)
-{ SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *programInner); }
+{}
 
 Process::Inner::~Inner() noexcept {}
 
@@ -466,6 +473,10 @@ std::size_t Process::currentCodeSectionIndex() const noexcept
 std::size_t Process::currentIp() const noexcept
 { return m_inner->m_currentIp; }
 
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS_SELF(Process,m_inner->)
+void Process::setFacilityFinder(Vm::FacilityFinderFunPtr f) noexcept
+{ m_inner->m_processFacilityFinder = std::move(f); }
+
+std::shared_ptr<void> Process::findFacility(char const * name) const noexcept
+{ return m_inner->findProcessFacility(name); }
 
 } // namespace sharemind {

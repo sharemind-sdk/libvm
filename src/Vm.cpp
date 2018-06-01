@@ -32,11 +32,11 @@ namespace sharemind {
 #define INNERGUARD GUARD_(m_mutex)
 #define GUARD GUARD_(m_inner->m_mutex)
 
-Vm::Inner::Inner() {}
+namespace Detail {
 
-Vm::Inner::~Inner() noexcept {}
+VmState::~VmState() noexcept = default;
 
-std::shared_ptr<Vm::SyscallWrapper> Vm::Inner::findSyscall(
+std::shared_ptr<Vm::SyscallWrapper> VmState::findSyscall(
         std::string const & signature) const noexcept
 {
     INNERGUARD;
@@ -45,9 +45,22 @@ std::shared_ptr<Vm::SyscallWrapper> Vm::Inner::findSyscall(
     return nullptr;
 }
 
+std::shared_ptr<void> VmState::findProcessFacility(char const * name)
+        const noexcept
+{
+    INNERGUARD;
+    if (m_processFacilityFinder && *m_processFacilityFinder)
+        return (*m_processFacilityFinder)(name);
+    return nullptr;
+}
+
+} // namespace Detail {
+
+
 Vm::SyscallContext::~SyscallContext() noexcept = default;
 
 Vm::SyscallWrapper::~SyscallWrapper() noexcept = default;
+
 
 Vm::Vm() : m_inner(std::make_shared<Inner>()) {}
 
@@ -62,6 +75,12 @@ std::shared_ptr<Vm::SyscallWrapper> Vm::findSyscall(
         std::string const & signature) const noexcept
 { return m_inner->findSyscall(signature); }
 
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(Vm,m_inner->)
+void Vm::setProcessFacilityFinder(FacilityFinderFunPtr f) noexcept {
+    GUARD;
+    m_inner->m_processFacilityFinder = std::move(f);
+}
+
+std::shared_ptr<void> Vm::findProcessFacility(char const * name) const noexcept
+{ return m_inner->findProcessFacility(name); }
 
 } // namespace sharemind {

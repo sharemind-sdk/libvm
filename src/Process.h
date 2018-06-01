@@ -28,6 +28,7 @@
 #include <sharemind/ExceptionMacros.h>
 #include <string>
 #include <type_traits>
+#include "Vm.h"
 
 
 namespace sharemind {
@@ -200,10 +201,24 @@ public: /* Methods: */
     std::size_t currentCodeSectionIndex() const noexcept;
     std::uintptr_t currentIp() const noexcept;
 
-    void setFacility(std::string name, std::shared_ptr<void> facility);
-    std::shared_ptr<void> facility(char const * const name) const noexcept;
-    std::shared_ptr<void> facility(std::string const & name) const noexcept;
-    bool unsetFacility(std::string const & name) noexcept;
+    void setFacilityFinder(Vm::FacilityFinderFunPtr f) noexcept;
+
+    template <typename F>
+    auto setFacilityFinder(F && f)
+            -> typename std::enable_if<
+                    !std::is_convertible<
+                        typename std::decay<decltype(f)>::type,
+                        Vm::FacilityFinderFunPtr
+                    >::value,
+                    void
+                >::type
+    {
+        return setFacilityFinder(
+                    std::make_shared<Vm::FacilityFinderFun>(
+                        std::forward<F>(f)));
+    }
+
+    std::shared_ptr<void> findFacility(char const * name) const noexcept;
 
 private: /* Fields: */
 

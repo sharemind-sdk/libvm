@@ -44,7 +44,6 @@
 #include "CommonInstructionMacros.h"
 #include "Core.h"
 #include "PreparationBlock.h"
-#include "Process.h"
 #include "Vm_p.h"
 
 
@@ -276,6 +275,25 @@ Detail::PreparedExecutable & Detail::PreparedExecutable::operator=(
         PreparedExecutable &&) noexcept = default;
 
 
+Detail::ProgramState::ProgramState(
+            std::shared_ptr<VmState> vmState,
+            std::shared_ptr<Detail::PreparedExecutable> preparedExecutable)
+    : m_vmState(std::move(vmState))
+    , m_preparedExecutable(std::move(preparedExecutable))
+{}
+
+Detail::ProgramState::~ProgramState() noexcept = default;
+
+std::shared_ptr<void> Detail::ProgramState::findProcessFacility(
+        char const * name) const noexcept
+{
+    std::lock_guard<std::mutex> const guard(m_mutex);
+    if (m_processFacilityFinder && *m_processFacilityFinder)
+        return (*m_processFacilityFinder)(name);
+    return m_vmState->findProcessFacility(name);
+}
+
+
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(sharemind::Exception, Program::, Exception);
 SHAREMIND_DEFINE_EXCEPTION_NOINLINE(IoException, Program::, IoException);
 #define EC(base,name,msg) \
@@ -309,11 +327,10 @@ EC(Prepare, InvalidInstructionArguments,
 Program::Inner::Inner(
         std::shared_ptr<Vm::Inner> vmInner,
         std::shared_ptr<Detail::PreparedExecutable> preparedExecutable)
-    : m_vmInner(std::move(vmInner))
-    , m_preparedExecutable(std::move(preparedExecutable))
-{ SHAREMIND_DEFINE_PROCESSFACILITYMAP_INTERCLASS_CHAIN(*this, *m_vmInner); }
+    : Detail::ProgramState(std::move(vmInner), std::move(preparedExecutable))
+{}
 
-Program::Inner::~Inner() noexcept {}
+Program::Inner::~Inner() noexcept = default;
 
 std::shared_ptr<Detail::PreparedExecutable> Program::Inner::loadFromFile(
         Vm::Inner const & vmInner,
@@ -485,6 +502,13 @@ VmInstructionInfo const * Program::instruction(
     return nullptr;
 }
 
-SHAREMIND_DEFINE_PROCESSFACILITYMAP_METHODS(Program,m_inner->)
+void Program::setProcessFacilityFinder(Vm::FacilityFinderFunPtr f) noexcept {
+    std::lock_guard<std::mutex> const guard(m_inner->m_mutex);
+    m_inner->m_processFacilityFinder = std::move(f);
+}
+
+std::shared_ptr<void> Program::findProcessFacility(char const * name)
+        const noexcept
+{ return m_inner->findProcessFacility(name); }
 
 } // namespace sharemind {

@@ -29,30 +29,35 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include "ProcessFacilityMap.h"
 
 
 namespace sharemind {
+namespace Detail {
 
-struct __attribute__((visibility("internal"))) Vm::Inner {
+class __attribute__((visibility("internal"))) VmState {
 
-/* Methods: */
+    friend class sharemind::Vm;
 
-    Inner();
-    ~Inner() noexcept;
+public: /* Methods: */
 
-    SHAREMIND_DECLARE_PROCESSFACILITYMAP_METHODS
+    ~VmState() noexcept;
 
-    std::shared_ptr<SyscallWrapper> findSyscall(std::string const & signature)
-            const noexcept;
+    std::shared_ptr<Vm::SyscallWrapper> findSyscall(
+                std::string const & signature) const noexcept;
 
-/* Fields: */
+    std::shared_ptr<void> findProcessFacility(char const * name) const noexcept;
+
+private: /* Fields: */
 
     mutable std::recursive_mutex m_mutex;
-    SyscallFinderFunPtr m_syscallFinder;
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
+    Vm::SyscallFinderFunPtr m_syscallFinder;
+    Vm::FacilityFinderFunPtr m_processFacilityFinder;
 
-};
+}; /* struct VmState */
+
+} /* namespace Detail { */
+
+struct __attribute__((visibility("internal"))) Vm::Inner: Detail::VmState {};
 
 } /* namespace sharemind { */
 

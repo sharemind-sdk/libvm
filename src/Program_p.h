@@ -29,9 +29,9 @@
 #include <vector>
 #include "CodeSection.h"
 #include "DataSection.h"
-#include "ProcessFacilityMap.h"
 #include "Program.h"
 #include "Vm.h"
+#include "Vm_p.h"
 
 
 namespace sharemind {
@@ -104,13 +104,38 @@ struct __attribute__((visibility("internal"))) PreparedExecutable {
 
 };
 
-} /* namespace Detail { */
-
-struct __attribute__((visibility("internal"))) Program::Inner {
+struct __attribute__((visibility("internal"))) ProgramState {
 
 /* Methods: */
 
-    Inner(std::shared_ptr<Vm::Inner> vmInner,
+    ProgramState(
+                std::shared_ptr<VmState> vmState,
+                std::shared_ptr<Detail::PreparedExecutable> preparedExecutable);
+    ~ProgramState() noexcept;
+
+    std::shared_ptr<void> findProcessFacility(char const * name) const noexcept;
+
+/* Fields: */
+
+    mutable std::mutex m_mutex;
+    Vm::FacilityFinderFunPtr m_processFacilityFinder;
+    std::shared_ptr<VmState> m_vmState;
+
+    std::shared_ptr<Detail::PreparedExecutable const> const
+            m_preparedExecutable;
+
+}; /* struct ProgramState */
+
+} /* namespace Detail { */
+
+
+struct __attribute__((visibility("internal"))) Program::Inner final
+    : Detail::ProgramState
+{
+
+/* Methods: */
+
+    Inner(std::shared_ptr<Vm::Inner> programInner,
           std::shared_ptr<Detail::PreparedExecutable> preparedExecutable);
     ~Inner() noexcept;
 
@@ -139,15 +164,7 @@ struct __attribute__((visibility("internal"))) Program::Inner {
                 Vm::Inner const & vmInner,
                 Executable && executable);
 
-/* Fields: */
-
-    SHAREMIND_DEFINE_PROCESSFACILITYMAP_FIELDS;
-    std::shared_ptr<Vm::Inner> m_vmInner;
-
-    std::shared_ptr<Detail::PreparedExecutable const> const
-            m_preparedExecutable;
-
-};
+}; /* struct Program::Inner */
 
 } /* namespace sharemind { */
 
