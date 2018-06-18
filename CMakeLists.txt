@@ -118,7 +118,7 @@ SharemindAddComponentPackage("dev"
     DESCRIPTION "Sharemind VM library development headers"
     DEB_SECTION "libdevel"
     DEB_DEPENDS
-        "libsharemind-vm (= ${SharemindLibVm_VERSION})"
+        "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
         "libsharemind-vmi-dev (>= 0.2.0)"
         "libsharemind-cheaders-dev (>= 0.1.0)"
         "libsharemind-cxxheaders-dev (>= 0.3.0)"
@@ -129,6 +129,6 @@ SharemindAddComponentPackage("debug"
     NAME "libsharemind-vm-dbg"
     DESCRIPTION "Sharemind VM library debug symbols"
     DEB_SECTION "debug"
-    DEB_DEPENDS "libsharemind-vm (= ${SharemindLibVm_VERSION})"
+    DEB_DEPENDS "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
 )
 SharemindPackagingFinalize()
