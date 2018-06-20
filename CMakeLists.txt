@@ -120,7 +120,7 @@ SharemindAddComponentPackage("dev"
     DEB_DEPENDS
         "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
         "libsharemind-vmi-dev (>= 0.2.0)"
-        "libsharemind-cheaders-dev (>= 0.1.0)"
+        "libsharemind-cheaders-dev (>= 1.1.0)"
         "libsharemind-cxxheaders-dev (>= 0.3.0)"
         "libc6-dev (>= 2.19)"
         "libstdc++-dev"
