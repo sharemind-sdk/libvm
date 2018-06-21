@@ -27,6 +27,7 @@
 #include <mutex>
 #include <sharemind/libexecutable/Executable.h>
 #include <vector>
+#include <type_traits>
 #include "CodeSection.h"
 #include "DataSection.h"
 #include "Program.h"
@@ -44,7 +45,10 @@ struct __attribute__((visibility("internal"))) PreparedSyscallBindings
 /* Methods: */
 
     PreparedSyscallBindings() = delete;
-    PreparedSyscallBindings(PreparedSyscallBindings &&) noexcept;
+    PreparedSyscallBindings(PreparedSyscallBindings &&)
+            noexcept(std::is_nothrow_move_constructible<
+                            std::vector<std::shared_ptr<Vm::SyscallWrapper> >
+                        >::value);
     PreparedSyscallBindings(PreparedSyscallBindings const &);
 
     template <typename SyscallFinder>
@@ -52,7 +56,10 @@ struct __attribute__((visibility("internal"))) PreparedSyscallBindings
             std::shared_ptr<Executable::SyscallBindingsSection> parsedBindings,
             SyscallFinder && syscallFinder);
 
-    PreparedSyscallBindings & operator=(PreparedSyscallBindings &&) noexcept;
+    PreparedSyscallBindings & operator=(PreparedSyscallBindings &&)
+            noexcept(std::is_nothrow_move_assignable<
+                            std::vector<std::shared_ptr<Vm::SyscallWrapper> >
+                        >::value);
     PreparedSyscallBindings & operator=(PreparedSyscallBindings const &);
 
 };
@@ -65,10 +72,20 @@ struct __attribute__((visibility("internal"))) PreparedLinkingUnit {
     PreparedLinkingUnit(Executable::LinkingUnit && parsedLinkingUnit,
                         SyscallFinder && syscallFinder);
 
-    PreparedLinkingUnit(PreparedLinkingUnit &&) noexcept;
+    PreparedLinkingUnit(PreparedLinkingUnit &&)
+            noexcept(std::is_nothrow_move_constructible<CodeSection>::value
+                     && std::is_nothrow_move_constructible<RoDataSection>::value
+                     && std::is_nothrow_move_constructible<RwDataSection>::value
+                     && std::is_nothrow_move_constructible<
+                                PreparedSyscallBindings>::value);
     PreparedLinkingUnit(PreparedLinkingUnit const &) = delete;
 
-    PreparedLinkingUnit & operator=(PreparedLinkingUnit &&) noexcept;
+    PreparedLinkingUnit & operator=(PreparedLinkingUnit &&)
+            noexcept(std::is_nothrow_move_assignable<CodeSection>::value
+                     && std::is_nothrow_move_assignable<RoDataSection>::value
+                     && std::is_nothrow_move_assignable<RwDataSection>::value
+                     && std::is_nothrow_move_assignable<
+                                PreparedSyscallBindings>::value);
     PreparedLinkingUnit & operator=(PreparedLinkingUnit const &) = delete;
 
 /* Fields: */
@@ -86,16 +103,19 @@ struct __attribute__((visibility("internal"))) PreparedExecutable {
 /* Methods: */
 
     PreparedExecutable() = delete;
-    PreparedExecutable(PreparedExecutable &&) noexcept;
-    PreparedExecutable(PreparedExecutable const &) noexcept = delete;
+    PreparedExecutable(PreparedExecutable &&)
+            noexcept(std::is_nothrow_move_constructible<
+                            std::vector<PreparedLinkingUnit> >::value);
+    PreparedExecutable(PreparedExecutable const &) = delete;
 
     template <typename SyscallFinder>
     PreparedExecutable(Executable parsedExecutable,
                        SyscallFinder && syscallFinder);
 
-    PreparedExecutable & operator=(PreparedExecutable &&) noexcept;
-    PreparedExecutable & operator=(PreparedExecutable const &) noexcept =
-            delete;
+    PreparedExecutable & operator=(PreparedExecutable &&)
+            noexcept(std::is_nothrow_move_assignable<
+                            std::vector<PreparedLinkingUnit> >::value);
+    PreparedExecutable & operator=(PreparedExecutable const &) = delete;
 
 /* Fields: */
 

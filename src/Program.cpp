@@ -150,7 +150,10 @@ static struct preprocess_pass2_function preprocess_pass2_functions[] = {
 
 
 Detail::PreparedSyscallBindings::PreparedSyscallBindings(
-        PreparedSyscallBindings &&) noexcept = default;
+        PreparedSyscallBindings &&)
+        noexcept(std::is_nothrow_move_constructible<
+                         std::vector<std::shared_ptr<Vm::SyscallWrapper> >
+                     >::value) = default;
 
 Detail::PreparedSyscallBindings::PreparedSyscallBindings(
         PreparedSyscallBindings const &) = default;
@@ -180,7 +183,10 @@ Detail::PreparedSyscallBindings::PreparedSyscallBindings(
 }
 
 Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
-        PreparedSyscallBindings &&) noexcept = default;
+        PreparedSyscallBindings &&)
+        noexcept(std::is_nothrow_move_assignable<
+                         std::vector<std::shared_ptr<Vm::SyscallWrapper> >
+                     >::value) = default;
 
 Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
         PreparedSyscallBindings const &) = default;
@@ -188,7 +194,11 @@ Detail::PreparedSyscallBindings & Detail::PreparedSyscallBindings::operator=(
 
 
 Detail::PreparedLinkingUnit::PreparedLinkingUnit(PreparedLinkingUnit &&)
-        noexcept = default;
+        noexcept(std::is_nothrow_move_constructible<CodeSection>::value
+                 && std::is_nothrow_move_constructible<RoDataSection>::value
+                 && std::is_nothrow_move_constructible<RwDataSection>::value
+                 && std::is_nothrow_move_constructible<
+                            PreparedSyscallBindings>::value) = default;
 
 template <typename SyscallFinder>
 Detail::PreparedLinkingUnit::PreparedLinkingUnit(
@@ -254,12 +264,18 @@ Detail::PreparedLinkingUnit::PreparedLinkingUnit(
 }
 
 Detail::PreparedLinkingUnit & Detail::PreparedLinkingUnit::operator=(
-        PreparedLinkingUnit &&) noexcept = default;
+        PreparedLinkingUnit &&)
+        noexcept(std::is_nothrow_move_assignable<CodeSection>::value
+                 && std::is_nothrow_move_assignable<RoDataSection>::value
+                 && std::is_nothrow_move_assignable<RwDataSection>::value
+                 && std::is_nothrow_move_assignable<
+                            PreparedSyscallBindings>::value) = default;
 
 
 
-Detail::PreparedExecutable::PreparedExecutable(PreparedExecutable &&) noexcept
-        = default;
+Detail::PreparedExecutable::PreparedExecutable(PreparedExecutable &&)
+        noexcept(std::is_nothrow_move_constructible<
+                        std::vector<PreparedLinkingUnit> >::value) = default;
 
 template <typename SyscallFinder>
 Detail::PreparedExecutable::PreparedExecutable(Executable parsedExecutable,
@@ -272,7 +288,9 @@ Detail::PreparedExecutable::PreparedExecutable(Executable parsedExecutable,
 }
 
 Detail::PreparedExecutable & Detail::PreparedExecutable::operator=(
-        PreparedExecutable &&) noexcept = default;
+        PreparedExecutable &&)
+        noexcept(std::is_nothrow_move_assignable<
+                        std::vector<PreparedLinkingUnit> >::value) = default;
 
 
 Detail::ProgramState::ProgramState(
