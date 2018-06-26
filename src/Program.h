@@ -21,7 +21,7 @@
 #define SHAREMIND_LIBVM_PROGRAM_H
 
 #include <cstddef>
-#include <istream>
+#include <iosfwd>
 #include <memory>
 #include <sharemind/Exception.h>
 #include <sharemind/ExceptionMacros.h>
