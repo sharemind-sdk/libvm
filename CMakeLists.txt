@@ -31,7 +31,7 @@ FIND_PACKAGE(SharemindCxxHeaders 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat 0.2.0 REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindVmM4 0.3.0 REQUIRED)
+FIND_PACKAGE(SharemindVmM4 0.4.0 REQUIRED)
 
 
 ################################################################################
