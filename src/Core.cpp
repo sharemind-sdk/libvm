@@ -329,6 +329,15 @@ enum class HaltCode { Continue, Halt };
         throw Process::UserDefinedException(std::move(p->m_userException)); \
     } while ((0))
 
+#define SHAREMIND_MI_DO_USER_EXCEPT_WITH_MESSAGE \
+    do { \
+        if ((!SHAREMIND_MI_HAS_STACK) || p->m_nextFrame->crefstack.empty()) \
+            throw Process::InvalidArgumentException(); \
+        auto const & cref = p->m_nextFrame->crefstack.front(); \
+        p->m_userException.setUserErrorMessage(cref.data.get(), cref.size); \
+        throw Process::UserDefinedException(std::move(p->m_userException)); \
+    } while ((0))
+
 #define SHAREMIND_MI_DO_EXCEPT(e) \
     do { \
         throw e(); \

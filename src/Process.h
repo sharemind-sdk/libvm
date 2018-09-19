@@ -130,6 +130,7 @@ public: /* Types: */
 
         std::uint64_t errorCode() const noexcept;
         void setErrorCode(std::uint64_t const value) noexcept;
+        void setUserErrorMessage(void const * data, std::size_t size);
 
         const char * what() const noexcept final override;
 
