@@ -104,12 +104,23 @@ DEFINE_CONSTMSG_EXCEPTION(RegularRuntimeException,
                           MemoryInUseException,
                           "Attempted to free memory which is in use!");
 
+#define SharemindUserDefinedExceptionMessage_PREFIX \
+    "User-defined exception with (unsigned) value of "
+#define SharemindUserDefinedExceptionMessage_SUFFIX "!"
 #define SharemindUserDefinedExceptionMessage \
-        "User-defined exception with (unsigned) value of %" PRIu64 "!"
+    SharemindUserDefinedExceptionMessage_PREFIX "%" PRIu64 \
+    SharemindUserDefinedExceptionMessage_SUFFIX
 
 namespace {
 
 struct UserDefinedExceptionData {
+
+/* Constants: */
+
+    static constexpr auto const minBufferSize =
+            sizeof(SharemindUserDefinedExceptionMessage_PREFIX) - 1u
+            + sizeof("18446744073709551615") - 1u // 2^64-1
+            + sizeof(SharemindUserDefinedExceptionMessage_SUFFIX); // incl. '\0'
 
 /* Methods: */
 
@@ -127,9 +138,7 @@ struct UserDefinedExceptionData {
 
 /* Fields: */
 
-    std::unique_ptr<char[]> message{
-            makeUnique<char[]>(
-                        sizeof(SharemindUserDefinedExceptionMessage) + 21u)};
+    std::unique_ptr<char[]> message{makeUnique<char[]>(minBufferSize)};
     std::uint64_t errorCode = 0u;
 };
 
