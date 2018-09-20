@@ -21,6 +21,7 @@
 #include "Process_p.h"
 
 #include <cassert>
+#include <cctype>
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
@@ -137,22 +138,11 @@ struct UserDefinedExceptionData {
     }
 
     void setUserErrorMessage(void const * data, std::size_t size) {
-        #define P " !#$%&'()*+,-./0123456789:;<=>?@" \
-                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`" \
-                  "abcdefghijklmnopqrstuvwxyz{|}~"
-        static_assert(sizeof(P) == 95, "");
-        #define C(x) case P[x]
-        #define PC \
-                C(0): C(1): C(2): C(3): C(4): C(5): C(6): C(7): C(8): C(9): \
-               C(10):C(11):C(12):C(13):C(14):C(15):C(16):C(17):C(18):C(19): \
-               C(20):C(21):C(22):C(23):C(24):C(25):C(26):C(27):C(28):C(29): \
-               C(30):C(31):C(32):C(33):C(34):C(35):C(36):C(37):C(38):C(39): \
-               C(40):C(41):C(42):C(43):C(44):C(45):C(46):C(47):C(48):C(49): \
-               C(50):C(51):C(52):C(53):C(54):C(55):C(56):C(57):C(58):C(59): \
-               C(60):C(61):C(62):C(63):C(64):C(65):C(66):C(67):C(68):C(69): \
-               C(70):C(71):C(72):C(73):C(74):C(75):C(76):C(77):C(78):C(79): \
-               C(80):C(81):C(82):C(83):C(84):C(85):C(86):C(87):C(88):C(89): \
-               C(90):C(91):C(92):C(93)
+        constexpr static auto const needsEscape =
+                [](char c) noexcept {
+                    return !std::isprint(static_cast<unsigned char>(c))
+                           || (c == '"');
+                };
 
         #define PREFIX "User-defined exception with the message \""
         #define SUFFIX "\" thrown!"
@@ -165,13 +155,10 @@ struct UserDefinedExceptionData {
         if (size > 0) {
             char const * cp = ip;
             for (std::size_t i = 0u; i < size; ++i, ++cp) {
-                switch (*cp) {
-                PC: break;
-                default:
+                if (needsEscape(*cp)) {
                     if (std::numeric_limits<std::size_t>::max() - 3u < realSize)
                         throw std::bad_alloc();
                     realSize += 3u; // \x##
-                    break;
                 }
             }
         }
@@ -182,28 +169,18 @@ struct UserDefinedExceptionData {
         auto * op = message.get();
         std::memcpy(op, PREFIX, sizeof(PREFIX) - 1u);
         op += sizeof(PREFIX) - 1u;
-        {
-            for (std::size_t i = 0u; i < size; ++i, ++ip) {
-                switch (*ip) {
-                PC:
-                    *op = *ip;
-                    ++op;
-                    break;
-                default:
-                    std::sprintf(op,
-                                 "\\x%02x",
-                                 static_cast<unsigned char>(*ip));
-                    op += 4u;
-                    break;
-                }
+        for (std::size_t i = 0u; i < size; ++i, ++ip) {
+            if (needsEscape(*ip)) {
+                std::sprintf(op, "\\x%02x", static_cast<unsigned char>(*ip));
+                op += 4u;
+            } else {
+                *op = *ip;
+                ++op;
             }
         }
         std::memcpy(op, SUFFIX, sizeof(SUFFIX));
         #undef SUFFIX
         #undef PREFIX
-        #undef PC
-        #undef C
-        #undef P
         errorCode = 0xf00;
     }
 
