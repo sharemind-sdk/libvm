@@ -138,7 +138,7 @@ struct UserDefinedExceptionData {
     }
 
     void setUserErrorMessage(void const * data, std::size_t size) {
-        constexpr static auto const needsEscape =
+        static auto const needsEscape =
                 [](char c) noexcept {
                     return !std::isprint(static_cast<unsigned char>(c))
                            || (c == '"');
