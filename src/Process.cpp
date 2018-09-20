@@ -144,10 +144,11 @@ struct UserDefinedExceptionData {
                            || (c == '"');
                 };
 
-        #define PREFIX "User-defined exception with the message \""
-        #define SUFFIX "\" thrown!"
+        static char const msgPrefix[] =
+                "User-defined exception with the message \"";
+        static char const msgSuffix[] = "\" thrown!";
         constexpr static auto const minMsgSize =
-                sizeof(PREFIX) + sizeof(SUFFIX) - 1u;
+                sizeof(msgPrefix) + sizeof(msgSuffix) - 1u;
         if (std::numeric_limits<std::size_t>::max() - minMsgSize < size)
             throw std::bad_alloc();
         auto const * ip = static_cast<char const *>(data);
@@ -167,8 +168,8 @@ struct UserDefinedExceptionData {
             currentBufferSize = realSize;
         }
         auto * op = message.get();
-        std::memcpy(op, PREFIX, sizeof(PREFIX) - 1u);
-        op += sizeof(PREFIX) - 1u;
+        std::memcpy(op, msgPrefix, sizeof(msgPrefix) - 1u);
+        op += sizeof(msgPrefix) - 1u;
         for (std::size_t i = 0u; i < size; ++i, ++ip) {
             if (needsEscape(*ip)) {
                 std::sprintf(op, "\\x%02x", static_cast<unsigned char>(*ip));
@@ -178,9 +179,7 @@ struct UserDefinedExceptionData {
                 ++op;
             }
         }
-        std::memcpy(op, SUFFIX, sizeof(SUFFIX));
-        #undef SUFFIX
-        #undef PREFIX
+        std::memcpy(op, msgSuffix, sizeof(msgSuffix));
         errorCode = 0xf00;
     }
 
