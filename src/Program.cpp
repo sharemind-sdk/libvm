@@ -34,7 +34,6 @@
 #include <sharemind/libexecutable/Executable.h>
 #include <sharemind/libvmi/instr.h>
 #include <sharemind/likely.h>
-#include <sharemind/MakeUnique.h>
 #include <sharemind/SignedToUnsigned.h>
 #include <streambuf>
 #include <sys/stat.h>
