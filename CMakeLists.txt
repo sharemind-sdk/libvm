@@ -50,7 +50,7 @@ IF(NOT SHAREMIND_RELEASE_BUILD)
     ADD_DEFINITIONS("-DSHAREMIND_FAST_BUILD")
 ENDIF(NOT SHAREMIND_RELEASE_BUILD)
 FILE(GLOB_RECURSE SharemindLibVm_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-SharemindSetCxx11CompileOptions(COMPILE_FLAGS "-fwrapv")
+SharemindSetCxx14CompileOptions(COMPILE_FLAGS "-fwrapv")
 SharemindAddSharedLibrary("libvm"
     OUTPUT_NAME "sharemind_vm"
     SOURCES
