@@ -28,7 +28,6 @@
 #include <limits>
 #include <new>
 #include <sharemind/AssertReturn.h>
-#include <sharemind/MakeUnique.h>
 #include "Program.h"
 
 
@@ -164,7 +163,7 @@ struct UserDefinedExceptionData {
             }
         }
         if (currentBufferSize < realSize) {
-            message = makeUnique<char[]>(realSize);
+            message = std::make_unique<char[]>(realSize);
             currentBufferSize = realSize;
         }
         auto * op = message.get();
@@ -189,7 +188,7 @@ struct UserDefinedExceptionData {
 /* Fields: */
 
     std::size_t currentBufferSize = minBufferSize;
-    std::unique_ptr<char[]> message{makeUnique<char[]>(minBufferSize)};
+    auto message{std::make_unique<char[]>(minBufferSize)};
     std::uint64_t errorCode = 0u;
 };
 
