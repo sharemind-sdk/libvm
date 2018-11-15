@@ -188,7 +188,7 @@ struct UserDefinedExceptionData {
 /* Fields: */
 
     std::size_t currentBufferSize = minBufferSize;
-    auto message{std::make_unique<char[]>(minBufferSize)};
+    std::unique_ptr<char[]> message{std::make_unique<char[]>(minBufferSize)};
     std::uint64_t errorCode = 0u;
 };
 
