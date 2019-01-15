@@ -201,7 +201,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
     std::atomic<bool> m_trapCond{false};
 
     // This state replicates default AMD64 behaviour.
-    // NB! By default, we ignore any fpu exceptions.
+    // NB! By default, we ignore any FPU exceptions.
     sf_fpu_state m_fpuState =
             static_cast<sf_fpu_state>(sf_float_tininess_after_rounding
                                       | sf_float_round_nearest_even);
