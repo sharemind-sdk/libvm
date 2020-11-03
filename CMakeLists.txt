@@ -23,22 +23,17 @@ PROJECT(SharemindLibVm VERSION "0.9.0" LANGUAGES "CXX")
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
-FIND_PACKAGE(SharemindCMakeHelpers 1.4 REQUIRED)
+FIND_PACKAGE(SharemindCMakeHelpers 1.6 REQUIRED)
+
+FIND_PACKAGE(SharemindCHeaders 1.3.0 REQUIRED)
+FIND_PACKAGE(SharemindCxxHeaders 0.8.0 REQUIRED)
+FIND_PACKAGE(SharemindLibExecutable 0.4.0 REQUIRED)
+FIND_PACKAGE(SharemindLibSoftfloat 0.3.0 REQUIRED)
+FIND_PACKAGE(SharemindLibVmi 0.4.0 REQUIRED)
+FIND_PACKAGE(SharemindVmM4 0.5.0 REQUIRED)
 
 
-FIND_PACKAGE(SharemindCHeaders 1.1.0 REQUIRED)
-FIND_PACKAGE(SharemindCxxHeaders 0.3.0 REQUIRED)
-FIND_PACKAGE(SharemindLibExecutable 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindLibSoftfloat 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindLibVmi 0.2.0 REQUIRED)
-FIND_PACKAGE(SharemindVmM4 0.4.0 REQUIRED)
-
-
-################################################################################
-# libvm
-################################################################################
-
-# Headers:
+# LibVm:
 INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Process.h"
               "${CMAKE_CURRENT_SOURCE_DIR}/src/Vm.h"
               "${CMAKE_CURRENT_SOURCE_DIR}/src/Program.h"
@@ -52,49 +47,40 @@ SharemindAddSharedLibrary(LibVm
     SOURCES
         ${SharemindLibVm_SOURCES}
         ${SharemindLibVm_HEADERS}
-    INCLUDE_DIRECTORIES
-        ${SharemindCHeaders_INCLUDE_DIRS}
-        ${SharemindCxxHeaders_INCLUDE_DIRS}
-        ${SharemindLibExecutable_INCLUDE_DIRS}
-        ${SharemindLibSoftfloat_INCLUDE_DIRS}
-        ${SharemindLibVmi_INCLUDE_DIRS}
-        ${SharemindVmM4_INCLUDE_DIRS}
-    LINK_LIBRARIES
-        ${SharemindLibExecutable_LIBRARIES}
-        ${SharemindLibSoftfloat_LIBRARIES}
-        ${SharemindLibVmi_LIBRARIES}
-        "m"
-        "pthread"
-    LEGACY_DEFINITIONS
-        ${SharemindCHeaders_DEFINITIONS}
-        ${SharemindCxxHeaders_DEFINITIONS}
-        ${SharemindLibExecutable_DEFINITIONS}
-        ${SharemindLibSoftfloat_DEFINITIONS}
-        ${SharemindLibVmi_DEFINITIONS}
-        ${SharemindVmM4_DEFINITIONS}
-    COMPILE_DEFINITIONS
-        "_XOPEN_SOURCE=700"
-        "SHAREMIND_INTERNAL_=1"
 )
 TARGET_COMPILE_OPTIONS(LibVm PRIVATE "-fwrapv")
+TARGET_INCLUDE_DIRECTORIES(LibVm
+    INTERFACE
+        # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src> # TODO
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+    )
+TARGET_LINK_LIBRARIES(LibVm
+    PRIVATE
+        Sharemind::LibSoftfloat
+        Sharemind::VmM4
+    PUBLIC
+        m
+        Sharemind::CHeaders
+        Sharemind::CxxHeaders
+        Sharemind::LibExecutable
+        Sharemind::LibVmi
+    )
+TARGET_COMPILE_DEFINITIONS(LibVm
+    PRIVATE
+        "SHAREMIND_INTERNAL_=1"
+    PUBLIC
+        "_XOPEN_SOURCE=700"
+        "__STDC_LIMIT_MACROS"
+    )
 IF(NOT SHAREMIND_RELEASE_BUILD)
     TARGET_COMPILE_DEFINITIONS(LibVm PRIVATE "SHAREMIND_FAST_BUILD")
 ENDIF(NOT SHAREMIND_RELEASE_BUILD)
-
-# Install cmake files:
-SharemindCreateCMakeFindFiles(
-    INCLUDE_DIRS
-        "${CMAKE_INSTALL_PREFIX}/include"
-    DEFINITIONS
-        "-D__STDC_LIMIT_MACROS"
-        "-D_XOPEN_SOURCE=700"
-    LIBRARIES
-        ${SharemindLibExecutable_LIBRARIES}
-        ${SharemindLibSoftfloat_LIBRARIES}
-        ${SharemindLibVmi_LIBRARIES}
-        "m"
-        "-L${CMAKE_INSTALL_PREFIX}/lib"
-        "-lsharemind_vm"
+SharemindCreateCMakeFindFilesForTarget(LibVm
+    DEPENDENCIES
+        "SharemindCHeaders 1.3.0"
+        "SharemindCxxHeaders 0.8.0"
+        "SharemindLibExecutable 0.4.0"
+        "SharemindLibVmi 0.4.0"
 )
 
 
@@ -105,9 +91,9 @@ SharemindAddComponentPackage("lib"
     DESCRIPTION "Sharemind VM library"
     DEB_SECTION "libs"
     DEB_DEPENDS
-        "libsharemind-vmi (>= 0.2.0)"
-        "libsharemind-executable (>= 0.2.0)"
-        "libsharemind-softfloat (>= 0.2.0)"
+        "libsharemind-vmi (>= 0.4.0)"
+        "libsharemind-executable (>= 0.4.0)"
+        "libsharemind-softfloat (>= 0.3.0)"
         "libc6 (>= 2.19)"
         "libstdc++6 (>= 4.8.0)"
 )
@@ -117,9 +103,9 @@ SharemindAddComponentPackage("dev"
     DEB_SECTION "libdevel"
     DEB_DEPENDS
         "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
-        "libsharemind-vmi-dev (>= 0.2.0)"
-        "libsharemind-cheaders-dev (>= 1.1.0)"
-        "libsharemind-cxxheaders-dev (>= 0.3.0)"
+        "libsharemind-vmi-dev (>= 0.4.0)"
+        "libsharemind-cheaders-dev (>= 1.3.0)"
+        "libsharemind-cxxheaders-dev (>= 0.8.0)"
         "libc6-dev (>= 2.19)"
         "libstdc++-dev"
 )
