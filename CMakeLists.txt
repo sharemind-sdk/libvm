@@ -46,7 +46,7 @@ INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Process.h"
         COMPONENT "dev")
 FILE(GLOB_RECURSE SharemindLibVm_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
 FILE(GLOB_RECURSE SharemindLibVm_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-SharemindSetCxx14CompileOptions(COMPILE_FLAGS "-fwrapv")
+SharemindSetCxx14CompileOptions()
 SharemindAddSharedLibrary(LibVm
     OUTPUT_NAME "sharemind_vm"
     SOURCES
@@ -76,6 +76,7 @@ SharemindAddSharedLibrary(LibVm
         "_XOPEN_SOURCE=700"
         "SHAREMIND_INTERNAL_=1"
 )
+TARGET_COMPILE_OPTIONS(LibVm PRIVATE "-fwrapv")
 IF(NOT SHAREMIND_RELEASE_BUILD)
     TARGET_COMPILE_DEFINITIONS(LibVm PRIVATE "SHAREMIND_FAST_BUILD")
 ENDIF(NOT SHAREMIND_RELEASE_BUILD)
