@@ -41,7 +41,6 @@ INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Process.h"
         COMPONENT "dev")
 FILE(GLOB_RECURSE SharemindLibVm_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
 FILE(GLOB_RECURSE SharemindLibVm_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-SharemindSetCxx14CompileOptions()
 SharemindAddSharedLibrary(LibVm
     OUTPUT_NAME "sharemind_vm"
     SOURCES
