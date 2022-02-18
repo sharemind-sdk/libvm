@@ -29,7 +29,7 @@ FIND_PACKAGE(SharemindCHeaders 1.3.0 REQUIRED)
 FIND_PACKAGE(SharemindCxxHeaders 0.9.0 REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable 0.4.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat 0.3.0 REQUIRED)
-FIND_PACKAGE(SharemindLibVmi 0.4.0 REQUIRED)
+FIND_PACKAGE(SharemindLibVmi 0.5.0 REQUIRED)
 FIND_PACKAGE(SharemindVmM4 0.5.0 REQUIRED)
 
 
@@ -79,7 +79,7 @@ SharemindCreateCMakeFindFilesForTarget(LibVm
         "SharemindCHeaders 1.3.0"
         "SharemindCxxHeaders 0.9.0"
         "SharemindLibExecutable 0.4.0"
-        "SharemindLibVmi 0.4.0"
+        "SharemindLibVmi 0.5.0"
 )
 
 
@@ -90,7 +90,7 @@ SharemindAddComponentPackage("lib"
     DESCRIPTION "Sharemind VM library"
     DEB_SECTION "libs"
     DEB_DEPENDS
-        "libsharemind-vmi (>= 0.4.0)"
+        "libsharemind-vmi (>= 0.5.0)"
         "libsharemind-executable (>= 0.4.0)"
         "libsharemind-softfloat (>= 0.3.0)"
         "libc6 (>= 2.19)"
@@ -102,7 +102,7 @@ SharemindAddComponentPackage("dev"
     DEB_SECTION "libdevel"
     DEB_DEPENDS
         "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
-        "libsharemind-vmi-dev (>= 0.4.0)"
+        "libsharemind-vmi-dev (>= 0.5.0)"
         "libsharemind-cheaders-dev (>= 1.3.0)"
         "libsharemind-cxxheaders-dev (>= 0.9.0)"
         "libc6-dev (>= 2.19)"
