@@ -27,7 +27,7 @@ FIND_PACKAGE(SharemindCMakeHelpers 1.6 REQUIRED)
 
 FIND_PACKAGE(SharemindCHeaders 1.3.0 REQUIRED)
 FIND_PACKAGE(SharemindCxxHeaders 0.9.0 REQUIRED)
-FIND_PACKAGE(SharemindLibExecutable 0.4.0 REQUIRED)
+FIND_PACKAGE(SharemindLibExecutable 0.5.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.5.0 REQUIRED)
 FIND_PACKAGE(SharemindVmM4 0.5.0 REQUIRED)
@@ -78,7 +78,7 @@ SharemindCreateCMakeFindFilesForTarget(LibVm
     DEPENDENCIES
         "SharemindCHeaders 1.3.0"
         "SharemindCxxHeaders 0.9.0"
-        "SharemindLibExecutable 0.4.0"
+        "SharemindLibExecutable 0.5.0"
         "SharemindLibVmi 0.5.0"
 )
 
@@ -91,7 +91,7 @@ SharemindAddComponentPackage("lib"
     DEB_SECTION "libs"
     DEB_DEPENDS
         "libsharemind-vmi (>= 0.5.0)"
-        "libsharemind-executable (>= 0.4.0)"
+        "libsharemind-executable (>= 0.5.0)"
         "libsharemind-softfloat (>= 0.3.0)"
         "libc6 (>= 2.19)"
         "libstdc++6 (>= 4.8.0)"
