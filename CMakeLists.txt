@@ -77,7 +77,7 @@ ENDIF(NOT SHAREMIND_RELEASE_BUILD)
 SharemindCreateCMakeFindFilesForTarget(LibVm
     DEPENDENCIES
         "SharemindCHeaders 1.3.0"
-        "SharemindCxxHeaders 0.8.0"
+        "SharemindCxxHeaders 0.9.0"
         "SharemindLibExecutable 0.4.0"
         "SharemindLibVmi 0.4.0"
 )
@@ -104,7 +104,7 @@ SharemindAddComponentPackage("dev"
         "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
         "libsharemind-vmi-dev (>= 0.4.0)"
         "libsharemind-cheaders-dev (>= 1.3.0)"
-        "libsharemind-cxxheaders-dev (>= 0.8.0)"
+        "libsharemind-cxxheaders-dev (>= 0.9.0)"
         "libc6-dev (>= 2.19)"
         "libstdc++-dev"
 )
