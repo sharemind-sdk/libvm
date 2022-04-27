@@ -28,9 +28,9 @@
 namespace sharemind {
 namespace Detail {
 
-enum class ExecuteMethod { GetInstruction, RunOrContinue };
+enum class CoreMethod { GetInstruction, Execute };
 
-void vmRun(ExecuteMethod const c, void * d)
+void vmRun(CoreMethod const c, void * d)
     __attribute__((
          #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5 )
          noclone,

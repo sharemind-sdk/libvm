@@ -100,7 +100,7 @@ void parseBindings(BindingsVector & r,
         Detail::PreparationBlock pb{ \
             &c[SHAREMIND_PREPARE_CURRENT_I], \
             Detail::PreparationBlock::InstructionLabel}; \
-        Detail::vmRun(Detail::ExecuteMethod::GetInstruction, &pb); \
+        Detail::vmRun(Detail::CoreMethod::GetInstruction, &pb); \
         SHAREMIND_PREPARE_CURRENT_I += (numargs); \
     } while ((0))
 #define SHAREMIND_PREPARE_ARG_AS(v,t) (c[(*i)+(v)].t[0])
@@ -258,7 +258,7 @@ Detail::PreparedLinkingUnit::PreparedLinkingUnit(
     {
         Detail::PreparationBlock pb{&c[codeSection.size()],
                                     Detail::PreparationBlock::EofLabel};
-        Detail::vmRun(Detail::ExecuteMethod::GetInstruction, &pb);
+        Detail::vmRun(Detail::CoreMethod::GetInstruction, &pb);
     }
 }
 

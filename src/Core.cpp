@@ -659,14 +659,14 @@ SHAREMIND_IMPL_INNER(_func_impl_eof,
 } // anonymous namespace
 
 
-void vmRun(ExecuteMethod const sharemind_vm_run_command,
+void vmRun(CoreMethod const sharemind_vm_run_command,
            void * const sharemind_vm_run_data)
 {
     assert(sharemind_vm_run_data);
     #ifdef SHAREMIND_FAST_BUILD
     using ImplLabelType = HaltCode (*)(ProcessState * const p);
     #endif
-    if (sharemind_vm_run_command == ExecuteMethod::GetInstruction) {
+    if (sharemind_vm_run_command == CoreMethod::GetInstruction) {
 #ifndef SHAREMIND_FAST_BUILD
         using ImplLabelType = void *;
 #define SHAREMIND_CBPTR p
@@ -697,7 +697,7 @@ void vmRun(ExecuteMethod const sharemind_vm_run_command,
         return;
 
     } else {
-        assert(sharemind_vm_run_command == ExecuteMethod::RunOrContinue);
+        assert(sharemind_vm_run_command == CoreMethod::Execute);
         assert(sharemind_vm_run_data);
         auto * const p =
                 static_cast<ProcessState *>(sharemind_vm_run_data);

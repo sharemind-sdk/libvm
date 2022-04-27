@@ -340,7 +340,7 @@ void ProcessState::run() {
         assert(m_state == State::Starting);
         m_state = State::Running;
     }
-    return execute(ExecuteMethod::RunOrContinue);
+    return execute(CoreMethod::Execute);
 }
 
 void ProcessState::resume() {
@@ -350,11 +350,11 @@ void ProcessState::resume() {
             throw Process::NotInTrappedStateException();
         m_state = State::Running;
     }
-    return execute(ExecuteMethod::RunOrContinue);
+    return execute(CoreMethod::Execute);
 }
 
-void ProcessState::execute(ExecuteMethod const executeMethod) {
-    assert(executeMethod == ExecuteMethod::RunOrContinue);
+void ProcessState::execute(CoreMethod const executeMethod) {
+    assert(executeMethod == CoreMethod::Execute);
 
     auto const setState =
             [this](State const newState) noexcept {

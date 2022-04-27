@@ -134,7 +134,7 @@ struct __attribute__((visibility("internal"))) ProcessState {
 
     void run();
     void resume();
-    void execute(ExecuteMethod const executeMethod);
+    void execute(CoreMethod const executeMethod);
     void pause() noexcept;
 
     std::uint64_t publicAlloc(std::uint64_t const size);
