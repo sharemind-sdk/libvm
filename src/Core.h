@@ -28,7 +28,7 @@
 namespace sharemind {
 namespace Detail {
 
-enum class ExecuteMethod { GetInstruction, Run, Continue };
+enum class ExecuteMethod { GetInstruction, RunOrContinue };
 
 void vmRun(ExecuteMethod const c, void * d)
     __attribute__((

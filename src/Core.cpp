@@ -697,8 +697,7 @@ void vmRun(ExecuteMethod const sharemind_vm_run_command,
         return;
 
     } else {
-        assert(sharemind_vm_run_command == ExecuteMethod::Run
-               || sharemind_vm_run_command == ExecuteMethod::Continue);
+        assert(sharemind_vm_run_command == ExecuteMethod::RunOrContinue);
         assert(sharemind_vm_run_data);
         auto * const p =
                 static_cast<ProcessState *>(sharemind_vm_run_data);
