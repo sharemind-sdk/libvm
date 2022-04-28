@@ -52,13 +52,11 @@ namespace {
 
 template <typename Exception,
           typename BindingsVector,
-          typename PredicateWithAction,
-          typename Predicate,
+          typename SyscallFinder,
           typename ExceptionPrefix>
 void parseBindings(BindingsVector & r,
                    std::vector<std::string> & bindings,
-                   PredicateWithAction predicateWithAction,
-                   Predicate predicate,
+                   SyscallFinder syscallFinder,
                    ExceptionPrefix && exceptionPrefix)
 {
     assert(r.empty());
@@ -68,11 +66,13 @@ void parseBindings(BindingsVector & r,
     auto it(bindings.begin());
 
     do {
-        if (!predicateWithAction(r, *it)) {
+        if (auto w = syscallFinder(*it)) {
+            r.emplace_back(std::move(w));
+        } else {
             std::vector<std::string> missingBinds;
             missingBinds.emplace_back(std::move(*it));
             while (++it != bindings.end())
-                if (!predicate(*it))
+                if (!syscallFinder(*it))
                     missingBinds.emplace_back(std::move(*it));
             std::ostringstream oss;
             oss << std::forward<ExceptionPrefix>(exceptionPrefix);
@@ -166,17 +166,7 @@ Detail::PreparedSyscallBindings::PreparedSyscallBindings(
         parseBindings<Program::UndefinedSyscallBindException>(
             *this,
             parsedBindings->syscallBindings,
-            [&syscallFinder](PreparedSyscallBindings & r,
-                       std::string const & bindName)
-            {
-                if (auto w = syscallFinder(bindName)) {
-                    r.emplace_back(std::move(w));
-                    return true;
-                }
-                return false;
-            },
-            [&syscallFinder](std::string const & bindName)
-            { return static_cast<bool>(syscallFinder(bindName)); },
+            std::forward<SyscallFinder>(syscallFinder),
             "Found bindings for undefined systems calls: ");
     }
 }
