@@ -349,7 +349,7 @@ enum class HaltCode { Continue, Halt };
     } else (void) 0
 
 #define SHAREMIND_MI_TRY_MEMRANGE(size,offset,numBytes,exception) \
-    SHAREMIND_MI_TRY_EXCEPT(((offset) < (size)) \
+    SHAREMIND_MI_TRY_EXCEPT(((offset) <= (size)) \
                        && ((numBytes) <= (size)) \
                        && ((size) - (offset) >= (numBytes)), \
                        exception)
