@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015 Cybernetica
+# Copyright (C) Cybernetica
 #
 # Research/Commercial License Usage
 # Licensees holding a valid Research License or Commercial License
@@ -18,15 +18,15 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.18)
-PROJECT(SharemindLibVm VERSION "0.11.1" LANGUAGES "CXX")
+PROJECT(SharemindLibVm VERSION "0.12.0" LANGUAGES "CXX")
 
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/config.local" OPTIONAL)
 INCLUDE("${CMAKE_CURRENT_BINARY_DIR}/config.local" OPTIONAL)
 
-FIND_PACKAGE(SharemindCMakeHelpers 1.6 REQUIRED)
+FIND_PACKAGE(SharemindCMakeHelpers 1.8 REQUIRED)
 
 FIND_PACKAGE(SharemindCHeaders 1.3.0 REQUIRED)
-FIND_PACKAGE(SharemindCxxHeaders 0.10.1 REQUIRED)
+FIND_PACKAGE(SharemindCxxHeaders 0.11.0 REQUIRED)
 FIND_PACKAGE(SharemindLibExecutable 0.5.0 REQUIRED)
 FIND_PACKAGE(SharemindLibSoftfloat 0.3.0 REQUIRED)
 FIND_PACKAGE(SharemindLibVmi 0.5.0 REQUIRED)
@@ -77,7 +77,7 @@ ENDIF(NOT SHAREMIND_RELEASE_BUILD)
 SharemindCreateCMakeFindFilesForTarget(LibVm
     DEPENDENCIES
         "SharemindCHeaders 1.3.0"
-        "SharemindCxxHeaders 0.10.1"
+        "SharemindCxxHeaders 0.11.0"
         "SharemindLibExecutable 0.5.0"
         "SharemindLibVmi 0.5.0"
 )
@@ -104,7 +104,7 @@ SharemindAddComponentPackage("dev"
         "libsharemind-vm (= ${SharemindLibVm_DEB_lib_PACKAGE_VERSION})"
         "libsharemind-vmi-dev (>= 0.5.0)"
         "libsharemind-cheaders-dev (>= 1.3.0)"
-        "libsharemind-cxxheaders-dev (>= 0.10.1)"
+        "libsharemind-cxxheaders-dev (>= 0.11.0)"
         "libc6-dev (>= 2.19)"
         "libstdc++-dev"
 )
